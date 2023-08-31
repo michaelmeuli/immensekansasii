@@ -6,9 +6,9 @@ IMMENSE
 
 ## Author
 
-* Michèle Leemann and Marco Meola (marco.meola(at)unibas.ch)
+* Michèle Leemann and Marco Meola (mmeola@imm.uzh.ch)
 
-Institution: Applied Microbiology Research - Department of Biomedicine - University Hospital Basel (USB)
+Institution: Applied Microbiology Research - Institute of Medical Microbiology - University of Zurich (UZH)
 
 The steps that are included are:
 
@@ -34,7 +34,7 @@ The steps that are included are:
 # Table of contents
 
 * [Introduction](#Introduction)
-* [Running IMMENSE on sciCORE](#Running-IMMENSE-on-sciCORE)
+* [Running IMMENSE on S3IT](#Running-IMMENSE-on-S3IT)
 	* [Running the pipeline on raw data](#Running-the-pipeline-on-raw-data)
 	* [Running the pipeline on fastq files](#Running-the-pipeline-on-fastq-files)
 	* [Running the pipeline on single fastq file(s)](#Running-the-pipeline-on-single-fastq-file(s))
@@ -63,14 +63,14 @@ Each process of the pipeline has its own working directory that is located in th
 
 While the pipeline is running the status can be monitored in **.nextflow.log** or in the slurm file. With successful completion the **report.html** is produced which gives information about each process inlcuding the used ressources. 
 
-# Running IMMENSE on sciCORE
+# Running IMMENSE on S3IT
 
 The pipeline can be run on **raw data**, **fastq files**, or **fasta files**.
 
 The general command to run the pipeline is:
 
 ```
-sbatch --job-name=IMMENSE_<run_ID> /scicore/home/egliadr/GROUP/Software/pipelines/nextflow/IMMENSE/run_IMMENSE.sh <input_type> <run_id> </absolute_path/to/input> "<additional_options>"
+sbatch --job-name=IMMENSE_<run_ID> /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh <input_type> <run_id> </absolute_path/to/input> "<additional_options>"
 ```
 
 **input_type run_id /absolute_path/to/data "additional_options"** must be provided in this order!
@@ -100,7 +100,7 @@ Provide the absolute path to where the **samplesheet** and the **data** is locat
 Example command for analysing the raw paired-end data of run500:  
 
 ``` 
-sbatch --job-name=IMMENSE_run500 /scicore/home/egliadr/GROUP/Software/pipelines/nextflow/IMMENSE/run_IMMENSE.sh raw_PE run500 /scicore/home/egliadr/GROUP/runQC/run500/demultiplexing
+sbatch --job-name=IMMENSE_run500 /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh raw_PE run500 /scicore/home/egliadr/GROUP/runQC/run500/demultiplexing
 ```
 **Note**: There must be no quotes around the paths.
 
@@ -113,17 +113,17 @@ Depending on the reads use **fq_PE** or **fq_SE** for the **input_type**:
 
 Provide the absolute path to the **"reads" folder**, for example 
 ``` 
-/scicore/home/egliadr/GROUP/runQC/run500/reads 
+/shares/amr.imm.uzh/data/illumina/routine/runQC/run500/reads 
 ```  
 or for a single species
 ``` 
-/scicore/home/egliadr/GROUP/runQC/run500/reads/esccol 
+/shares/amr.imm.uzh/data/illumina/routine/run500/reads/esccol 
 ``` 
 
 Example command for analysing the paired-end reads of run500:  
 
 ``` 
-sbatch --job-name=IMMENSE_run500 /scicore/home/egliadr/GROUP/Software/pipelines/nextflow/IMMENSE/run_IMMENSE.sh fq_PE run500 /scicore/home/egliadr/GROUP/runQC/run500/reads
+sbatch --job-name=IMMENSE_run500 /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh fq_PE run500 /scicore/home/egliadr/GROUP/runQC/run500/reads
 ``` 
 **Note**: There must be no quotes around the paths.
 
@@ -135,14 +135,14 @@ For **one single sample** add ```"--single_sample <sample_id>"``` at the end of 
 
 Example to run one **single sample**: 
 ``` 
-sbatch --job-name=IMMENSE_singleSample /scicore/home/egliadr/GROUP/Software/pipelines/nextflow/IMMENSE/run_IMMENSE.sh fq_PE run_singleSample /scicore/home/egliadr/GROUP/runQC/IMMENSETestHSS/reads/pseaer "--single_sample 401915-22"
+sbatch --job-name=IMMENSE_singleSample /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh fq_PE run_singleSample /scicore/home/egliadr/GROUP/runQC/IMMENSETestHSS/reads/pseaer "--single_sample 401915-22"
 ``` 
 
 For **several individual samples** add ```"--single_sample {sample_id_1,sample_id_2,...,sample_id_X}"``` at the end of the sbatch command (i.e. **"additional_options"**).
 
 Example to run **three samples**:
 ``` 
-sbatch --job-name=IMMENSE_threeSamples /scicore/home/egliadr/GROUP/Software/pipelines/nextflow/IMMENSE/run_IMMENSE.sh fq_PE run_threeSamples /scicore/home/egliadr/GROUP/runQC/IMMENSETestHSS/reads "--single_sample {401915-22,502637-1-21,202315-22}"
+sbatch --job-name=IMMENSE_threeSamples /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh fq_PE run_threeSamples /scicore/home/egliadr/GROUP/runQC/IMMENSETestHSS/reads "--single_sample {401915-22,502637-1-21,202315-22}"
 ``` 
 ## Running the pipeline on fasta files
 
@@ -151,7 +151,7 @@ To run the pipeline on fasta files provide a directory with the genome files to 
 The **input_type** to be used is **fasta**.
 
 ``` 
-sbatch --job-name=IMMENSE_genomes /scicore/home/egliadr/GROUP/Software/pipelines/nextflow/IMMENSE/run_IMMENSE.sh fasta run_genomes /scicore/home/egliadr/GROUP/Michele/example_genomes
+sbatch --job-name=IMMENSE_genomes /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh fasta run_genomes /S3IT/home/egliadr/GROUP/Michele/example_genomes
 ``` 
 
 ## Email-notification
@@ -160,13 +160,13 @@ To receive an email notification when the pipeline is finished including multiqc
 ```"--email <email_address1,email_address2,...>"``` at the end of the sbatch command (i.e. **"additional_options"**).
 
 ``` 
-sbatch --job-name=IMMENSE_run500 /scicore/home/egliadr/GROUP/Software/pipelines/nextflow/IMMENSE/run_IMMENSE.sh raw_PE run500 /scicore/home/egliadr/GROUP/runQC/run500/demultiplexing "--email michele.leemann@unibas.ch"
+sbatch --job-name=IMMENSE_run500 /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh raw_PE run500 /S3IT/home/egliadr/GROUP/runQC/run500/demultiplexing "--email michele.leemann@unibas.ch"
 ```
 
 You can also use it in combination with the single_sample option:
 
 ``` 
-sbatch --job-name=IMMENSE_run500 /scicore/home/egliadr/GROUP/Software/pipelines/nextflow/IMMENSE/run_IMMENSE.sh fq_PE run_threeSamples /scicore/home/egliadr/GROUP/runQC/IMMENSETestHSS/reads "--single_sample {sample_id_1,sample_id_2,...,sample_id_X} --email michele.leemann@unibas.ch"
+sbatch --job-name=IMMENSE_run500 /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh fq_PE run_threeSamples /S3IT/home/egliadr/GROUP/runQC/IMMENSETestHSS/reads "--single_sample {sample_id_1,sample_id_2,...,sample_id_X} --email michele.leemann@unibas.ch"
 ``` 
 
 ## Change parameters for Trimmomatic
@@ -187,7 +187,7 @@ Both, SLIDINGWINDOW and MINLEN need to be specified, but also additional trimmom
 Full command:
 
 ``` 
-sbatch --job-name=IMMENSE_run500 /scicore/home/egliadr/GROUP/Software/pipelines/nextflow/IMMENSE/run_IMMENSE.sh raw_PE run500 /scicore/home/egliadr/GROUP/runQC/run500/demultiplexing "--trimmomatic_PE_extra SLIDINGWINDOW:4:12 MINLEN:80"
+sbatch --job-name=IMMENSE_run500 /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh raw_PE run500 /S3IT/home/egliadr/GROUP/runQC/run500/demultiplexing "--trimmomatic_PE_extra SLIDINGWINDOW:4:12 MINLEN:80"
 ```
 
 ## Troubleshooting
@@ -267,7 +267,7 @@ The following databases/files are required:
 
 ## Launching the pipeline
 
-For sciCORE the launching of the pipeline was defined in the run_IMMENSE.sh (or in the old version run_pipeline.sh respectively). 
+For S3IT the launching of the pipeline was defined in the run_IMMENSE.sh (or in the old version run_pipeline.sh respectively). 
 
 The general command to launch the pipeline is: 
 
@@ -284,4 +284,4 @@ nextflow run /path/to/IMMENSE/main.nf -with-singularity -with-report -profile <p
 --SE		Single-end reads: YES or NO
 ```
 
-The **additional options** as described for the usage on sciCORE can be added in the same manner to the command and all parameters defined in the params.config file can be overwritten on the command line with ```--<parames-name> <params-value>```.
+The **additional options** as described for the usage on S3IT can be added in the same manner to the command and all parameters defined in the params.config file can be overwritten on the command line with ```--<parames-name> <params-value>```.
