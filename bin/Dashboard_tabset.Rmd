@@ -1,0 +1,129 @@
+---
+title: "Sample quality dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    social: menu
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+library('flexdashboard')
+library('DT')
+library('ggplot2')
+dat.file <- "quality.csv"
+dat.path <-"."
+qc.dat <- read.csv(file = dat.file,header = T,as.is = T)
+#qc.dat$Ct_val <- as.numeric(qc.dat$Ct_val)
+# qc.dat <- reactive({
+#   dat <- read.delim("run258-277.v2.QC_report.csv",header = T,sep = ",",as.is = T)
+#   dat <- dat[which(dat$mean_coverage > input$mincov),]
+#   dat <- dat[which(qc.dat$Ct_val < input$ct),]
+#   dat
+# })
+pagelength <- 20
+```
+
+
+Overview
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Total sequenced samples {.value-box}
+
+```{r total}
+total <- length(qc.dat$Sample)-1
+# Emit the successful
+valueBox(total, icon = "fa-globe",color="darkblue")
+```
+
+### # samples with high read quality {.value-box}
+
+```{r seq}
+highqual <- length(which(qc.dat$Read_quality > 85))
+
+# Emit the sequenced samples
+valueBox(value = highqual, icon = "fa-vials", color = "blue")
+```
+
+### Samples with coverage > 40x {.value-box}
+
+```{r success}
+success <- length(which(qc.dat$Read_depth >= 40))
+# Emit the successful
+valueBox(success, icon = "fa-vial",color="green")
+```
+
+### Contig count > 100 {.value-box}
+
+```{r failed}
+contigs <- length(which(qc.dat$Contig_count >= 100))
+# Emit the successful
+valueBox(contigs, icon = "fa-vial",color="darkred")
+```
+
+### Sequenced species {.value-box}
+
+```{r runs}
+species <- length(list.files(dat.path))
+# Emit the successful
+valueBox(species, icon = "fa-cubes",color="orange")
+```
+
+
+<!-- Row -->
+<!-- ----------------------------------------------------------------------- -->
+
+<!-- ### less than 2 SNPs {.value-box} -->
+
+<!-- ```{r SPN2} -->
+<!-- valueBox(sum(na.omit(as.numeric(qc.dat$X._SNPs < 2 ))), icon = "fa-exclamation",color="lightblue") -->
+<!-- ``` -->
+
+<!-- ### 2-5 SNPs {.value-box} -->
+
+<!-- ```{r SNP5} -->
+<!-- valueBox(sum(na.omit(as.numeric(qc.dat$X._SNPs > 2 & qc.dat$X._SNPs <= 5))), icon = "fa-exclamation-circle",color="lightblue") -->
+<!-- ``` -->
+
+<!-- ### 5-10 SNPs {.value-box} -->
+
+<!-- ```{r SNP10} -->
+<!-- valueBox(sum(na.omit(as.numeric(qc.dat$X._SNPs > 5 & qc.dat$X._SNPs <= 10 ))), icon = "fa-exclamation-circle",color="lightblue") -->
+<!-- ``` -->
+
+<!-- ### more than 10 SNPs {.value-box} -->
+
+<!-- ```{r SNPx} -->
+<!-- valueBox(sum(na.omit(as.numeric(qc.dat$X._SNPs > 10))), icon = "fa-exclamation-triangle",color="lightblue") -->
+<!-- ``` -->
+
+
+Sample table
+=======================================================================
+
+### Table of sequenced samples
+
+```{r table}
+datatable(data=qc.dat, extensions = 'Buttons', filter="top", options = list(pageLength = 100,lengthMenu=c(20,50,100,1000),dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel', 'pdf', 'print')))
+```
+
+
+Plot Read_depth vs Contig count
+=======================================================================
+
+### Plot CT value vs. mean coverage
+
+```{r CtvsMeancov}
+ggplot(qc.dat, aes(x=Read_depth,y= Contig_count,color=Read_quality)) + 
+  geom_point(size = 2) + 
+  ggtitle("CT ~ coverage") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1,  size = 8, hjust = 1)) +
+  scale_colour_gradient(name = "Read quality") +
+  labs(y = "Read depth", x = "Contig count") + 
+  geom_hline(yintercept=50, color="red")
+```
+
