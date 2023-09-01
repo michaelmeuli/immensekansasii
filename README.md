@@ -1,6 +1,6 @@
 # IMMENSE
 
-IMMENSE
+IMM Extended Nextflow Sequencing Environment
 
 [![Nextflow](https://img.shields.io/badge/Nextflow-21.10.0-brightgreen.svg)]([https://www.nextflow.io/])
 

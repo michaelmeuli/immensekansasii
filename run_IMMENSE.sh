@@ -1,8 +1,6 @@
 #!/bin/bash
 
-
 #SBATCH --time=1-00:00:00
-#SBATCH --partition=hpc
 #SBATCH --mem=2G
 #SBATCH --cpus-per-task=1
 #SBATCH --job-name=IMMENSE
@@ -26,15 +24,17 @@ else
   echo "you must specify an input option of raw_PE, raw_SE, fq_PE, fq_SE, or fasta!" && exit 1
 fi
 
+export SINGULARITY_BINDPATH=/scratch,/data,/home/$USER,/shares
+export SINGULARITY_CACHEDIR=/shares/amr.imm.uzh/.singularity
 
 module purge
-module load hpc
 module load anaconda3
-source activate /home/cluster/mmeola/data/miniconda3/envs/nextflow
+module load singularityce/3.10.2
+source activate /home/$USER/data/miniconda3/envs/nextflow
 
 launchDir=$PWD
 
-MAIN_DIR="/scicore/home/egliadr/GROUP/Software/pipelines/nextflow/IMMENSE"
+MAIN_DIR="/shares/amr.imm.uzh/bioinfo/pipelines/USBacto"
 
 nextflow run $MAIN_DIR/main.nf \
           -with-singularity -with-report -profile slurm \
@@ -46,8 +46,8 @@ nextflow run $MAIN_DIR/main.nf \
 
 
 module purge
-module load hpc
-module load r/3.6
+module load amd
+module load rstudio
 
 cp $MAIN_DIR/bin/resistance_table.R assembly/
 cd $launchDir/assembly/
@@ -56,8 +56,9 @@ mv resistances.txt $launchDir/${2}_transfer_result
 
 cd $launchDir/${2}_transfer_result/
 cp $MAIN_DIR/bin/Dashboard_tabset.Rmd .
-ml Pandoc/2.7.3
-ml R/3.6.3-foss-2018b
+module load singularityce/3.10.2
+source activate /home/mmeola/data/miniconda3/envs/nextflow
+module load rstudio
 
 R -e "rmarkdown::render('Dashboard_tabset.Rmd',output_file='QC_dashboard.html')"
 
@@ -66,3 +67,5 @@ rm work/*/*/*.sam work/*/*/*.bam* work/*/*/*.fastq.gz
 
 touch pipeline.complete
 chmod -R 775 $launchDir
+
+
