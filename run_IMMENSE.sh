@@ -29,6 +29,7 @@ export SINGULARITY_CACHEDIR=/shares/amr.imm.uzh/.singularity
 
 module purge
 module load anaconda3
+module load containers
 module load singularityce/3.10.2
 source activate /home/$USER/data/miniconda3/envs/nextflow
 
