@@ -59,7 +59,7 @@ mv resistances.txt $launchDir/${2}_transfer_result
 cd $launchDir/${2}_transfer_result/
 cp $MAIN_DIR/bin/Dashboard_tabset.Rmd .
 module load singularityce/3.10.2
-source activate /home/mmeola/data/miniconda3/envs/nextflow
+source activate /home/$USER/data/miniconda3/envs/nextflow
 module load rstudio
 
 R -e "rmarkdown::render('Dashboard_tabset.Rmd',output_file='QC_dashboard.html')"
