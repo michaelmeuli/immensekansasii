@@ -21,7 +21,7 @@ process gtdbtk_classify_wf {
 
   script:
   """
-  export GTDBTK_DATA_PATH=/scicore/home/egliadr/GROUP/Software/databases/gtdbtk_r207_v2_data
+  export GTDBTK_DATA_PATH=${params.gtdb_db}
 
   gtdbtk classify_wf --genome_dir . --out_dir ${sample_id} --prefix ${sample_id} --cpus ${task.cpus}
 
