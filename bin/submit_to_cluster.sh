@@ -18,18 +18,20 @@ source activate env_immense
 
 launchDir=$PWD
 
-MAIN_DIR="/home/progal/software/IMMENSE_phil_dev"
-
-input_type=$1
-single_end=$2
+MAIN_DIR=$1
+INPUT_TYPE=$2
+SINGLE_END=$3
+RUN_ID=$4
+INPUT_DIR=$5
+ADDITIONAL_ARGS=$6
 
 nextflow run $MAIN_DIR/main.nf \
           -with-singularity -with-report -profile slurm \
-          --run_id "$3" \
-          --input_type "$input_type" \
-          --input "$4" \
-          --SE "$single_end" \
-          $5
+          --run_id "$RUN_ID" \
+          --input_type "$INPUT_TYPE" \
+          --input "$INPUT_DIR" \
+          --SE "$SINGLE_END" \
+          $ADDITIONAL_ARGS
 
 
 module purge
@@ -40,9 +42,9 @@ module load mamba
 cp $MAIN_DIR/bin/resistance_table.R assembly/
 cd $launchDir/assembly/
 Rscript resistance_table.R
-mv resistances.txt $launchDir/${2}_transfer_result
+mv resistances.txt $launchDir/${RUN_ID}_transfer_result
 
-cd $launchDir/${2}_transfer_result/
+cd $launchDir/${RUN_ID}_transfer_result/
 cp $MAIN_DIR/bin/Dashboard_tabset.Rmd .
 module load singularityce/3.10.2
 source activate env_immense

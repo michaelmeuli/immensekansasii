@@ -70,12 +70,16 @@ The pipeline can be run on **raw data**, **fastq files**, or **fasta files**.
 The general command to run the pipeline is:
 
 ```
-sbatch --job-name=IMMENSE_<run_ID> /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh <input_type> <run_id> </absolute_path/to/input> "<additional_options>"
+# Go to directory where you want to save your output
+cd where/you/want/your/output
+
+# Start Pipeline
+bash path/to/pipeline/run_IMMENSE.sh <SLURM_JOB_NAME> <input_type> <run_id> </absolute_path/to/input> "<additional_options>"
 ```
 
-**input_type run_id /absolute_path/to/data "additional_options"** must be provided in this order!
+**SLURM_JOB_NAME input_type run_id /absolute_path/to/input "additional_options"** must be provided in this order!
 
-**--job-name** is optional. If not provided the name of the job is IMMENSE.
+**SLURM_JOB_NAME**: Job name for the SLURM job name
 
 **input_type**: raw_PE, raw_SE, fq_PE, fq_SE, or fasta
 

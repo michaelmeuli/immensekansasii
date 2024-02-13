@@ -4,7 +4,6 @@
 # If everything exists, it then submits the nextflow main job as a sbatch job
 
 module load mamba # Using mamba instead of anaconda because its smaller and faster
-module load singularityce/3.10.2
 
 ###############################################################
 ## Code to make sure conda environment exists and is accessible
@@ -26,10 +25,8 @@ env_file="$MAIN_DIR/environment.yml"
 
 # Start extracting after finding the line with 'dependencies:'
 extract=false
-
 # Create an empty array to hold package names
 PACKAGES=()
-
 # Read the environment.yml line by line
 while IFS= read -r line; do
     if [[ $line == "dependencies:" ]]; then
@@ -45,9 +42,8 @@ while IFS= read -r line; do
     fi
 done < "$env_file"
 #####################################################################
-#PACKAGES=("nextflow" "python" "r-dt" "r-flexdashboard" "r-ggplot2")
 
-# Check that the `nextflow` conda environment exists
+# Check that the `env_immense` conda environment exists
 if conda info --envs | grep -qw $ENV_NAME; then
     echo "Environment '$ENV_NAME' exists. Checking for packages..."
 
@@ -62,7 +58,7 @@ if conda info --envs | grep -qw $ENV_NAME; then
             # If the package is missing, just install all required packages from the environment file.
             conda env update -n $ENV_NAME --file $MAIN_DIR/environment.yml
         else
-            echo "Package '$pkg' is already installed."
+            echo "Package '$pkg' is installed."
         fi
     done
 else
@@ -72,6 +68,8 @@ else
     echo ""
     conda env create -f $MAIN_DIR/environment.yml
     echo "Done initializing environment."
+    echo "Please restart your bash session, then restart pipeline."
+    exit
 fi
 
 echo "Done checking environment."
@@ -109,7 +107,7 @@ fi
 
 ### Submitting the nextflow script to SLURM
 echo "Submitting nextflow coordinator to SLURM."
-sbatch --job-name=$1 $MAIN_DIR/bin/submit_to_cluster.sh $input_type $single_end $3 $4 $5
+sbatch --job-name=$1 $MAIN_DIR/bin/submit_to_cluster.sh $MAIN_DIR $input_type $single_end $3 $4 $5
 
 # To run this script run:
 # cd where/you/want/your/output
