@@ -11,7 +11,7 @@ output:
 library('flexdashboard')
 library('DT')
 library('ggplot2')
-dat.file <- "quality.csv"
+dat.file <- list.files(path = ".", pattern = "*quality.csv", full.names = TRUE)
 dat.path <-"."
 qc.dat <- read.csv(file = dat.file,header = T,as.is = T)
 #qc.dat$Ct_val <- as.numeric(qc.dat$Ct_val)
