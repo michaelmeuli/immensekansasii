@@ -29,7 +29,7 @@ The steps that are included are:
 * Genome inspection (antimicrobial resistance genes, virulence factors)
 	* abricate (1.0.1)
 
-[<img src="Immense_diagram.png" width="800" />](IMMENSE_diagram.png)
+[<img src="IMMENSE_diagram.png" width="800" />](IMMENSE_diagram.png)
 
 # Table of contents
 
