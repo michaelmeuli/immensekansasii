@@ -10,7 +10,7 @@ process busco {
     publishDir("assembly/results/${sample_id}/3_quality/BUSCO", mode: 'copy')
     tag { sample_id }
     container params.CONTAINER
-    containerOptions "-B ${params.busco_lineage}, -B ${params.busco_files}"
+    containerOptions "-B ${params.busco_files}"
 
     input:
     tuple val (sample_id), path (fasta)
@@ -18,16 +18,15 @@ process busco {
     output:
     tuple val (sample_id), path ("${sample_id}/*"), emit: busco_all
     tuple val (sample_id), path ("${sample_id}/short_summary.specific.*.txt"), emit: summary_specific
-    tuple val (sample_id), path ("${sample_id}/short_summary.generic.*.txt"), emit: summary_generic
+    tuple val (sample_id), path ("${sample_id}/short_summary.generic.*.txt"), optional: true
     path "${sample_id}_busco_version.txt", emit: version
 
     script:
     """
-    busco -m genome -i ${fasta} -o ${sample_id} --auto-lineage-prok --offline --download_path ${params.busco_files}
-
+    busco -m genome -i ${fasta} -o ${sample_id} --auto-lineage --offline --download_path ${params.busco_files}
     busco --version > busco_vers.txt
     echo ${params.CONTAINER} > busco_singularity.txt
-    grep "Running BUSCO using lineage dataset" ${sample_id}/logs/busco.log | cut -f2 | cut -d\\  -f6-10 | sed 's/ (prokaryota,//g' | tr ")" " " > busco_lineages_version.txt
+    grep "Running BUSCO using lineage dataset" ${sample_id}/logs/busco.log | cut -f2 | cut -d" "  -f6-10 | sed 's/ (prokaryota,//g' | tr ")" " " > busco_lineages_version.txt
     cat busco_vers.txt busco_singularity.txt busco_lineages_version.txt | tr "\n" "\t" > ${sample_id}_busco_version.txt
     """
 }
