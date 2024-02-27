@@ -18,6 +18,7 @@ source activate env_immense
 
 launchDir=$PWD
 
+# It's important that the arguments are supplied in the expected order.
 MAIN_DIR=$1
 INPUT_TYPE=$2
 SINGLE_END=$3

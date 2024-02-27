@@ -74,7 +74,7 @@ The general command to run the pipeline is:
 cd where/you/want/your/output
 
 # Start Pipeline
-bash path/to/pipeline/run_IMMENSE.sh <SLURM_JOB_NAME> <input_type> <run_id> </absolute_path/to/input> "<additional_options>"
+bash path/to/pipeline/run_IMMENSE.sh -j <SLURM_JOB_NAME> -t <input_type> -r <run_id> -i </absolute_path/to/input> -x "<additional_options>"
 ```
 
 **SLURM_JOB_NAME input_type run_id /absolute_path/to/input "additional_options"** must be provided in this order!

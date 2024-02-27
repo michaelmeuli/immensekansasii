@@ -1,32 +1,98 @@
 #!/bin/bash
 
 # This script checks that the dependencies are all installed.
-# If everything exists, it then submits the nextflow main job as a sbatch job
+# If everything exists, it then submits the nextflow controller job as a sbatch job
+
+###############################################################
+## Parse and Check arguments
+###############################################################
+
+# Display usage
+usage() {
+    echo "Usage: $0 -j <Slurm Job Name> -t <Input Type> -r <Run ID> -i <Input Directory> [-x <Additional Options>]"
+    echo ""
+    echo "-j    Name of the SLURM job"
+    echo "-t    Specifies the input type: raw_PE, raw_SE, fq_PE, fq_SE, or fasta"
+    echo "-r    Used to tag the transfer folder, the quality file, and the software version file"
+    echo "-i    This is where input files are"
+    echo '-x    Optional. Used for specifying single samples, email address, or different parameters for trimmomatic. Several additional options can be combined by listing them one after the other inside double quotes "option1 option2 ...".'
+    exit 1
+}
+
+# Initialize variables
+jobName=""
+inputType=""
+runId=""
+inputDirectory=""
+additionalArguments=""
+
+# Loop through arguments and process them
+while getopts ":j:t:r:i:x:" opt; do
+    case ${opt} in
+        j )
+            jobName=$OPTARG
+            ;;
+        t )
+            inputType=$OPTARG
+            ;;
+        r )
+            runId=$OPTARG
+            ;;
+        i )
+            inputDirectory=$OPTARG
+            ;;
+        x )
+            additionalArguments=$OPTARG
+            ;;
+        \? )
+            echo "Invalid option: $OPTARG" 1>&2
+            usage
+            ;;
+        : )
+            echo "Invalid option: $OPTARG requires an argument" 1>&2
+            usage
+            ;;
+    esac
+done
+shift $((OPTIND -1))
+
+# Check if all required options were provided
+if [ -z "$jobName" ] || [ -z "$runId" ] || [ -z "$inputType" ] || [ -z "$inputDirectory" ]; then
+    echo "Options -j -t -r -i  are required."
+    usage
+fi
+
+# Print the given arguments
+echo "Job Name:             $jobName"
+echo "Run ID:               $runId"
+echo "Input Type:           $inputType"
+echo "Input Directory:      $inputDirectory"
+echo "Additional Arguments: $additionalArguments"
+
+###############################################################
+###############################################################
 
 module load mamba # Using mamba instead of anaconda because its smaller and faster
 
 ###############################################################
-## Code to make sure conda environment exists and is accessible
+## Check that Conda Environment has access to all Required Packages
 ###############################################################
 
 # Main directory is the directory where the pipeline is located
 MAIN_DIR="$(dirname "$(readlink -f "$0")")"
 
-echo "Pipeline is located at:"
-echo $MAIN_DIR
+echo "Pipeline is located at: $MAIN_DIR"
 
 # Conda Environment name
 ENV_NAME="env_immense"
 
-# Check that these packages are installed
-#####################################################################
-# Define the path to your environment.yml file
+# Path to the environment.yml file
 env_file="$MAIN_DIR/environment.yml"
 
-# Start extracting after finding the line with 'dependencies:'
-extract=false
+extract=false # Helper variable for checking packages
 # Create an empty array to hold package names
 PACKAGES=()
+
 # Read the environment.yml line by line
 while IFS= read -r line; do
     if [[ $line == "dependencies:" ]]; then
@@ -41,7 +107,6 @@ while IFS= read -r line; do
         break # Stop if another block starts
     fi
 done < "$env_file"
-#####################################################################
 
 # Check that the `env_immense` conda environment exists
 if conda info --envs | grep -qw $ENV_NAME; then
@@ -58,7 +123,7 @@ if conda info --envs | grep -qw $ENV_NAME; then
             # If the package is missing, just install all required packages from the environment file.
             conda env update -n $ENV_NAME --file $MAIN_DIR/environment.yml
         else
-            echo "Package '$pkg' is installed."
+            echo "Package '$pkg' was found."
         fi
     done
 else
@@ -67,8 +132,8 @@ else
     echo "This may take a few minutes"
     echo ""
     conda env create -f $MAIN_DIR/environment.yml
-    echo "Done initializing environment."
-    echo "Please restart your bash session, then restart pipeline."
+    echo "Done installing Conda environment."
+    echo "Please start a new bash terminal session to update paths, then start pipeline again."
     exit
 fi
 
@@ -85,18 +150,18 @@ echo "==============================="
 ## Checking input arguments:
 #TODO check arguments more robustly.
 
-if [[ $2 == raw_PE ]]
+if [[ $inputType == raw_PE ]]
 then input_type="bcl" && single_end="NO"
-elif [[ $2 == raw_SE ]]
+elif [[ $inputType == raw_SE ]]
 then
   input_type="bcl" && single_end="YES"
-elif [[ $2 == fq_PE ]]
+elif [[ $inputType == fq_PE ]]
 then
   input_type="fastq" && single_end="NO"
-elif [[ $2 == fq_SE ]]
+elif [[ $inputType == fq_SE ]]
 then
   input_type="fastq" && single_end="YES"
-elif [[ $2 == fasta ]]
+elif [[ $inputType == fasta ]]
 then
   input_type="fasta" && single_end="NO"
 else
@@ -107,8 +172,9 @@ fi
 
 ### Submitting the nextflow script to SLURM
 echo "Submitting nextflow coordinator to SLURM."
-sbatch --job-name=$1 $MAIN_DIR/bin/submit_to_cluster.sh $MAIN_DIR $input_type $single_end $3 $4 $5
+sbatch --job-name=$jobName $MAIN_DIR/bin/submit_to_cluster.sh $MAIN_DIR $input_type $single_end $runId $inputDirectory $additionalArguments
+# The submit_to_cluster.sh script expects the inputs in this exact order.
 
 # To run this script run:
 # cd where/you/want/your/output
-# bash /home/progal/software/IMMENSE_phil_dev/run_IMMENSE.sh IMMENSE_phil_test fq_PE phil_test /home/progal/data/IMMense_optimisation/reads/bursta
+# bash /home/progal/software/IMMENSE_phil_dev/run_IMMENSE.sh -j IMMENSE_phil_test -t fq_PE -r phil_test -i /home/progal/data/IMMense_optimisation/reads/bursta
