@@ -56,6 +56,6 @@ process links_for_transfer {
   mkdir -p $PWD/${params.run_id}_transfer_result/genomes/\$species $PWD/${params.run_id}_transfer_result/genomes_one_contig/\$species $PWD/${params.run_id}_transfer_result/reads/\$species
   ln -sf $PWD/assembly/results/${sample_id}/2_annotation/${sample_id}.fna $PWD/${params.run_id}_transfer_result/genomes/\$species/
   ln -sf $PWD/assembly/results/${sample_id}/3_quality/remapping/${sample_id}_concatenated_contigs.fna $PWD/${params.run_id}_transfer_result/genomes_one_contig/\$species/
-  if [[ ${params.input_type} != "fasta" ]]; then if [[ -d $PWD/reads ]]; then ln -s $PWD/reads/\$species/${sample_id}* $PWD/${params.run_id}_transfer_result/reads/\$species/; else ln -s ${params.input}/**${sample_id}* $PWD/${params.run_id}_transfer_result/reads/\$species/; fi; fi
+  if [[ ${params.input_type} != "fasta" ]]; then if [[ -d $PWD/reads ]]; then ln -sf $PWD/reads/\$species/${sample_id}* $PWD/${params.run_id}_transfer_result/reads/\$species/; else ln -sf ${params.input}/**${sample_id}* $PWD/${params.run_id}_transfer_result/reads/\$species/; fi; fi
   """
 }

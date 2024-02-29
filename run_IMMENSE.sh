@@ -69,6 +69,16 @@ echo "Input Type:           $inputType"
 echo "Input Directory:      $inputDirectory"
 echo "Additional Arguments: $additionalArguments"
 
+# Check that input directory exists:
+if [ -d $inputDirectory ]; then
+    echo ""
+else
+  echo ""
+  echo "ERROR => Input directory does not exist. Please check your path."
+  echo ""
+  exit 1
+fi
+
 ###############################################################
 ###############################################################
 
@@ -134,7 +144,7 @@ else
     conda env create -f $MAIN_DIR/environment.yml
     echo "Done installing Conda environment."
     echo "Please start a new bash terminal session to update paths, then start pipeline again."
-    exit
+    exit 1
 fi
 
 echo "Done checking environment."
