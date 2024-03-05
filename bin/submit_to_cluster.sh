@@ -6,7 +6,6 @@
 #SBATCH --job-name=IMMENSE
 
 export SINGULARITY_BINDPATH=/scratch,/data,/home/$USER,/shares
-export SINGULARITY_CACHEDIR=/shares/amr.imm.uzh/.singularity
 export SINGULARITY_TMPDIR=/tmp
 export TMPDIR="/tmp"
 
@@ -28,6 +27,9 @@ ADDITIONAL_ARGS=$6
 
 nextflow run $MAIN_DIR/main.nf \
           -with-singularity -with-report -profile slurm \
+          -with-trace \
+          -with-timeline \
+          -resume \
           --run_id "$RUN_ID" \
           --input_type "$INPUT_TYPE" \
           --input "$INPUT_DIR" \
@@ -55,7 +57,7 @@ source activate env_immense
 R -e "rmarkdown::render('Dashboard_tabset.Rmd',output_file='QC_dashboard.html')"
 
 cd $launchDir
-rm work/*/*/*.sam work/*/*/*.bam* work/*/*/*.fastq.gz
+# rm work/*/*/*.sam work/*/*/*.bam* work/*/*/*.fastq.gz # Commented out by PvB -> it causes -resume not to work
 
 touch pipeline.complete
 chmod -R 775 $launchDir

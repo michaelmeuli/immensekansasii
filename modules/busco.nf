@@ -23,7 +23,7 @@ process busco {
 
     script:
     """
-    busco -m genome -i ${fasta} -o ${sample_id} --auto-lineage --offline --download_path ${params.busco_files}
+    busco -f -m genome -i ${fasta} -o ${sample_id} --auto-lineage --offline --download_path ${params.busco_files}
     busco --version > busco_vers.txt
     echo ${params.CONTAINER} > busco_singularity.txt
     grep "Running BUSCO using lineage dataset" ${sample_id}/logs/busco.log | cut -f2 | cut -d" "  -f6-10 | sed 's/ (prokaryota,//g' | tr ")" " " > busco_lineages_version.txt
