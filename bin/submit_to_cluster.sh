@@ -57,7 +57,6 @@ source activate env_immense
 R -e "rmarkdown::render('Dashboard_tabset.Rmd',output_file='QC_dashboard.html')"
 
 cd $launchDir
-# rm work/*/*/*.sam work/*/*/*.bam* work/*/*/*.fastq.gz # Commented out by PvB -> it causes -resume not to work
 
 touch pipeline.complete
 chmod -R 775 $launchDir
