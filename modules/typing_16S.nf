@@ -14,9 +14,7 @@ process typing_16S {
     containerOptions "-B ${params.db_16s}"
 
     input:
-    //tuple val (sample_id), path (one_contig)
     tuple val (sample_id), path (one_contig)
-    val (db)
 
     output:
     tuple val (sample_id), path ("${sample_id}_16S_blast.tab"), emit: blast_tab
@@ -26,7 +24,7 @@ process typing_16S {
     """
     #!/bin/bash
 
-    DB=`find -L ${db} -name "*.nhr" | sed 's/.nhr//'`
+    DB=`find -L ${params.db_16s} -name "*.nhr" | sed 's/.nhr//'`
     blastn -db \$DB  -num_threads ${task.cpus} -max_target_seqs 1 -max_hsps 1 \
            -query ${one_contig} -out ${sample_id}_16S_blast.tab \
            -outfmt "6 qseqid sseqid stitle qlen slen length pident nident mismatch gaps evalue bitscore"

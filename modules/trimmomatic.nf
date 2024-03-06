@@ -17,7 +17,6 @@ process trimmomaticPE {
 
     input:
     tuple val (sample_id), path (fastq)
-    val (illuminaclip)
 
     output:
     tuple val (sample_id), path ("${sample_id}_r1.fastq.gz"), path ("${sample_id}_r2.fastq.gz"), emit: trimmed_reads
@@ -33,7 +32,7 @@ process trimmomaticPE {
     ${sample_id}_r1.not-paired.fastq.gz \
     ${sample_id}_r2.fastq.gz \
     ${sample_id}_r2.not-paired.fastq.gz \
-    ILLUMINACLIP:${illuminaclip}:2:30:10 ${params.trimmomatic_PE_extra} \
+    ILLUMINACLIP:${params.illuminaclip}:2:30:10 ${params.trimmomatic_PE_extra} \
     2> ${sample_id}.quality_read_trimm_info
 
     echo "trimmomatic \$(trimmomatic -version)" > trimmomatic_vers.txt
@@ -53,7 +52,6 @@ process trimmomaticSE {
 
     input:
     tuple val (sample_id), path (fastq)
-    val (illuminaclip)
 
     output:
     tuple val (sample_id), path ("${sample_id}_trimmed.fastq.gz"), emit: trimmed_reads
@@ -66,7 +64,7 @@ process trimmomaticSE {
     -threads ${task.cpus} -phred33 \
     ${fastq} \
     ${sample_id}_trimmed.fastq.gz \
-    ILLUMINACLIP:${illuminaclip}:2:30:10 ${params.trimmomatic_SE_extra} \
+    ILLUMINACLIP:${params.illuminaclip}:2:30:10 ${params.trimmomatic_SE_extra} \
     2> ${sample_id}.quality_read_trimm_info
 
     echo "trimmomatic \$(trimmomatic -version)" > trimmomatic_vers.txt

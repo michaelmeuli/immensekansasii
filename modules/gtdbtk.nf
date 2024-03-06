@@ -2,7 +2,8 @@
 * gtdbtk module
 */
 
-params.CONTAINER = "mleemann-usbacto-gtdbtk_2.1.0_with_ps"
+// params.CONTAINER = "mleemann-usbacto-gtdbtk_2.1.0_with_ps"
+params.CONTAINER = "quay.io/biocontainers/gtdbtk:2.3.2--pyhdfd78af_0"
 params.OUTPUT = "gtdb_output"
 
 process gtdbtk_classify_wf {
@@ -23,7 +24,7 @@ process gtdbtk_classify_wf {
   """
   export GTDBTK_DATA_PATH=${params.gtdb_db}
 
-  gtdbtk classify_wf --genome_dir . --out_dir ${sample_id} --prefix ${sample_id} --cpus ${task.cpus}
+  gtdbtk classify_wf --genome_dir . --out_dir ${sample_id} --prefix ${sample_id} --cpus ${task.cpus} --skip_ani_screen
 
   echo \$(basename ${params.gtdb_db}) > db_version_gtdb.txt
   echo ${params.CONTAINER} > gtdb_singularity.txt

@@ -111,15 +111,6 @@ else if (params.input_type == "fasta") {
       .set { genome }
 }
 
-
-Channel
-    .value( params.illuminaclip)
-    .set { illuminaclip }
-
-Channel
-    .value( params.db_16s)
-    .set { db_16s }
-
 Channel
     .value( params.db_rMLST)
     .set { db_rMLST }
@@ -178,7 +169,7 @@ workflow {
         sarscov2: it =~ /sarscov-2/
         undet: it =~ /Undetermined/
         other: true}.set{ fastqs }
-      trimm_out = trimmomaticPE(fastqs.other.map{ file -> tuple(file.simpleName.replaceAll(/_R1|_R2$/,''), file)}.groupTuple(sort:true), illuminaclip)
+      trimm_out = trimmomaticPE(fastqs.other.map{ file -> tuple(file.simpleName.replaceAll(/_R1|_R2$/,''), file)}.groupTuple(sort:true))
 
       mqc_reads_out = multiqc_reads(bcl2fastq_out.reports, fastqc_out.qc.collect(), trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect())
       linked_reads = link_reads(mqc_reads_out.version)
@@ -204,9 +195,16 @@ workflow {
       bam_remapping = samtoolsRemapping(remapping.sam)
       remapping_polished = pilon_remapping(bam_remapping.bam.join(one_contig))
       coverage = coverage_pilon_corrected(remapping_polished.vcf)
-      typ16S = typing_16S(one_contig, db_16s)
+      typ16S = typing_16S(one_contig)
       abricate_out = abricate(annotation.fna)
-      single_summary = summary_sample(trimm_out.trim_log.join(coverage.ifEmpty("NA")).join(insertsize.ifEmpty("NA")).join(assembly_stats.tsv.ifEmpty("NA")).join(typ16S.blast_tab.ifEmpty("NA")).join(metaphlan_out.profile.ifEmpty("NA")).join(rmlst_out.ifEmpty("NA")).join(busco_out.summary_specific.ifEmpty("NA")).join(gtdb_out.summary.ifEmpty("NA")))
+      single_summary = summary_sample(trimm_out.trim_log.join(coverage.ifEmpty("NA"))
+                                                        .join(insertsize.ifEmpty("NA"))
+                                                        .join(assembly_stats.tsv.ifEmpty("NA"))
+                                                        .join(typ16S.blast_tab.ifEmpty("NA"))
+                                                        .join(metaphlan_out.profile.ifEmpty("NA"))
+                                                        .join(rmlst_out.ifEmpty("NA"))
+                                                        .join(busco_out.summary_specific.ifEmpty("NA"))
+                                                        .join(gtdb_out.summary.ifEmpty("NA")))
       summary = merge_summaries(single_summary.sample_quality.collect())
       links_for_transfer(one_contig)
       write_software_versions(bcl2fastq_out.version.concat(
@@ -229,7 +227,7 @@ workflow {
     }
 
     else if (params.input_type == "fastq") {
-      trimm_out = trimmomaticPE(reads_for_trimming.other, illuminaclip)
+      trimm_out = trimmomaticPE(reads_for_trimming.other)
       unicycler_out = unicycler(trimm_out.trimmed_reads)
       bwa_index_polishing = bwaIndex(unicycler_out.assembly)
       mapping = bwaAlign(trimm_out.trimmed_reads.join(bwa_index_polishing.index))
@@ -252,7 +250,7 @@ workflow {
       bam_remapping = samtoolsRemapping(remapping.sam)
       remapping_polished = pilon_remapping(bam_remapping.bam.join(one_contig))
       coverage = coverage_pilon_corrected(remapping_polished.vcf)
-      typ16S = typing_16S(one_contig, db_16s)
+      typ16S = typing_16S(one_contig)
       abricate_out = abricate(annotation.fna)
       single_summary = summary_sample(trimm_out.trim_log.join(coverage.ifEmpty("NA")).join(insertsize.ifEmpty("NA")).join(assembly_stats.tsv.ifEmpty("NA")).join(typ16S.blast_tab.ifEmpty("NA")).join(metaphlan_out.profile.ifEmpty("NA")).join(rmlst_out.ifEmpty("NA")).join(busco_out.summary_specific.ifEmpty("NA")).join(gtdb_out.summary.ifEmpty("NA")))
       summary = merge_summaries(single_summary.sample_quality.collect())
@@ -289,7 +287,7 @@ workflow {
         sarscov2: it =~ /sarscov-2/
         undet: it =~ /Undetermined/
         other: true}.set{ fastqs }
-      trimm_out = trimmomaticSE(fastqs.other.map{ file -> tuple(file.simpleName.replaceAll(/_R1|_R2$/,''), file)}.groupTuple(sort:true), illuminaclip)
+      trimm_out = trimmomaticSE(fastqs.other.map{ file -> tuple(file.simpleName.replaceAll(/_R1|_R2$/,''), file)}.groupTuple(sort:true))
 
       mqc_reads_out = multiqc_reads(bcl2fastq_out.reports, fastqc_out.qc.collect(), trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect())
       linked_reads = link_reads(mqc_reads_out.version)
@@ -315,7 +313,7 @@ workflow {
       bam_remapping = samtoolsRemapping(remapping.sam)
       remapping_polished = pilon_remappingSE(bam_remapping.bam.join(one_contig))
       coverage = coverage_pilon_corrected(remapping_polished.vcf)
-      typ16S = typing_16S(one_contig, db_16s)
+      typ16S = typing_16S(one_contig)
       abricate_out = abricate(annotation.fna)
       single_summary = summary_sample(trimm_out.trim_log.join(coverage.ifEmpty("NA")).join(insertsize.ifEmpty("NA")).join(assembly_stats.tsv.ifEmpty("NA")).join(typ16S.blast_tab.ifEmpty("NA")).join(metaphlan_out.profile.ifEmpty("NA")).join(rmlst_out.ifEmpty("NA")).join(busco_out.summary_specific.ifEmpty("NA")).join(gtdb_out.summary.ifEmpty("NA")))
       summary = merge_summaries(single_summary.sample_quality.collect())
@@ -340,7 +338,7 @@ workflow {
     }
 
     else if (params.input_type == "fastq") {
-      trimm_out = trimmomaticSE(reads_for_trimming.other, illuminaclip)
+      trimm_out = trimmomaticSE(reads_for_trimming.other)
       unicycler_out = unicyclerSE(trimm_out.trimmed_reads)
       bwa_index_polishing = bwaIndex(unicycler_out.assembly)
       mapping = bwaAlignSE(trimm_out.trimmed_reads.join(bwa_index_polishing.index))
@@ -363,7 +361,7 @@ workflow {
       bam_remapping = samtoolsRemapping(remapping.sam)
       remapping_polished = pilon_remappingSE(bam_remapping.bam.join(one_contig))
       coverage = coverage_pilon_corrected(remapping_polished.vcf)
-      typ16S = typing_16S(one_contig, db_16s)
+      typ16S = typing_16S(one_contig)
       abricate_out = abricate(annotation.fna)
       single_summary = summary_sample(trimm_out.trim_log.join(coverage.ifEmpty("NA")).join(insertsize.ifEmpty("NA")).join(assembly_stats.tsv.ifEmpty("NA")).join(typ16S.blast_tab.ifEmpty("NA")).join(metaphlan_out.profile.ifEmpty("NA")).join(rmlst_out.ifEmpty("NA")).join(busco_out.summary_specific.ifEmpty("NA")).join(gtdb_out.summary.ifEmpty("NA")))
       summary = merge_summaries(single_summary.sample_quality.collect())
@@ -392,7 +390,7 @@ workflow {
       typing_rMLST = rMLST(annotation.fna, db_rMLST)
       rmlst_out = call_rMLST(typing_rMLST.blast_tabs, bigsdb_rMLST)
       one_contig = make_one_contig(annotation.fna)
-      typ16S = typing_16S(one_contig, db_16s)
+      typ16S = typing_16S(one_contig)
       abricate_out = abricate(annotation.fna)
       links_for_transfer(one_contig)
       write_software_versions(annotation.version.first().concat(
