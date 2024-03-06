@@ -11,7 +11,7 @@ process summary_sample {
     containerOptions "-B ${params.input}"
 
     input:
-    tuple val (sample_id), path (trim_log), path (coverage), path (insertions), path (quast_tsv), path (blast16S), path (metaphlan), path (rmlst), path (busco), path(gtdbtk)
+    tuple val (sample_id), path (trim_log), path (coverage), path (insertions), path (quast_tsv), path (blast16S), path (metaphlan), path (rmlst), path (busco), path (gtdbtk)
 
     output:
     path ("*.txt"), emit: summary_files
@@ -30,7 +30,7 @@ process summary_sample {
     head -n 1 ${blast16S} | awk -F "\\t" '{print \$3 "\\t" \$6  "\\t" \$7}' > ${sample_id}_7.txt
     grep "s__" ${metaphlan}  | grep -v "t__" | awk '{split(\$0,a,"|"); print a[7],"\\t",\$3}'| awk -F __ '{print \$2}' | cut -f1,3 | head -n 1 > ${sample_id}_8.txt
     cat ${rmlst} > ${sample_id}_9.txt
-    cat ${gtdbtk} | tail -1 | cut -f2,3,6-8 | awk -F __ '{print \$8}' > ${sample_id}_10.txt
+    cat ${gtdbtk} | tail -1 | cut -f2,3,6-8,20 | awk 'BEGIN{FS=OFS="__"} { if (NF > 1) \$1=\$8; else \$1=\$1; print \$1}' > ${sample_id}_10.txt
     if [[ -d $PWD/reads ]]; then find $PWD/reads -name ${sample_id}*.fastq.gz | awk -F/ '{print \$(NF-1)}' | uniq > ${sample_id}_11.txt; else find ${params.input} -name ${sample_id}*.fastq.gz | awk -F/ '{print \$(NF-1)}' | uniq > ${sample_id}_11.txt; fi
 
     if [[ ! -s ${sample_id}_1.txt ]]; then echo -e "NA" >> "${sample_id}_1.txt"; fi
@@ -42,7 +42,7 @@ process summary_sample {
     if [[ ! -s ${sample_id}_7.txt ]]; then echo -e "NA\\tNA" >> "${sample_id}_7.txt"; fi
     if [[ ! -s ${sample_id}_8.txt ]]; then echo -e "NA\\tNA" >> "${sample_id}_8.txt"; fi
     if [[ ! -s ${sample_id}_9.txt ]]; then echo -e "NA\\tNA\\tNA" >> "${sample_id}_9.txt"; fi
-    if [[ ! -s ${sample_id}_10.txt ]]; then echo -e "NA\\tNA\\tNA\\tNA\\tNA" >> "${sample_id}_10.txt"; fi
+    if [[ ! -s ${sample_id}_10.txt ]]; then echo -e "NA\\tNA\\tNA\\tNA\\tNA\\tNA" >> "${sample_id}_10.txt"; fi
 
     cat <(echo ${sample_id}) ${sample_id}_11.txt ${sample_id}_?.txt ${sample_id}_10.txt <(echo ${params.run_id}) | tr "\n" "\t" > ${sample_id}.tab
     """
@@ -64,7 +64,7 @@ process merge_summaries {
     """
     #!/bin/bash
 
-    echo -e "Sample\\tinitial_species\\tRead_quality\\tRead_depth\\tAlternative_bases\\tInsert_size\\tContig_count\\tTotal_length\\tN50\\tGC_percent\\tComplete_BUSCOs\\tBUSCO_groups_searched\\t16S_species\\tAlignment_length\\tAlignment_identity\\tMetaPhlAn3_species\\tMetaPhlAn3_purity\\trMLST_best_species\\trMLST_best_rST\\tAlleles_missing\\tgtdb_species\\tgtdb_fastani_reference\\tgtdb_fastani_ani\\tgtdb_fastani_af\\tgtdb_closest_placement_reference\\trun_id" > quality_temp.tab
+    echo -e "Sample\\tinitial_species\\tRead_quality\\tRead_depth\\tAlternative_bases\\tInsert_size\\tContig_count\\tTotal_length\\tN50\\tGC_percent\\tComplete_BUSCOs\\tBUSCO_groups_searched\\t16S_species\\tAlignment_length\\tAlignment_identity\\tMetaPhlAn3_species\\tMetaPhlAn3_purity\\trMLST_best_species\\trMLST_best_rST\\tAlleles_missing\\tgtdb_species\\tgtdb_fastani_reference\\tgtdb_fastani_ani\\tgtdb_fastani_af\\tgtdb_closest_placement_reference\\tgtdbdb_warnings\\trun_id" > quality_temp.tab
     for sample in ${sample_quality}; do cat \$sample >> quality_temp.tab; printf "\n" >> quality_temp.tab; done
     (head -n 1 quality_temp.tab && tail -n +2 quality_temp.tab | sort) > ${params.run_id}_quality.tab
     let sample_count=\$(grep -c "" ${params.run_id}_quality.tab)-1
