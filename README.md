@@ -23,7 +23,7 @@ The steps that are included are:
 	* GenomeQC - BUSCO (5.3.2)
 * Taxonomy
 	* GTDB-tk1 (2.1.0)
-	* Metaphlan3 (3.0.13)
+	* Metaphlan4 (4.1.0)
 * Genome annotation
 	* Prokka (1.14.6)
 * Genome inspection (antimicrobial resistance genes, virulence factors)
@@ -246,7 +246,36 @@ Install Nextflow either by using Bioconda or curl (for instructions see https://
 
 Clone IMMENSE repository.
 
-Get all the required singularity images by running ``` bash pull_singularity_img.sh ``` in the designated singularity cache folder.
+### Prepare Singular containers
+Get all the required singularity images by starting an interactive S3IT session on SLURM: (login node might run out of memory)
+```
+srun --pty -n 1 -c 5 --time=01:00:00 --mem=16G bash -l
+```
+Then loading singularity and pulling all the container images to the location where they should be saved.
+
+```
+module load singularityce
+
+# Navigate to where the container images should be saved
+cd /shares/amr.imm.uzh/.singularity 
+# Then run the script to pull all the container images
+bash path/to/repo/Singularity/pull_singularity_img.sh # Change this to the path where this repository is located.
+```
+
+### Prepare required Databases
+
+```
+# Put the metaphlan4 database where you want and update path in params.config
+cd path/to/metaphlan4/database
+# To download Jun23 database, the following links were used
+wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJun23_CHOCOPhlAnSGB_202307.tar
+wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJun23_CHOCOPhlAnSGB_202307.md5
+wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJun23_CHOCOPhlAnSGB_202307_marker_info.txt.bz2
+wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJun23_CHOCOPhlAnSGB_202307_species.txt.bz2
+# Unpack the database:
+
+
+```
 
 ## Adjusting the nextflow.config file
 
@@ -267,7 +296,7 @@ The following databases/files are required:
 * GTDB 
 * rMLST database
 * 16S database
-* Metaphlan3 database
+* Metaphlan4 database
 
 ## Launching the pipeline
 

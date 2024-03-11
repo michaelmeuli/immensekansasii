@@ -139,7 +139,7 @@ include { busco; get_busco_lineages; busco_plot } from "./modules/busco"
 include { quast } from "./modules/quast"
 include { gtdbtk_classify_wf } from "./modules/gtdbtk"
 include { rMLST; call_rMLST } from "./modules/rMLST"
-include { metaphlan3; metaphlan3SE } from "./modules/metaphlan"
+include { metaphlan4; metaphlan4SE } from "./modules/metaphlan"
 include { make_one_contig; parse_sam_for_insertsize; coverage_pilon_corrected } from "./modules/python_functions"
 include { bwaIndex as indexRemapping } from "./modules/bwa_index"
 include { bwaAlign as alignRemapping; bwaAlignSE as alignRemappingSE } from "./modules/bwa-mem"
@@ -156,8 +156,9 @@ include { write_software_versions } from "./modules/write_software_versions"
 
 workflow {
 
-  if (params.SE == "NO") {
-    if (params.input_type == "bcl") {
+  if (params.SE == "NO") {  
+
+    if (params.input_type == "bcl") { // if starting from bcl files, first process to fastq
       bcl2fastq_out = bcl2fastq(rundir, samplesheet)
 
       bcl2fastq_out.raw_fastq.flatten().branch{
@@ -173,6 +174,16 @@ workflow {
 
       mqc_reads_out = multiqc_reads(bcl2fastq_out.reports, fastqc_out.qc.collect(), trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect())
       linked_reads = link_reads(mqc_reads_out.version)
+    }
+
+    else if (params.input_type == "fastq") {// if starting from fastq, directly do trimmomatic
+
+    bcl2fastq_out = Channel.value(["version": ""]) // since bcl2fastq was not run, make the version channel empty
+    fastqc_out = Channel.value(["version": ""]) // since fastqc was not run, make the version channel empty
+
+    trimm_out = trimmomaticPE(reads_for_trimming.other)
+    }
+
       unicycler_out = unicycler(trimm_out.trimmed_reads)
       bwa_index_polishing = bwaIndex(unicycler_out.assembly)
       mapping = bwaAlign(trimm_out.trimmed_reads.join(bwa_index_polishing.index))
@@ -180,14 +191,14 @@ workflow {
       polished_assembly = pilon(bam_file.bam.join(unicycler_out.assembly))
       annotation = prokka(polished_assembly.assembly)
       busco_out = busco(polished_assembly.assembly)
-      busco_lineages = get_busco_lineages(busco.out.version.collect())
+      busco_lineages = get_busco_lineages(busco_out.version.collect())
       busco_plot(busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect())
       assembly_stats = quast(annotation.fna)
       mqc_assembly_out = multiqc_assembly(trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect(), assembly_stats.stats.collect(), annotation.annot_all.collect(), busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect())
       gtdb_out = gtdbtk_classify_wf(annotation.fna)
       typing_rMLST = rMLST(annotation.fna, db_rMLST)
       rmlst_out = call_rMLST(typing_rMLST.blast_tabs, bigsdb_rMLST)
-      metaphlan_out = metaphlan3(trimm_out.trimmed_reads)
+      metaphlan_out = metaphlan4(trimm_out.trimmed_reads)
       one_contig = make_one_contig(annotation.fna)
       bwa_index_remapping = indexRemapping(one_contig)
       remapping = alignRemapping(trimm_out.trimmed_reads.join(bwa_index_remapping.index))
@@ -207,9 +218,8 @@ workflow {
                                                         .join(gtdb_out.summary.ifEmpty("NA")))
       summary = merge_summaries(single_summary.sample_quality.collect())
       links_for_transfer(one_contig)
-      write_software_versions(bcl2fastq_out.version.concat(
-                              fastqc_out.version.first(),
-                              trimm_out.version.first(),
+      // collecting the versions of the various software
+      software_version_channel = trimm_out.version.first().concat(
                               unicycler_out.version.first(),
                               bwa_index_polishing.version.first(),
                               mapping.version.first(),
@@ -223,10 +233,18 @@ workflow {
                               typing_rMLST.version.first(),
                               metaphlan_out.version.first(),
                               typ16S.version.first(),
-                              abricate_out.version.first()).collect())
+                              abricate_out.version.first()).collect()
+
+      if (params.input_type == "bcl") { // if `bcl` input, then bcl2fastq and fastqc where also used
+      software_version_channel = software_version_channel.concat(
+                                    bcl2fastq_out.version,
+                                    fastqc_out.version.first()).collect()
+      }
+
+      write_software_versions(software_version_channel)
     }
 
-    else if (params.input_type == "fastq") {
+    /* else if (params.input_type == "fastq") {
       trimm_out = trimmomaticPE(reads_for_trimming.other)
       unicycler_out = unicycler(trimm_out.trimmed_reads)
       bwa_index_polishing = bwaIndex(unicycler_out.assembly)
@@ -242,7 +260,7 @@ workflow {
       gtdb_out = gtdbtk_classify_wf(annotation.fna)
       typing_rMLST = rMLST(annotation.fna, db_rMLST)
       rmlst_out = call_rMLST(typing_rMLST.blast_tabs, bigsdb_rMLST)
-      metaphlan_out = metaphlan3(trimm_out.trimmed_reads)
+      metaphlan_out = metaphlan4(trimm_out.trimmed_reads)
       one_contig = make_one_contig(annotation.fna)
       bwa_index_remapping = indexRemapping(one_contig)
       remapping = alignRemapping(trimm_out.trimmed_reads.join(bwa_index_remapping.index))
@@ -252,7 +270,14 @@ workflow {
       coverage = coverage_pilon_corrected(remapping_polished.vcf)
       typ16S = typing_16S(one_contig)
       abricate_out = abricate(annotation.fna)
-      single_summary = summary_sample(trimm_out.trim_log.join(coverage.ifEmpty("NA")).join(insertsize.ifEmpty("NA")).join(assembly_stats.tsv.ifEmpty("NA")).join(typ16S.blast_tab.ifEmpty("NA")).join(metaphlan_out.profile.ifEmpty("NA")).join(rmlst_out.ifEmpty("NA")).join(busco_out.summary_specific.ifEmpty("NA")).join(gtdb_out.summary.ifEmpty("NA")))
+      single_summary = summary_sample(trimm_out.trim_log.join(coverage.ifEmpty("NA"))
+                                                        .join(insertsize.ifEmpty("NA"))
+                                                        .join(assembly_stats.tsv.ifEmpty("NA"))
+                                                        .join(typ16S.blast_tab.ifEmpty("NA"))
+                                                        .join(metaphlan_out.profile.ifEmpty("NA"))
+                                                        .join(rmlst_out.ifEmpty("NA"))
+                                                        .join(busco_out.summary_specific.ifEmpty("NA"))
+                                                        .join(gtdb_out.summary.ifEmpty("NA")))
       summary = merge_summaries(single_summary.sample_quality.collect())
       links_for_transfer(one_contig)
       write_software_versions(trimm_out.version.first().concat(
@@ -270,9 +295,7 @@ workflow {
                               metaphlan_out.version.first(),
                               typ16S.version.first(),
                               abricate_out.version.first()).collect())
-    }
-
-  }
+    } */
 
   if (params.SE == "YES") {
     if (params.input_type == "bcl") {
@@ -305,7 +328,7 @@ workflow {
       mqc_assembly_out = multiqc_assembly(trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect(), assembly_stats.stats.collect(), annotation.annot_all.collect(), busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect())
       typing_rMLST = rMLST(annotation.fna, db_rMLST)
       rmlst_out = call_rMLST(typing_rMLST.blast_tabs, bigsdb_rMLST)
-      metaphlan_out = metaphlan3SE(trimm_out.trimmed_reads)
+      metaphlan_out = metaphlan4SE(trimm_out.trimmed_reads)
       one_contig = make_one_contig(annotation.fna)
       bwa_index_remapping = indexRemapping(one_contig)
       remapping = alignRemappingSE(trimm_out.trimmed_reads.join(bwa_index_remapping.index))
@@ -353,7 +376,7 @@ workflow {
       gtdb_out = gtdbtk_classify_wf(annotation.fna)
       typing_rMLST = rMLST(annotation.fna, db_rMLST)
       rmlst_out = call_rMLST(typing_rMLST.blast_tabs, bigsdb_rMLST)
-      metaphlan_out = metaphlan3SE(trimm_out.trimmed_reads)
+      metaphlan_out = metaphlan4SE(trimm_out.trimmed_reads)
       one_contig = make_one_contig(annotation.fna)
       bwa_index_remapping = indexRemapping(one_contig)
       remapping = alignRemappingSE(trimm_out.trimmed_reads.join(bwa_index_remapping.index))
