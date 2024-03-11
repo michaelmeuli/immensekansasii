@@ -123,7 +123,7 @@ if conda info --envs | grep -qw $ENV_NAME; then
     echo "Environment '$ENV_NAME' exists. Checking for packages..."
 
     # Activate environment
-    conda activate $ENV_NAME
+    source activate $ENV_NAME
 
     # Loop through packages and install if missing
     for pkg in "${PACKAGES[@]}"; do
