@@ -2,8 +2,8 @@
 *  unicycler module
 */
 
-params.CONTAINER = "quay.io/biocontainers/unicycler:0.4.8--py37h13b99d1_3"
-//params.CONTAINER = "https://depot.galaxyproject.org/singularity/unicycler:0.4.8--py37h13b99d1_3"
+params.CONTAINER = "quay.io/biocontainers/unicycler:0.5.0--py38h5cf8b27_3"
+
 params.OUTPUT = "unicycler_output"
 
 process unicycler {

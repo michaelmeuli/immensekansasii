@@ -157,8 +157,9 @@ include { write_software_versions } from "./modules/write_software_versions"
 workflow {
 
   if (params.SE == "NO") {  
-
-    if (params.input_type == "bcl") { // if starting from bcl files, first process to fastq
+    
+    // if starting from bcl files, first process to fastq
+    if (params.input_type == "bcl") { 
       bcl2fastq_out = bcl2fastq(rundir, samplesheet)
 
       bcl2fastq_out.raw_fastq.flatten().branch{
@@ -175,8 +176,9 @@ workflow {
       mqc_reads_out = multiqc_reads(bcl2fastq_out.reports, fastqc_out.qc.collect(), trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect())
       linked_reads = link_reads(mqc_reads_out.version)
     }
-
-    else if (params.input_type == "fastq") {// if starting from fastq, directly do trimmomatic
+    
+    // if starting from fastq, directly do trimmomatic
+    else if (params.input_type == "fastq") {
 
     bcl2fastq_out = Channel.value(["version": ""]) // since bcl2fastq was not run, make the version channel empty
     fastqc_out = Channel.value(["version": ""]) // since fastqc was not run, make the version channel empty
@@ -185,12 +187,8 @@ workflow {
     }
 
       unicycler_out = unicycler(trimm_out.trimmed_reads)
-      bwa_index_polishing = bwaIndex(unicycler_out.assembly)
-      mapping = bwaAlign(trimm_out.trimmed_reads.join(bwa_index_polishing.index))
-      bam_file = samtools(mapping.sam)
-      polished_assembly = pilon(bam_file.bam.join(unicycler_out.assembly))
-      annotation = prokka(polished_assembly.assembly)
-      busco_out = busco(polished_assembly.assembly)
+      annotation = prokka(unicycler_out.assembly)
+      busco_out = busco(unicycler_out.assembly)
       busco_lineages = get_busco_lineages(busco_out.version.collect())
       busco_plot(busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect())
       assembly_stats = quast(annotation.fna)
@@ -221,10 +219,6 @@ workflow {
       // collecting the versions of the various software
       software_version_channel = trimm_out.version.first().concat(
                               unicycler_out.version.first(),
-                              bwa_index_polishing.version.first(),
-                              mapping.version.first(),
-                              bam_file.version.first(),
-                              polished_assembly.version.first(),
                               annotation.version.first(),
                               busco_lineages,
                               assembly_stats.version.first(),
@@ -244,59 +238,6 @@ workflow {
       write_software_versions(software_version_channel)
     }
 
-    /* else if (params.input_type == "fastq") {
-      trimm_out = trimmomaticPE(reads_for_trimming.other)
-      unicycler_out = unicycler(trimm_out.trimmed_reads)
-      bwa_index_polishing = bwaIndex(unicycler_out.assembly)
-      mapping = bwaAlign(trimm_out.trimmed_reads.join(bwa_index_polishing.index))
-      bam_file = samtools(mapping.sam)
-      polished_assembly = pilon(bam_file.bam.join(unicycler_out.assembly))
-      annotation = prokka(polished_assembly.assembly)
-      busco_out = busco(polished_assembly.assembly)
-      busco_lineages = get_busco_lineages(busco.out.version.collect())
-      busco_plot(busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect())
-      assembly_stats = quast(annotation.fna)
-      mqc_assembly_out = multiqc_assembly(trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect(), assembly_stats.stats.collect(), annotation.annot_all.collect(), busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect())
-      gtdb_out = gtdbtk_classify_wf(annotation.fna)
-      typing_rMLST = rMLST(annotation.fna, db_rMLST)
-      rmlst_out = call_rMLST(typing_rMLST.blast_tabs, bigsdb_rMLST)
-      metaphlan_out = metaphlan4(trimm_out.trimmed_reads)
-      one_contig = make_one_contig(annotation.fna)
-      bwa_index_remapping = indexRemapping(one_contig)
-      remapping = alignRemapping(trimm_out.trimmed_reads.join(bwa_index_remapping.index))
-      insertsize = parse_sam_for_insertsize(remapping.sam)
-      bam_remapping = samtoolsRemapping(remapping.sam)
-      remapping_polished = pilon_remapping(bam_remapping.bam.join(one_contig))
-      coverage = coverage_pilon_corrected(remapping_polished.vcf)
-      typ16S = typing_16S(one_contig)
-      abricate_out = abricate(annotation.fna)
-      single_summary = summary_sample(trimm_out.trim_log.join(coverage.ifEmpty("NA"))
-                                                        .join(insertsize.ifEmpty("NA"))
-                                                        .join(assembly_stats.tsv.ifEmpty("NA"))
-                                                        .join(typ16S.blast_tab.ifEmpty("NA"))
-                                                        .join(metaphlan_out.profile.ifEmpty("NA"))
-                                                        .join(rmlst_out.ifEmpty("NA"))
-                                                        .join(busco_out.summary_specific.ifEmpty("NA"))
-                                                        .join(gtdb_out.summary.ifEmpty("NA")))
-      summary = merge_summaries(single_summary.sample_quality.collect())
-      links_for_transfer(one_contig)
-      write_software_versions(trimm_out.version.first().concat(
-                              unicycler_out.version.first(),
-                              bwa_index_polishing.version.first(),
-                              mapping.version.first(),
-                              bam_file.version.first(),
-                              polished_assembly.version.first(),
-                              annotation.version.first(),
-                              busco_lineages,
-                              assembly_stats.version.first(),
-                              mqc_assembly_out.version,
-                              gtdb_out.version.first(),
-                              typing_rMLST.version.first(),
-                              metaphlan_out.version.first(),
-                              typ16S.version.first(),
-                              abricate_out.version.first()).collect())
-    } */
-
   if (params.SE == "YES") {
     if (params.input_type == "bcl") {
       bcl2fastq_out = bcl2fastq(rundir, samplesheet)
@@ -315,12 +256,8 @@ workflow {
       mqc_reads_out = multiqc_reads(bcl2fastq_out.reports, fastqc_out.qc.collect(), trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect())
       linked_reads = link_reads(mqc_reads_out.version)
       unicycler_out = unicyclerSE(trimm_out.trimmed_reads)
-      bwa_index_polishing = bwaIndex(unicycler_out.assembly)
-      mapping = bwaAlignSE(trimm_out.trimmed_reads.join(bwa_index_polishing.index))
-      bam_file = samtools(mapping.sam)
-      polished_assembly = pilonSE(bam_file.bam.join(unicycler_out.assembly))
-      annotation = prokka(polished_assembly.assembly)
-      busco_out = busco(polished_assembly.assembly)
+      annotation = prokka(unicycler_out.assembly)
+      busco_out = busco(unicycler_out.assembly)
       busco_lineages = get_busco_lineages(busco.out.version.collect())
       busco_plot(busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect())
       assembly_stats = quast(annotation.fna)
@@ -345,10 +282,6 @@ workflow {
                               fastqc_out.version.first(),
                               trimm_out.version.first(),
                               unicycler_out.version.first(),
-                              bwa_index_polishing.version.first(),
-                              mapping.version.first(),
-                              bam_file.version.first(),
-                              polished_assembly.version.first(),
                               annotation.version.first(),
                               busco_lineages,
                               assembly_stats.version.first(),
@@ -363,12 +296,8 @@ workflow {
     else if (params.input_type == "fastq") {
       trimm_out = trimmomaticSE(reads_for_trimming.other)
       unicycler_out = unicyclerSE(trimm_out.trimmed_reads)
-      bwa_index_polishing = bwaIndex(unicycler_out.assembly)
-      mapping = bwaAlignSE(trimm_out.trimmed_reads.join(bwa_index_polishing.index))
-      bam_file = samtools(mapping.sam)
-      polished_assembly = pilonSE(bam_file.bam.join(unicycler_out.assembly))
-      annotation = prokka(polished_assembly.assembly)
-      busco_out = busco(polished_assembly.assembly)
+      annotation = prokka(unicycler_out.assembly)
+      busco_out = busco(unicycler_out.assembly)
       busco_lineages = get_busco_lineages(busco.out.version.collect())
       busco_plot(busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect())
       assembly_stats = quast(annotation.fna)
@@ -391,10 +320,6 @@ workflow {
       links_for_transfer(one_contig)
       write_software_versions(trimm_out.version.first().concat(
                               unicycler_out.version.first(),
-                              bwa_index_polishing.version.first(),
-                              mapping.version.first(),
-                              bam_file.version.first(),
-                              polished_assembly.version.first(),
                               annotation.version.first(),
                               busco_lineages,
                               assembly_stats.version.first(),
