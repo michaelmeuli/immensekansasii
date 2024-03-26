@@ -2,7 +2,7 @@
 *  unicycler module
 */
 
-params.CONTAINER = "quay.io/biocontainers/unicycler:0.5.0--py38h5cf8b27_3"
+params.CONTAINER = "quay.io/biocontainers/unicycler:0.4.8--py39h98c8e45_5"
 
 params.OUTPUT = "unicycler_output"
 
