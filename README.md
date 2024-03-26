@@ -247,19 +247,23 @@ Install Nextflow either by using Bioconda or curl (for instructions see https://
 Clone IMMENSE repository.
 
 ### Prepare Singular containers
-Get all the required singularity images by starting an interactive S3IT session on SLURM: (login node might run out of memory)
+Get all the required singularity images by starting an interactive S3IT session on SLURM: (login node will run out of memory)
+
+>If you want to change where the singularity containers are stored, change the line `cacheDir =` under the singularity settings in the nextflow.config file
+
 ```
-srun --pty -n 1 -c 5 --time=01:00:00 --mem=16G bash -l
+srun --pty -n 1 -c 6 --time=01:00:00 --mem=16G bash -l
 ```
-Then loading singularity and pulling all the container images to the location where they should be saved.
+Then loading singularity and using the script in the repo to load all the container images to the location where they should be saved.
 
 ```
 module load singularityce
 
-# Navigate to where the container images should be saved
-cd /shares/amr.imm.uzh/.singularity 
-# Then run the script to pull all the container images
-bash path/to/repo/Singularity/pull_singularity_img.sh # Change this to the path where this repository is located.
+# Navigate to the pipeline repository and the contained Singularity directory
+cd path/to/IMMENSE_repo/Singularity
+
+# Then run the script to pull all the container images to the directory specified in nextflow.config
+bash pull_singularity_img.sh
 ```
 
 ### Prepare required Databases

@@ -22,6 +22,9 @@ process trimmomaticPE {
     tuple val (sample_id), path ("${sample_id}_r1.fastq.gz"), path ("${sample_id}_r2.fastq.gz"), emit: trimmed_reads
     tuple val (sample_id), path ("${sample_id}.quality_read_trimm_info"), emit: trim_log
     path "trimmomatic_version.txt", emit: version
+    tuple val(sample_id), env(PASSED_PERC), emit: passed_reads_percentage
+    tuple val(sample_id), env(PASSED_READS), emit: passed_reads_number
+
 
     script:
     """
@@ -38,7 +41,13 @@ process trimmomaticPE {
     echo "trimmomatic \$(trimmomatic -version)" > trimmomatic_vers.txt
     echo ${params.CONTAINER} > trimmomatic_singularity.txt
     cat trimmomatic_vers.txt trimmomatic_singularity.txt | tr "\n" "\t" > trimmomatic_version.txt
+    
+    # Extracting passed-reads percentage info for summary
+    PASSED_PERC=`grep "Both Surviving" ${sample_id}.quality_read_trimm_info | awk '{print \$8}' | tr -d '()%'`
+    PASSED_READS=`grep "Both Surviving" ${sample_id}.quality_read_trimm_info | awk '{print \$7}'`
     """
+
+
 }
 
 
@@ -57,6 +66,8 @@ process trimmomaticSE {
     tuple val (sample_id), path ("${sample_id}_trimmed.fastq.gz"), emit: trimmed_reads
     tuple val (sample_id), path ("${sample_id}.quality_read_trimm_info"), emit: trim_log
     path "trimmomatic_version.txt", emit: version
+    tuple val(sample_id), env(PASSED_PERC), emit: passed_reads_percentage
+
 
     script:
     """
@@ -70,5 +81,8 @@ process trimmomaticSE {
     echo "trimmomatic \$(trimmomatic -version)" > trimmomatic_vers.txt
     echo ${params.CONTAINER} > trimmomatic_singularity.txt
     cat trimmomatic_vers.txt trimmomatic_singularity.txt | tr "\n" "\t" > trimmomatic_version.txt
+
+    # Extracting passed-reads percentage info for summary
+    PASSED_PERC=`grep "Both Surviving" ${sample_id}.quality_read_trimm_info | awk '{print \$8}' | tr -d '()%'`
     """
 }

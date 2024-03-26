@@ -23,6 +23,8 @@ process metaphlan4 {
     tuple val (sample_id), path ("${sample_id}_profiled_metagenome.txt"), emit: profile
     tuple val (sample_id), path ("${sample_id}.error.txt"), emit: error
     path "metaphlan_version.txt", emit: version
+    tuple val (sample_id), env(TAXA), emit: taxa
+    tuple val (sample_id), env(PURITY), emit: purity
 
     script:
     """
@@ -38,6 +40,10 @@ process metaphlan4 {
     echo ${params.metaphlan_db_name} > metaphlan_db_version.txt
     echo ${params.CONTAINER} > metaphlan_singularity.txt
     cat metaphlan_vers.txt metaphlan_singularity.txt metaphlan_db_version.txt | tr "\n" "\t" > metaphlan_version.txt
+
+    TAXA=`grep "s__" ${sample_id}_profiled_metagenome.txt  | grep -v "t__" | awk '{split(\$0,a,"|"); print a[7],"\\t",\$3}'| awk -F __ '{print \$2}' | cut -f1 | head -n 1`
+    PURITY=`grep "s__" ${sample_id}_profiled_metagenome.txt  | grep -v "t__" | awk '{split(\$0,a,"|"); print a[7],"\\t",\$3}'| awk -F __ '{print \$2}' | cut -f3 | head -n 1`
+    
     """
 }
 
@@ -56,6 +62,8 @@ process metaphlan4SE {
     tuple val (sample_id), path ("${sample_id}_profiled_metagenome.txt"), emit: profile
     tuple val (sample_id), path ("${sample_id}.error.txt"), emit: error
     path "metaphlan_version.txt", emit: version
+    tuple val (sample_id), env(TAXA), emit: taxa
+    tuple val (sample_id), env(PURITY), emit: purity
 
     script:
     """
@@ -74,5 +82,9 @@ process metaphlan4SE {
     echo ${params.metaphlan_db_name} > metaphlan_db_version.txt
     echo ${params.CONTAINER} > metaphlan_singularity.txt
     cat metaphlan_vers.txt metaphlan_singularity.txt metaphlan_db_version.txt | tr "\n" "\t" > metaphlan_version.txt
+    
+    TAXA=`grep "s__" ${sample_id}_profiled_metagenome.txt  | grep -v "t__" | awk '{split(\$0,a,"|"); print a[7],"\\t",\$3}'| awk -F __ '{print \$2}' | cut -f1 | head -n 1`
+    PURITY=`grep "s__" ${sample_id}_profiled_metagenome.txt  | grep -v "t__" | awk '{split(\$0,a,"|"); print a[7],"\\t",\$3}'| awk -F __ '{print \$2}' | cut -f3 | head -n 1`
+    
     """
 }

@@ -4,7 +4,7 @@
 
 
 process link_reads {
-
+  // Move all fastq.gz file into a nicely organized 'reads' directory
   tag { "${params.run_id}" }
   containerOptions "-B ${params.input}, -B $launchDir"
 

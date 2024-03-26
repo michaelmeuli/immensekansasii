@@ -2,8 +2,9 @@
 *  fastqc module
 */
 
-params.CONTAINER = "quay.io/biocontainers/fastqc:0.11.9--0"
-//params.CONTAINER = "https://depot.galaxyproject.org/singularity/fastqc:0.11.9--0"
+//params.CONTAINER = "quay.io/biocontainers/fastqc:0.11.9--0"
+params.CONTAINER = "quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0"
+
 params.OUTPUT = "fastqc_output"
 
 process fastqc {

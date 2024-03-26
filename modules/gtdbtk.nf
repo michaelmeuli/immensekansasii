@@ -19,6 +19,12 @@ process gtdbtk_classify_wf {
   tuple val (sample_id), path ("${sample_id}/*.summary.tsv"), emit: summary
   tuple val (sample_id), path ("${sample_id}/*.log")
   path "gtdb_version.txt", emit: version
+  tuple val (sample_id), env(SPECIES), emit: species
+  tuple val (sample_id), env(ANI_REF), emit: ani_ref
+  tuple val (sample_id), env(ANI), emit: ani_ani
+  tuple val (sample_id), env(AF), emit: ani_af
+  tuple val (sample_id), env(PLACEMENT_REF), emit: placement_ref
+  tuple val (sample_id), env(GTDB_NOTES), emit: gtdb_notes
 
   script:
   """
@@ -30,5 +36,14 @@ process gtdbtk_classify_wf {
   echo ${params.CONTAINER} > gtdb_singularity.txt
   gtdbtk -v | cut -d\\  -f1-3 >> gtdb_vers.txt
   cat gtdb_vers.txt gtdb_singularity.txt db_version_gtdb.txt | tr "\n" "\t" > gtdb_version.txt
+
+  # Extracting key information for summary quality.csv
+  SPECIES=`cat ${sample_id}/*.summary.tsv | tail -1 | cut -f2,3,6-8,20 | awk 'BEGIN{FS=OFS="__"} { if (NF > 1) \$1=\$8; else \$1=\$1; print \$1}' | cut -f1`
+  ANI_REF=`cat ${sample_id}/*.summary.tsv | tail -1 | cut -f2,3,6-8,20 | awk 'BEGIN{FS=OFS="__"} { if (NF > 1) \$1=\$8; else \$1=\$1; print \$1}' | cut -f2`
+  ANI=`cat ${sample_id}/*.summary.tsv | tail -1 | cut -f2,3,6-8,20 | awk 'BEGIN{FS=OFS="__"} { if (NF > 1) \$1=\$8; else \$1=\$1; print \$1}' | cut -f3`
+  AF=`cat ${sample_id}/*.summary.tsv | tail -1 | cut -f2,3,6-8,20 | awk 'BEGIN{FS=OFS="__"} { if (NF > 1) \$1=\$8; else \$1=\$1; print \$1}' | cut -f4`
+  PLACEMENT_REF=`cat ${sample_id}/*.summary.tsv | tail -1 | cut -f2,3,6-8,20 | awk 'BEGIN{FS=OFS="__"} { if (NF > 1) \$1=\$8; else \$1=\$1; print \$1}' | cut -f5`
+  GTDB_NOTES=`cat ${sample_id}/*.summary.tsv | tail -1 | cut -f2,3,6-8,20 | awk 'BEGIN{FS=OFS="__"} { if (NF > 1) \$1=\$8; else \$1=\$1; print \$1}' | cut -f6`
+
   """
 }

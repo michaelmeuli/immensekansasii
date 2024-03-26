@@ -3,7 +3,7 @@
 */
 
 params.CONTAINER = "quay.io/biocontainers/blast:2.12.0--pl5262h3289130_0"
-//params.CONTAINER = "https://depot.galaxyproject.org/singularity/blast:2.12.0--pl5262h3289130_0"
+
 params.OUTPUT = "typing16s_output"
 
 process typing_16S {
@@ -19,6 +19,9 @@ process typing_16S {
     output:
     tuple val (sample_id), path ("${sample_id}_16S_blast.tab"), emit: blast_tab
     path "blastn_16S_version.txt", emit: version
+    tuple val (sample_id), env(TAXA), emit: taxa
+    tuple val (sample_id), env(ALN_LENGTH), emit: aln_length
+    tuple val (sample_id), env(ALN_ID), emit: aln_identity
 
     script:
     """
@@ -34,5 +37,10 @@ process typing_16S {
     if [[ ${params.db_16s} == *16S_* ]]; then basename ${params.db_16s} > db_version_16S.txt; else echo "database as of 20171115" > db_version_16S.txt; fi
     echo ${params.CONTAINER} > blastn_16S_singularity.txt
     cat blastn_16S_vers.txt blastn_16S_singularity.txt db_version_16S.txt | tr "\n" "\t" > blastn_16S_version.txt
+
+    # Extracting key information:
+    TAXA=`head -n 1 ${sample_id}_16S_blast.tab | awk -F "\\t" '{print \$3}'`
+    ALN_LENGTH=`head -n 1 ${sample_id}_16S_blast.tab | awk -F "\\t" '{print \$6}'`
+    ALN_ID=`head -n 1 ${sample_id}_16S_blast.tab | awk -F "\\t" '{print \$7}'`
     """
 }

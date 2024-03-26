@@ -2,7 +2,9 @@
 *  bcl2fastq module
 */
 
-params.CONTAINER = "jlboat-BioinfoContainers_bcl2fastq"   // shub://jlboat/BioinfoContainers:bcl2fastq
+//params.CONTAINER = "jlboat-BioinfoContainers_bcl2fastq"   // shub://jlboat/BioinfoContainers:bcl2fastq
+params.CONTAINER = "quay.io/biocontainers/bcl2fastq-nextseq:1.3.0--pyh5e36f6f_0"
+
 params.OUTPUT = "bcl2fastq_output"
 
 process bcl2fastq {

@@ -2,7 +2,7 @@
 *  R scripts module
 */
 
-params.CONTAINER = "r-base-4.1.3"   // docker://r-base:4.1.3
+params.CONTAINER = "r-base-4.3.3"   // docker://r-base:4.1.3
 
 process generate_resistance_table {
     tag { "${params.run_id}" }
