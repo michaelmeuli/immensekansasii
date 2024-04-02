@@ -155,7 +155,6 @@ echo "==============================="
 ## Now the conda environment exists and is loadable
 #########################################################
 
-
 #########################################################
 ## Checking input arguments:
 #TODO check arguments more robustly.
@@ -181,6 +180,7 @@ fi
 #########################################################
 
 ### Submitting the nextflow script to SLURM
+
 echo "Submitting nextflow coordinator to SLURM."
 sbatch --job-name=$jobName $MAIN_DIR/bin/submit_to_cluster.sh $MAIN_DIR $input_type $single_end $runId $inputDirectory $additionalArguments
 # The submit_to_cluster.sh script expects the inputs in this exact order.

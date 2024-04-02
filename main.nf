@@ -131,7 +131,7 @@ include { multiqc_reads; multiqc_assembly } from "./modules/multiqc"
 include { trimmomaticPE; trimmomaticSE } from "./modules/trimmomatic"
 include { unicycler; unicyclerSE } from "./modules/unicycler"
 include { samtools } from "./modules/samtools"
-include { pilon; pilonSE; pilon_remapping; pilon_remappingSE } from "./modules/pilon"
+include { pilon_remapping; pilon_remappingSE } from "./modules/pilon"
 include { prokka } from "./modules/prokka"
 include { busco; get_busco_lineages; busco_plot } from "./modules/busco"
 include { quast } from "./modules/quast"
@@ -171,6 +171,9 @@ workflow {
       other: true}.set{ fastqs }
 
     fastqc_out = fastqc(for_fastqc.other)
+    
+    // bcl_sending_to_fastq=fastqs.other.map{ file -> tuple(file.simpleName.replaceAll(/_R1|_R2$/,''), file)}.groupTuple(sort:true)
+    // bcl_sending_to_fastq.view()
 
     // Depending if its paired-end reads or not, trim differently
     if (params.SE == "NO") {  
@@ -180,9 +183,9 @@ workflow {
     }
 
     mqc_reads_out = multiqc_reads(bcl2fastq_out.reports, fastqc_out.qc.collect(), trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect())
-    linked_reads = link_reads(mqc_reads_out.version)
+    linked_reads = link_reads(mqc_reads_out.version) // put reads in demultiplex subfolder
   }
-    
+  //TODO: regardless of BCL or Fastq start, use the same trimmomatic process & do fastqc before & after.
   // if starting from fastq, directly do trimmomatic
   else if (params.input_type == "fastq") {
     if (params.SE == "NO") {  
@@ -209,12 +212,10 @@ workflow {
   }
 
     qc_size_passed = trimm_out_checked.passed.map { sample ->
-    // Assuming the first element of each tuple is sample_id
-    return [sample[0], ""]
+    return [sample[0], ""] // Assuming the first element of each tuple is sample_id
     }
 
     qc_size_failed = trimm_out_checked.failed.map { sample ->
-    // Assuming the first element of each tuple is sample_id
     return [sample[0], "Trimmed fastq below 1MB - Assembly skipped"] // the note to put into the quality.csv file
     }
     // collect warning if files are not large enough

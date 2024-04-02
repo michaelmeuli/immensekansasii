@@ -1,14 +1,16 @@
 #!/bin/bash
 
+module load singularityce
+
 # Get the path where nextflow expects the singularity containers
-INSTALL_PATH=`grep 'cacheDir =' ../nextflow.config | cut -d '"' -f 2`
+INSTALL_PATH=`grep 'singularity_container_cache' ../params.config | cut -d '"' -f 2` # default is /shares/amr.imm.uzh/.singularity_IMMENSE
 
 echo ""
 echo "Installing Singularity Containers at:            ${INSTALL_PATH}"
 echo ""
 
 singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-abricate-1.0.1--ha8f3691_1.img docker://quay.io/biocontainers/abricate:1.0.1--ha8f3691_1
-singularity build --sandbox -F ${INSTALL_PATH}/bcl2fastq-nextseq-1.3.0--pyh5e36f6f_0.img docker://quay.io/biocontainers/bcl2fastq-nextseq:1.3.0--pyh5e36f6f_0
+singularity build --sandbox -F ${INSTALL_PATH}/jlboat-BioinfoContainers_bcl2fastq.img shub://jlboat/BioinfoContainers:bcl2fastq
 singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-blast-2.12.0--pl5262h3289130_0.img docker://quay.io/biocontainers/blast:2.12.0--pl5262h3289130_0
 singularity build --sandbox -F ${INSTALL_PATH}/ezlabgva-busco_v5.3.2_cv1.img docker://ezlabgva/busco:v5.3.2_cv1
 singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-bwa-0.7.17--h5bf99c6_8.img docker://quay.io/biocontainers/bwa:0.7.17--h5bf99c6_8
