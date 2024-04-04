@@ -330,15 +330,6 @@ workflow {
   }
 }
 
-// workflow.onComplete {
-//     println ""
-//     println "Pipeline finished!"
-//     println ""
-//     println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
-//     println ""
-
-
-// }
 
 workflow.onError {
     println ""
@@ -346,47 +337,6 @@ workflow.onError {
     println ""
     println "${workflow.errorReport}"
 }
-
-/*
-* Mail notification
-*/
-
-// if (params.email == "yourmail@yourdomain" || params.email == "") {
-//     log.info 'Skipping the email\n'
-// }
-// else {
-//     log.info "Sending the email to ${params.email}\n"
-
-//     workflow.onComplete {
-
-//     def msg = """\
-//         IMMENSE ${params.run_id} execution summary
-//         ---------------------------
-//         Completed at: ${workflow.complete}
-//         Duration    : ${workflow.duration}
-//         Success     : ${workflow.success}
-//         workDir     : ${workflow.launchDir}
-//         exit status : ${workflow.exitStatus}
-//         Error report: ${workflow.errorReport ?: '-'}
-//         """
-//         .stripIndent()
-
-//     quality_tab = file("${params.run_id}_transfer_result/${params.run_id}_quality.tab")
-//     mulQC_ass = file("${params.run_id}_transfer_result/${params.run_id}_multiqc_assembly.html")
-//     mulQC_reads = file("${params.run_id}_transfer_result/${params.run_id}_multiqc_trimmed.html")
-//     dashb = file("${params.run_id}_transfer_result/QC_dashboard.html")
-
-//         sendMail{
-//           to "${params.email}"
-//           subject "IMMENSE ${params.run_id} complete"
-//           body msg
-//           if (quality_tab.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_quality.tab" }
-//           if (dashb.exists()) { attach "${params.run_id}_transfer_result/QC_dashboard.html" }
-//           if (mulQC_ass.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_multiqc_assembly.html", fileName: "multiqc_report_assembly.html" }
-//           if (mulQC_reads.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_multiqc_trimmed.html", fileName: "multiqc_report_reads.html" }
-//         }
-//     }
-// }
 
 workflow.onComplete {
     println ""
