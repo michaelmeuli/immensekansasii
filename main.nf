@@ -159,11 +159,6 @@ workflow {
   if (params.input_type == "bcl") { 
     bcl2fastq_out = bcl2fastq(rundir, samplesheet)
 
-    // send raw reads to fastqc
-    // bcl2fastq_out.raw_fastq.flatten().branch{
-    //   undet: it =~ /Undetermined/
-    //   other: true}.set{ for_fastqc }
-
     // send raw reads to trimmomatic
     bcl2fastq_out.fastq.flatten().branch{
       sarscov2: it =~ /sarscov-2/
@@ -172,38 +167,23 @@ workflow {
 
     reads_for_trimming = [:]
     reads_for_trimming['other']=fastqs.other.map{ file -> tuple(file.simpleName.replaceAll(/_R1|_R2$/,''), file)}.groupTuple(sort:true)
-//  reads_for_trimming['fastqc']=fastqs.other.map{ file -> tuple(file.simpleName.replaceAll(/_R1|_R2$/,''), file)}.groupTuple(sort:true)
     
     linked_reads = link_reads(bcl2fastq_out.finished.collect()) // waits for all files to be converted and then puts reads in demultiplex subfolder
-
-    // Depending if its paired-end reads or not, trim differently
-    // if (params.SE == "NO") {  
-    // trimm_out = trimmomaticPE(reads_for_trimming)
-    // } else if (params.SE == "YES") {
-    // trimm_out = trimmomaticSE(reads_for_trimming)
-    // }
-    // TODO: fastqc expects just a bunch of fastq files not in a tuple.
-    //fastqc_out = fastqc(reads_for_trimming.fastqc)
-    // TODO: Fix multiqc so that 1 report is done after bcl2fastq and then another is done before & after trimming.
-    // mqc_reads_out = multiqc_reads(bcl2fastq_out.reports, fastqc_out.qc.collect(), trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect()) 
     multiqc_bcl_out = multiqc_bcl(bcl2fastq_out.reports) 
   }
-
-  //TODO: Put fastq files in two channels for fastqc and trimming:
-  //TODO: Run fastqc on raw reads
+  
+  // Running fastq on fastq reads before trimming and generating multiQC report
   fastqc_raw_reads_out = fastqc_raw_reads(reads_for_trimming.other)
   multiqc_raw_fastqc_out = multiqc_raw_fastqc(fastqc_raw_reads_out.output.collect())
-  //TODO: regardless of BCL or Fastq start, use the same trimmomatic process & do fastqc before & after.
   
   if (params.SE == "NO") {  
       trimm_out = trimmomaticPE(reads_for_trimming.other)
     } else if (params.SE == "YES") {
       trimm_out = trimmomaticSE(reads_for_trimming.other)
     }
-  // Run fastqc on trimmed reads
-  fastqc_trimmed_reads_out = fastqc_trimmed_reads(trimm_out.trimmed_reads)
   
-  // Create multiqc report with trimming log and trimmed reads
+  // Run fastqc on trimmed reads & create multiQC report
+  fastqc_trimmed_reads_out = fastqc_trimmed_reads(trimm_out.trimmed_reads)
   multiqc_trimmed_fastqc_out = multiqc_trimmed_fastqc(fastqc_trimmed_reads_out.output.collect(), trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect())
 
   // Checking that input files are large enough (otherwise processes fail)
