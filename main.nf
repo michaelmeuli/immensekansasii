@@ -126,8 +126,8 @@ Channel
 
 include { bcl2fastq } from "./modules/bcl2fastq"
 include { link_reads; links_for_transfer } from "./modules/create_links"
-include { fastqc } from "./modules/fastqc"
-include { multiqc_reads; multiqc_assembly } from "./modules/multiqc"
+include { fastqc_raw_reads; fastqc_trimmed_reads } from "./modules/fastqc"
+include { multiqc_bcl; multiqc_raw_fastqc; multiqc_trimmed_fastqc; multiqc_assembly } from "./modules/multiqc"
 include { trimmomaticPE; trimmomaticSE } from "./modules/trimmomatic"
 include { unicycler; unicyclerSE } from "./modules/unicycler"
 include { samtools } from "./modules/samtools"
@@ -160,9 +160,9 @@ workflow {
     bcl2fastq_out = bcl2fastq(rundir, samplesheet)
 
     // send raw reads to fastqc
-    bcl2fastq_out.raw_fastq.flatten().branch{
-      undet: it =~ /Undetermined/
-      other: true}.set{ for_fastqc }
+    // bcl2fastq_out.raw_fastq.flatten().branch{
+    //   undet: it =~ /Undetermined/
+    //   other: true}.set{ for_fastqc }
 
     // send raw reads to trimmomatic
     bcl2fastq_out.fastq.flatten().branch{
@@ -170,30 +170,41 @@ workflow {
       undet: it =~ /Undetermined/
       other: true}.set{ fastqs }
 
-    fastqc_out = fastqc(for_fastqc.other)
+    reads_for_trimming = [:]
+    reads_for_trimming['other']=fastqs.other.map{ file -> tuple(file.simpleName.replaceAll(/_R1|_R2$/,''), file)}.groupTuple(sort:true)
+//  reads_for_trimming['fastqc']=fastqs.other.map{ file -> tuple(file.simpleName.replaceAll(/_R1|_R2$/,''), file)}.groupTuple(sort:true)
     
-    // bcl_sending_to_fastq=fastqs.other.map{ file -> tuple(file.simpleName.replaceAll(/_R1|_R2$/,''), file)}.groupTuple(sort:true)
-    // bcl_sending_to_fastq.view()
+    linked_reads = link_reads(bcl2fastq_out.finished.collect()) // waits for all files to be converted and then puts reads in demultiplex subfolder
 
     // Depending if its paired-end reads or not, trim differently
-    if (params.SE == "NO") {  
-    trimm_out = trimmomaticPE(fastqs.other.map{ file -> tuple(file.simpleName.replaceAll(/_R1|_R2$/,''), file)}.groupTuple(sort:true))
-    } else if (params.SE == "YES") {
-    trimm_out = trimmomaticSE(fastqs.other.map{ file -> tuple(file.simpleName.replaceAll(/_R1|_R2$/,''), file)}.groupTuple(sort:true))
-    }
-
-    mqc_reads_out = multiqc_reads(bcl2fastq_out.reports, fastqc_out.qc.collect(), trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect())
-    linked_reads = link_reads(mqc_reads_out.version) // put reads in demultiplex subfolder
+    // if (params.SE == "NO") {  
+    // trimm_out = trimmomaticPE(reads_for_trimming)
+    // } else if (params.SE == "YES") {
+    // trimm_out = trimmomaticSE(reads_for_trimming)
+    // }
+    // TODO: fastqc expects just a bunch of fastq files not in a tuple.
+    //fastqc_out = fastqc(reads_for_trimming.fastqc)
+    // TODO: Fix multiqc so that 1 report is done after bcl2fastq and then another is done before & after trimming.
+    // mqc_reads_out = multiqc_reads(bcl2fastq_out.reports, fastqc_out.qc.collect(), trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect()) 
+    multiqc_bcl_out = multiqc_bcl(bcl2fastq_out.reports) 
   }
+
+  //TODO: Put fastq files in two channels for fastqc and trimming:
+  //TODO: Run fastqc on raw reads
+  fastqc_raw_reads_out = fastqc_raw_reads(reads_for_trimming.other)
+  multiqc_raw_fastqc_out = multiqc_raw_fastqc(fastqc_raw_reads_out.output.collect())
   //TODO: regardless of BCL or Fastq start, use the same trimmomatic process & do fastqc before & after.
-  // if starting from fastq, directly do trimmomatic
-  else if (params.input_type == "fastq") {
-    if (params.SE == "NO") {  
+  
+  if (params.SE == "NO") {  
       trimm_out = trimmomaticPE(reads_for_trimming.other)
     } else if (params.SE == "YES") {
       trimm_out = trimmomaticSE(reads_for_trimming.other)
     }
-  }
+  // Run fastqc on trimmed reads
+  fastqc_trimmed_reads_out = fastqc_trimmed_reads(trimm_out.trimmed_reads)
+  
+  // Create multiqc report with trimming log and trimmed reads
+  multiqc_trimmed_fastqc_out = multiqc_trimmed_fastqc(fastqc_trimmed_reads_out.output.collect(), trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect())
 
   // Checking that input files are large enough (otherwise processes fail)
   // After trimming, check that reads are still at least 1MB: if too small then put in failed channel to track them.
@@ -302,6 +313,7 @@ workflow {
 
       // collecting the versions of the various software
       software_version_channel = trimm_out.version.first().concat(
+                              fastqc_raw_reads_out.version.first(),
                               unicycler_out.version.first(),
                               annotation.version.first(),
                               busco_lineages,
@@ -315,8 +327,7 @@ workflow {
 
     if (params.input_type == "bcl") { // if `bcl` input, then bcl2fastq and fastqc where also used
       software_version_channel = software_version_channel.concat(
-                                    bcl2fastq_out.version,
-                                    fastqc_out.version.first()).collect()
+                                    bcl2fastq_out.version).collect()
       }
 
       write_software_versions(software_version_channel)

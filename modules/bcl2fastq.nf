@@ -22,9 +22,10 @@ process bcl2fastq {
     path ("result/**fastq.gz"), emit: raw_fastq
     path ("reads/*/*fastq.gz"), emit: fastq
     path "result/SampleSheet.*"
-    path "result/Stats"
-    path "result/Reports", emit: reports
+    path "result/Stats", emit: reports
+    path "result/Reports"
     path "bcl2fastq_version.txt", emit: version
+    path "bcl2fastq_version.txt", emit: finished
 
     script:
     """
