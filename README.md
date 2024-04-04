@@ -6,7 +6,8 @@ IMM Extended Nextflow Sequencing Environment
 
 ## Author
 
-* Michèle Leemann and Marco Meola (mmeola@imm.uzh.ch)
+* Michèle Leemann, Marco Meola (mmeola@imm.uzh.ch)
+* Updated/extended by Philipp v. Bieberstein
 
 Institution: Applied Microbiology Research - Institute of Medical Microbiology - University of Zurich (UZH)
 
@@ -22,7 +23,7 @@ The steps that are included are:
 	* Quast (5.0.2)
 	* GenomeQC - BUSCO (5.3.2)
 * Taxonomy
-	* GTDB-tk1 (2.1.0)
+	* GTDB-tk1 (2.3.2)
 	* Metaphlan4 (4.1.0)
 * Genome annotation
 	* Prokka (1.14.6)
@@ -104,7 +105,8 @@ Provide the absolute path to where the **samplesheet** and the **data** is locat
 Example command for analysing the raw paired-end data of run500:  
 
 ``` 
-sbatch --job-name=IMMENSE_run500 /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh raw_PE run500 /scicore/home/egliadr/GROUP/runQC/run500/demultiplexing
+bash /home/progal/software/IMMENSE_phil_dev/run_IMMENSE.sh -j IMMENSE_run500 -t raw_PE -r run500 -i /scicore/home/egliadr/GROUP/runQC/run500/demultiplexing
+
 ```
 **Note**: There must be no quotes around the paths.
 
@@ -127,7 +129,8 @@ or for a single species
 Example command for analysing the paired-end reads of run500:  
 
 ``` 
-sbatch --job-name=IMMENSE_run500 /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh fq_PE run500 /scicore/home/egliadr/GROUP/runQC/run500/reads
+bash /home/progal/software/IMMENSE_phil_dev/run_IMMENSE.sh -j IMMENSE_run500 -t fq_PE -r run500 -i /scicore/home/egliadr/GROUP/runQC/run500/reads
+
 ``` 
 **Note**: There must be no quotes around the paths.
 
@@ -139,14 +142,14 @@ For **one single sample** add ```"--single_sample <sample_id>"``` at the end of 
 
 Example to run one **single sample**: 
 ``` 
-sbatch --job-name=IMMENSE_singleSample /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh fq_PE run_singleSample /scicore/home/egliadr/GROUP/runQC/IMMENSETestHSS/reads/pseaer "--single_sample 401915-22"
+bash /home/progal/software/IMMENSE_phil_dev/run_IMMENSE.sh -j IMMENSE_singleSample -t fq_PE -r run_singleSample -i /scicore/home/egliadr/GROUP/runQC/IMMENSETestHSS/reads/pseaer "--single_sample 401915-22"
 ``` 
 
 For **several individual samples** add ```"--single_sample {sample_id_1,sample_id_2,...,sample_id_X}"``` at the end of the sbatch command (i.e. **"additional_options"**).
 
 Example to run **three samples**:
 ``` 
-sbatch --job-name=IMMENSE_threeSamples /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh fq_PE run_threeSamples /scicore/home/egliadr/GROUP/runQC/IMMENSETestHSS/reads "--single_sample {401915-22,502637-1-21,202315-22}"
+bash /home/progal/software/IMMENSE_phil_dev/run_IMMENSE.sh -j IMMENSE_threeSamples -t fq_PE -r run_threeSamples -i /scicore/home/egliadr/GROUP/runQC/IMMENSETestHSS/reads "--single_sample {401915-22,502637-1-21,202315-22}"
 ``` 
 ## Running the pipeline on fasta files
 
@@ -155,7 +158,7 @@ To run the pipeline on fasta files provide a directory with the genome files to 
 The **input_type** to be used is **fasta**.
 
 ``` 
-sbatch --job-name=IMMENSE_genomes /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh fasta run_genomes /S3IT/home/egliadr/GROUP/Michele/example_genomes
+bash /home/progal/software/IMMENSE_phil_dev/run_IMMENSE.sh -j IMMENSE_genomes -t fasta -r run_genomes -i /S3IT/home/egliadr/GROUP/Michele/example_genomes
 ``` 
 
 ## Email-notification
@@ -164,13 +167,14 @@ To receive an email notification when the pipeline is finished including multiqc
 ```"--email <email_address1,email_address2,...>"``` at the end of the sbatch command (i.e. **"additional_options"**).
 
 ``` 
-sbatch --job-name=IMMENSE_run500 /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh raw_PE run500 /S3IT/home/egliadr/GROUP/runQC/run500/demultiplexing "--email michele.leemann@unibas.ch"
+bash /home/progal/software/IMMENSE_phil_dev/run_IMMENSE.sh -j IMMENSE_run500 -t raw_PE -r run500 -i /scicore/home/egliadr/GROUP/runQC/run500/demultiplexing "--email username@imm.uzh.ch"
+
 ```
 
 You can also use it in combination with the single_sample option:
 
 ``` 
-sbatch --job-name=IMMENSE_run500 /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh fq_PE run_threeSamples /S3IT/home/egliadr/GROUP/runQC/IMMENSETestHSS/reads "--single_sample {sample_id_1,sample_id_2,...,sample_id_X} --email michele.leemann@unibas.ch"
+bash /home/progal/software/IMMENSE_phil_dev/run_IMMENSE.sh -j IMMENSE_run500 -t raw_PE -r run500 -i /scicore/home/egliadr/GROUP/runQC/run500/demultiplexing "--single_sample {sample_id_1,sample_id_2,...,sample_id_X} --email username@imm.uzh.ch"
 ``` 
 
 ## Change parameters for Trimmomatic
@@ -191,7 +195,7 @@ Both, SLIDINGWINDOW and MINLEN need to be specified, but also additional trimmom
 Full command:
 
 ``` 
-sbatch --job-name=IMMENSE_run500 /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh raw_PE run500 /S3IT/home/egliadr/GROUP/runQC/run500/demultiplexing "--trimmomatic_PE_extra SLIDINGWINDOW:4:12 MINLEN:80"
+bash /home/progal/software/IMMENSE_phil_dev/run_IMMENSE.sh -j IMMENSE_run500 -t raw_PE -r run500 -i /scicore/home/egliadr/GROUP/runQC/run500/demultiplexing "--trimmomatic_PE_extra SLIDINGWINDOW:4:12 MINLEN:80"
 ```
 
 ## Troubleshooting
@@ -231,7 +235,8 @@ If the pipeline does not finish properly due to failed processes that leave inpu
 With the following workaround the creation of the **BUSCO plot, the MultiQC report**, and the **quality file** can be triggered for the finished samples. 
 
 ```
-sbatch pipeline_completion.sh <run_id>
+# DEPRECIATED
+#sbatch pipeline_completion.sh <run_id>
 ```
 
 The **run_id** needs to be same as used for the run that did not finish. 
@@ -254,7 +259,7 @@ Get all the required singularity images by starting an interactive S3IT session 
 ```
 srun --pty -n 1 -c 6 --time=01:00:00 --mem=16G bash -l
 ```
-Then loading singularity and using the script in the repo to load all the container images to the location where they should be saved.
+Then loading singularity and using the script in the repo to load all the container images to the location where they should be saved. The script pull the target location from the `params.config` file
 
 ```
 module load singularityce
