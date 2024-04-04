@@ -330,13 +330,15 @@ workflow {
   }
 }
 
-workflow.onComplete {
-    println ""
-    println "Pipeline finished!"
-    println ""
-    println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
-    println ""
-}
+// workflow.onComplete {
+//     println ""
+//     println "Pipeline finished!"
+//     println ""
+//     println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+//     println ""
+
+
+// }
 
 workflow.onError {
     println ""
@@ -349,39 +351,85 @@ workflow.onError {
 * Mail notification
 */
 
-if (params.email == "yourmail@yourdomain" || params.email == "") {
-    log.info 'Skipping the email\n'
-}
-else {
-    log.info "Sending the email to ${params.email}\n"
+// if (params.email == "yourmail@yourdomain" || params.email == "") {
+//     log.info 'Skipping the email\n'
+// }
+// else {
+//     log.info "Sending the email to ${params.email}\n"
 
-    workflow.onComplete {
+//     workflow.onComplete {
 
-    def msg = """\
-        IMMENSE ${params.run_id} execution summary
-        ---------------------------
-        Completed at: ${workflow.complete}
-        Duration    : ${workflow.duration}
-        Success     : ${workflow.success}
-        workDir     : ${workflow.launchDir}
-        exit status : ${workflow.exitStatus}
-        Error report: ${workflow.errorReport ?: '-'}
-        """
-        .stripIndent()
+//     def msg = """\
+//         IMMENSE ${params.run_id} execution summary
+//         ---------------------------
+//         Completed at: ${workflow.complete}
+//         Duration    : ${workflow.duration}
+//         Success     : ${workflow.success}
+//         workDir     : ${workflow.launchDir}
+//         exit status : ${workflow.exitStatus}
+//         Error report: ${workflow.errorReport ?: '-'}
+//         """
+//         .stripIndent()
 
-    quality_tab = file("${params.run_id}_transfer_result/${params.run_id}_quality.tab")
-    mulQC_ass = file("${params.run_id}_transfer_result/${params.run_id}_multiqc_assembly_report.html")
-    mulQC_reads = file("demultiplexing/multiqc/${params.run_id}_multiqc_reads.html")
-    dashb = file("${params.run_id}_transfer_result/QC_dashboard.html")
+//     quality_tab = file("${params.run_id}_transfer_result/${params.run_id}_quality.tab")
+//     mulQC_ass = file("${params.run_id}_transfer_result/${params.run_id}_multiqc_assembly.html")
+//     mulQC_reads = file("${params.run_id}_transfer_result/${params.run_id}_multiqc_trimmed.html")
+//     dashb = file("${params.run_id}_transfer_result/QC_dashboard.html")
 
-        sendMail{
-          to "${params.email}"
-          subject "IMMENSE ${params.run_id} complete"
-          body msg
-          if (quality_tab.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_quality.tab" }
-          if (dashb.exists()) { attach "${params.run_id}_transfer_result/QC_dashboard.html" }
-          if (mulQC_ass.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_multiqc_assembly_report.html", fileName: "multiqc_report_assembly.html" }
-          if (mulQC_reads.exists()) { attach "demultiplexing/multiqc/${params.run_id}_multiqc_reads.html", fileName: "multiqc_report_reads.html" }
+//         sendMail{
+//           to "${params.email}"
+//           subject "IMMENSE ${params.run_id} complete"
+//           body msg
+//           if (quality_tab.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_quality.tab" }
+//           if (dashb.exists()) { attach "${params.run_id}_transfer_result/QC_dashboard.html" }
+//           if (mulQC_ass.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_multiqc_assembly.html", fileName: "multiqc_report_assembly.html" }
+//           if (mulQC_reads.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_multiqc_trimmed.html", fileName: "multiqc_report_reads.html" }
+//         }
+//     }
+// }
+
+workflow.onComplete {
+    println ""
+    println "Pipeline finished!"
+    println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+    println ""
+
+    if (params.email != "yourmail@yourdomain" && params.email != "") {
+        log.info "Preparing to send completion email to ${params.email}"
+
+        def msg = """\
+            IMMENSE ${params.run_id} execution summary
+            ---------------------------
+            Completed at: ${workflow.complete}
+            Duration    : ${workflow.duration}
+            Success     : ${workflow.success}
+            workDir     : ${workflow.launchDir}
+            exit status : ${workflow.exitStatus}
+            Error report: ${workflow.errorReport ?: '-'}
+            """.stripIndent()
+
+        quality_tab = file("${params.run_id}_transfer_result/${params.run_id}_quality.tab")
+        //dashb = file("${params.run_id}_transfer_result/QC_dashboard.html")
+        mulQC_ass = file("${params.run_id}_transfer_result/${params.run_id}_multiqc_assembly.html")
+        //mulQC_reads = file("${params.run_id}_transfer_result/${params.run_id}_multiqc_trimmed.html")
+        
+
+        try {
+            sendMail{
+                to "${params.email}"
+                subject "IMMENSE ${params.run_id} complete"
+                
+                if (quality_tab.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_quality.tab" }
+                //if (dashb.exists()) { attach "${params.run_id}_transfer_result/QC_dashboard.html" }
+                if (mulQC_ass.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_multiqc_assembly.html", fileName: "multiqc_report_assembly.html" }
+                //if (mulQC_reads.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_multiqc_trimmed.html", fileName: "multiqc_report_reads.html" }
+
+                body msg
         }
+        } catch (Exception e) {
+            log.error "Failed to send completion email: ${e.message}"
+        }
+    } else {
+        log.info 'Skipping the email'
     }
 }

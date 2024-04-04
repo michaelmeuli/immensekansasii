@@ -71,7 +71,7 @@ process multiqc_bcl {
     output:
     path "${params.run_id}_multiqc_bcl.html", emit: multiqc_bcl_report
     path "${params.run_id}_multiqc_bcl_data/*"
-    path "multiqc_version.txt", emit: version
+    path "${params.run_id}_multiqc_bcl_data/multiqc_version.txt", emit: version
 
     script:
     """
@@ -79,14 +79,14 @@ process multiqc_bcl {
 
     multiqc --version > multiqc_vers.txt
     echo ${params.CONTAINER} > multiqc_singularity.txt
-    cat multiqc_vers.txt multiqc_singularity.txt | tr "\n" "\t" > multiqc_version.txt
+    cat multiqc_vers.txt multiqc_singularity.txt | tr "\n" "\t" > ${params.run_id}_multiqc_bcl_data/multiqc_version.txt
     """
 }
 
 
 process multiqc_raw_fastqc {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/00_fastqc_raw_reads", mode: 'copy')
+    publishDir("assembly/00_fastqc_raw_reads", mode: 'copy')
     publishDir("${params.run_id}_transfer_result", pattern: '*_multiqc_fastq.html', mode: 'copy')
     tag { "${params.run_id}" }
     container params.CONTAINER
@@ -112,7 +112,7 @@ process multiqc_raw_fastqc {
 
 process multiqc_trimmed_fastqc {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/01_fastqc_after_trimming", mode: 'copy')
+    publishDir("assembly/01_fastqc_after_trimming", mode: 'copy')
     publishDir("${params.run_id}_transfer_result", pattern: '*_multiqc_trimmed.html', mode: 'copy')
     tag { "${params.run_id}" }
     container params.CONTAINER
@@ -138,8 +138,8 @@ process multiqc_trimmed_fastqc {
 
 process multiqc_assembly {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/multiqc", mode: 'copy')
-    publishDir("${params.run_id}_transfer_result", pattern: '*_multiqc_assembly_report.html', mode: 'copy')
+    publishDir("assembly/02_multiqc_assembly", mode: 'copy')
+    publishDir("${params.run_id}_transfer_result", pattern: '*_multiqc_assembly.html', mode: 'copy')
     tag { "${params.run_id}" }
     container params.CONTAINER
 

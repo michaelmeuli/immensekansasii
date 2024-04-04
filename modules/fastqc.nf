@@ -9,7 +9,7 @@ params.OUTPUT = "fastqc_output"
 
 process fastqc_raw_reads {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/00_fastqc_raw_reads/fastqc", mode: 'copy')
+    publishDir("assembly/00_fastqc_raw_reads/fastqc", mode: 'copy')
     tag { sample_id }
     container params.CONTAINER
 
@@ -32,7 +32,7 @@ process fastqc_raw_reads {
 
 process fastqc_trimmed_reads {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/01_fastqc_after_trimming/fastqc", mode: 'copy')
+    publishDir("assembly/01_fastqc_after_trimming/fastqc", mode: 'copy')
     tag { sample_id }
     container params.CONTAINER
 
