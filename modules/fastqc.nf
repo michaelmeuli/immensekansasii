@@ -14,7 +14,7 @@ process fastqc_raw_reads {
     container params.CONTAINER
 
     input:
-    tuple val (sample_id), path (reads)
+    path (reads)
 
     output:
     path("*_fastqc*"), emit: output
@@ -22,7 +22,7 @@ process fastqc_raw_reads {
 
     script:
     """
-    fastqc ${reads}
+    fastqc -t 4 ${reads}
 
     fastqc --version > fastqc_vers.txt
     echo ${params.CONTAINER} > fastqc_singularity.txt
@@ -37,7 +37,8 @@ process fastqc_trimmed_reads {
     container params.CONTAINER
 
     input:
-    tuple val (sample_id), path (read1), path (read2)
+    //tuple val (sample_id), path (read1), path (read2)
+    path (reads)
 
     output:
     path("*_fastqc*"), emit: output
@@ -45,7 +46,7 @@ process fastqc_trimmed_reads {
 
     script:
     """
-    fastqc ${read1} ${read2}
+    fastqc -t 4 ${reads}
 
     fastqc --version > fastqc_vers.txt
     echo ${params.CONTAINER} > fastqc_singularity.txt
