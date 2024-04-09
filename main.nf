@@ -173,7 +173,7 @@ workflow {
   }
   
   // Running fastq on fastq reads before trimming and generating multiQC report
-  fastqc_raw_reads_out = fastqc_raw_reads(reads_for_trimming.other.map { sample_id, reads -> return reads }.collect()) // extract only the reads without sample_id
+  fastqc_raw_reads_out = fastqc_raw_reads(reads_for_trimming.other) // extract only the reads without sample_id
   multiqc_raw_fastqc_out = multiqc_raw_fastqc(fastqc_raw_reads_out.output.collect())
   
   if (params.SE == "NO") {  
@@ -183,7 +183,7 @@ workflow {
     }
   
   // Run fastqc on trimmed reads & create multiQC report
-  fastqc_trimmed_reads_out = fastqc_trimmed_reads(trimm_out.trimmed_reads.map { sample_id, reads1, reads2 -> return [reads1, reads2] }.collect()) // extract only the reads without sample_id
+  fastqc_trimmed_reads_out = fastqc_trimmed_reads(trimm_out.trimmed_reads) // extract only the reads without sample_id
   multiqc_trimmed_fastqc_out = multiqc_trimmed_fastqc(fastqc_trimmed_reads_out.output.collect(), trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect())
 
   // Checking that input files are large enough (otherwise processes fail)
