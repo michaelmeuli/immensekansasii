@@ -226,30 +226,22 @@ The **.command.sh** file shows the command that was run in the process, and the 
 
 Sometimes the .command.log or the .command.out file can give further information about the problem. 
 
-### Pipeline does not finish / Missing quality files
-
-If the pipeline does not finish properly due to failed processes that leave input channels open, it can happen that the **BUSCO plot, the MultiQC report for the assembly, the quality file** and the **software version file** are not produced. 
-
-[<img src="pics/missing_jobs.png" width="500" />](pics/missing_jobs.png)
-
-With the following workaround the creation of the **BUSCO plot, the MultiQC report**, and the **quality file** can be triggered for the finished samples. 
-
-```
-# DEPRECIATED
-#sbatch pipeline_completion.sh <run_id>
-```
-
-The **run_id** needs to be same as used for the run that did not finish. 
-
-For the sample(s) that failed, find out what the problem was and rerun it in single_sample mode with a different **run_id**.
-
 # Preparations for usage on other infrastructure
 
-## Requirements
-
-Install Nextflow either by using Bioconda or curl (for instructions see https://www.nextflow.io/). The pipeline was tested with Nextflow version 21.10.0.
+### Install Dependencies
 
 Clone IMMENSE repository.
+
+```
+git clone https://gitlab.uzh.ch/appliedmicrobiologyresearch/amr_research/immense.git
+```
+
+Install [minionda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) or Mamba. Then the `run_IMMENSE.sh` script automatically checks if you have all dependencies installed and if not installs them based on `environment.yml`. Alternatively, manually use the `environment.yml` file to install the dependencies.
+
+```
+cd path/to/IMMENSE_repo
+conda env update -n env_IMMENSE --file ./environment.yml
+```
 
 ### Prepare Singular containers
 Get all the required singularity images by starting an interactive S3IT session on SLURM: (login node will run out of memory)
@@ -259,16 +251,16 @@ Get all the required singularity images by starting an interactive S3IT session 
 ```
 srun --pty -n 1 -c 6 --time=01:00:00 --mem=16G bash -l
 ```
-Then loading singularity and using the script in the repo to load all the container images to the location where they should be saved. The script pull the target location from the `params.config` file
+Then loading singularity and using the script in the repo to load all the container images to the location where they should be saved. The script pulls the target location from the `params.config` file
 
 ```
 module load singularityce
 
-# Navigate to the pipeline repository and the contained Singularity directory
-cd path/to/IMMENSE_repo/Singularity
+# Navigate to the pipeline repository
+cd path/to/IMMENSE_repo
 
 # Then run the script to pull all the container images to the directory specified in nextflow.config
-bash pull_singularity_img.sh
+bash Singularity/pull_singularity_img.sh
 ```
 
 ### Prepare required Databases
@@ -282,7 +274,6 @@ wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJun23_CHO
 wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJun23_CHOCOPhlAnSGB_202307_marker_info.txt.bz2
 wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJun23_CHOCOPhlAnSGB_202307_species.txt.bz2
 # Unpack the database:
-
 
 ```
 
@@ -309,12 +300,12 @@ The following databases/files are required:
 
 ## Launching the pipeline
 
-For S3IT the launching of the pipeline was defined in the run_IMMENSE.sh (or in the old version run_pipeline.sh respectively). 
+For S3IT the launching of the pipeline was defined in the run_IMMENSE.sh. 
 
-The general command to launch the pipeline is: 
+The general command to launch the pipeline locally is: 
 
 ```
-nextflow run /path/to/IMMENSE/main.nf -with-singularity -with-report -profile <profile-name> --run_id <run_id> --input_type <input_type> --input <input_dir> --SE YES/NO
+nextflow run /path/to/IMMENSE/main.nf -with-singularity -with-report -with-trace -with-timeline -profile <profile-name> --run_id <run_id> --input_type <input_type> --input <input_dir> --SE YES/NO
 ```
 
 ```
@@ -326,4 +317,21 @@ nextflow run /path/to/IMMENSE/main.nf -with-singularity -with-report -profile <p
 --SE		Single-end reads: YES or NO
 ```
 
-The **additional options** as described for the usage on S3IT can be added in the same manner to the command and all parameters defined in the params.config file can be overwritten on the command line with ```--<parames-name> <params-value>```.
+The **additional options** as described for the usage on S3IT can be added in the same manner to the command and all parameters defined in the params.config file can be overwritten on the command line with `--<parames-name> <params-value>`.
+
+### Pipeline does not finish / Missing quality files (DEPRECAITED)
+
+If the pipeline does not finish properly due to failed processes that leave input channels open, it can happen that the **BUSCO plot, the MultiQC report for the assembly, the quality file** and the **software version file** are not produced. 
+
+[<img src="pics/missing_jobs.png" width="500" />](pics/missing_jobs.png)
+
+With the following workaround the creation of the **BUSCO plot, the MultiQC report**, and the **quality file** can be triggered for the finished samples. 
+
+```
+# DEPRECIATED
+#sbatch pipeline_completion.sh <run_id>
+```
+
+The **run_id** needs to be same as used for the run that did not finish. 
+
+For the sample(s) that failed, find out what the problem was and rerun it in single_sample mode with a different **run_id**.
