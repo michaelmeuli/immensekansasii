@@ -143,7 +143,7 @@ else
     echo ""
     conda env create -f $MAIN_DIR/environment.yml
     echo "Done installing Conda environment."
-    echo "Please start a new bash terminal session to update paths, then start pipeline again."
+    echo "Please restart pipeline again."
     exit 1
 fi
 
@@ -154,6 +154,12 @@ echo "==============================="
 #########################################################
 ## Now the conda environment exists and is loadable
 #########################################################
+
+# For future if we need current edge version 24.02.0
+# This will automatically install this version before running the pipeline (if needed)
+#TODO: Remove this once conda can install this version
+#NXF_VER=24.02.0-edge 
+
 
 #########################################################
 ## Checking input arguments:

@@ -2,11 +2,10 @@
 * create_links module
 */
 
-
 process link_reads {
   // Move all fastq.gz file into a nicely organized 'reads' directory
   tag { "${params.run_id}" }
-  containerOptions "-B ${params.input}, -B $launchDir"
+  //containerOptions "-B ${params.input}, -B $launchDir"
 
   input:
   path (demultiplex_ok)
@@ -39,9 +38,8 @@ process link_reads {
 
 
 process links_for_transfer {
-
   tag { sample_id }
-  containerOptions "-B ${params.input}, -B $launchDir"
+  //containerOptions "-B ${params.input}, -B $launchDir"
 
   input:
   tuple val (sample_id), path (one_contig)
@@ -51,11 +49,19 @@ process links_for_transfer {
   script:
   """
   #!/bin/bash
-
+  # To find species name: search for the input reads, the parent folder of the reads will be the species name
   species=\$(find ${params.input} -name ${sample_id}*.fastq.gz | awk -F/ '{print \$(NF-1)}' | uniq)
   mkdir -p $PWD/${params.run_id}_transfer_result/genomes/\$species $PWD/${params.run_id}_transfer_result/reads/\$species
   ln -sf $PWD/assembly/results/${sample_id}/2_annotation/${sample_id}.fna $PWD/${params.run_id}_transfer_result/genomes/\$species/
   #ln -sf $PWD/assembly/results/${sample_id}/3_quality/remapping/${sample_id}_concatenated_contigs.fna $PWD/${params.run_id}_transfer_result/genomes_one_contig/\$species/
-  if [[ ${params.input_type} != "fasta" ]]; then if [[ -d $PWD/reads ]]; then ln -sf $PWD/reads/\$species/${sample_id}* $PWD/${params.run_id}_transfer_result/reads/\$species/; else ln -sf ${params.input}/**${sample_id}* $PWD/${params.run_id}_transfer_result/reads/\$species/; fi; fi
+  if [[ ${params.input_type} != "fasta" ]]; 
+	  then if [[ -d $PWD/reads ]]; 
+      then ln -sf $PWD/reads/\$species/${sample_id}* $PWD/${params.run_id}_transfer_result/reads/\$species/; 
+      else 
+        shopt -s globstar; 
+        ln -sf ${params.input}/**/*${sample_id}* $PWD/${params.run_id}_transfer_result/reads/\$species/; 
+        shopt -u globstar;
+    fi; 
+  fi
   """
 }

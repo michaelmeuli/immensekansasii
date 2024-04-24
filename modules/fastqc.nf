@@ -17,13 +17,14 @@ process fastqc_raw_reads {
     tuple val(sample_id), file(fastqs)
 
     output:
-    path("*_fastqc*"), emit: output
+    path("*_fastqc*"), emit: output, optional: true
     path "fastqc_version.txt", emit: version
 
     script:
     """
-    fastqc -t 2 ${fastqs.join(' ')}
-
+    # fastqc -t 2 ${fastqs.join(' ')}
+    # Below we try to run fastqc but if it doesn't work (ie file corrupted), write failed into log. Trimmomatic might still work
+    fastqc -t 2 ${fastqs.join(' ')} && echo "Success" || echo "Failed to run fastqc completely" > fastqc_error.log
     fastqc --version > fastqc_vers.txt
     echo ${params.CONTAINER} > fastqc_singularity.txt
     cat fastqc_vers.txt fastqc_singularity.txt | tr "\n" "\t" > fastqc_version.txt

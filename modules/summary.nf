@@ -5,10 +5,11 @@
 params.OUTPUT = "summary"
 
 process summary_sample {
-    // publishDir(params.OUTPUT, mode: 'copy')
     publishDir("assembly/results/${sample_id}/3_quality/summary", mode: 'copy')
+    // execute on the main node (no special software needed so no need to submit a job and use a container)
     tag { sample_id }
-    containerOptions "-B ${params.input}"
+    //containerOptions "-B ${params.input}"
+    
 
     input:
     tuple val (sample_id), val (trimm_out_passed_reads_percentage), val (trimm_out_passed_reads_number), val (coverage_read_depth), val (coverage_alt_bases), val (insertsize_insert_size),  val (assembly_stats_number_contigs), val (assembly_stats_total_length), val (assembly_stats_n50), val (assembly_stats_gc_percent), val (typ16S_taxa), val (typ16S_aln_length), val (typ16S_aln_identity), val (metaphlan_out_taxa),  val (metaphlan_out_purity), val (rmlst_out_taxa), val (rmlst_out_best_rST), val (rmlst_out_alleles_missing), val (busco_out_complete_busco), val (busco_out_busco_groups), val (busco_out_busco_lineage), val (gtdb_out_species), val (gtdb_out_ani_ref), val (gtdb_out_ani_ani), val (gtdb_out_ani_af), val (gtdb_out_placement_ref), val (gtdb_out_gtdb_notes), val (qc_size_warning)
@@ -26,7 +27,9 @@ process summary_sample {
     if [[ -d $PWD/reads ]]; then find $PWD/reads -name ${sample_id}*.fastq.gz | awk -F/ '{print \$(NF-1)}' | uniq > ${sample_id}_expected_species.txt; else find ${params.input} -name ${sample_id}*.fastq.gz | awk -F/ '{print \$(NF-1)}' | uniq > ${sample_id}_expected_species.txt; fi
     EXPECTED_SPECIES=`cat ${sample_id}_expected_species.txt`
 
-    # Writing the variables passed as input to the sample specific file:
+    # Writing the variables passed as input to the sample specific file
+    # These sample-specific summaries are then merged in the merge_summaries process
+    
     echo "${sample_id}" > ${sample_id}_tmp.tab
     # This is an environmental variable in this script, not an input like the others
     echo "\${EXPECTED_SPECIES}" >> ${sample_id}_tmp.tab
@@ -68,9 +71,9 @@ process summary_sample {
 
 
 process merge_summaries {
-    // publishDir(params.OUTPUT, mode: 'copy')
     publishDir("${params.run_id}_transfer_result", mode: 'copy')
     tag { "${params.run_id}" }
+    // execute on the main node (no special software needed so no need to submit a job and use a container)
 
     input:
     path (sample_quality)

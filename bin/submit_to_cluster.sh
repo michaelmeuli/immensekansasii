@@ -1,8 +1,9 @@
 #!/bin/bash
 
-#SBATCH --time=1-00:00:00
-#SBATCH --mem=2G
-#SBATCH --cpus-per-task=1
+#SBATCH --time=23:00:00
+#SBATCH --mem=4G
+#SBATCH --cpus-per-task=2
+#SBATCH --ntasks=1
 #SBATCH --job-name=IMMENSE
 
 export SINGULARITY_BINDPATH=/scratch,/data,/home/$USER,/shares
@@ -11,7 +12,7 @@ export TMPDIR="/tmp"
 
 module purge
 module load mamba
-module load singularityce/3.10.2
+module load singularityce/4.1.0
 
 source activate env_immense
 
@@ -25,7 +26,9 @@ RUN_ID=$4
 INPUT_DIR=$5
 ADDITIONAL_ARGS=$6
 
-nextflow run $MAIN_DIR/main.nf \
+
+#nextflow run $MAIN_DIR/main.nf \
+nextflow -trace nextflow.executor run $MAIN_DIR/main.nf \
           -with-singularity -with-report -profile slurm \
           -with-trace \
           -with-timeline \
@@ -36,6 +39,7 @@ nextflow run $MAIN_DIR/main.nf \
           --SE "$SINGLE_END" \
           $ADDITIONAL_ARGS
 
+#-ansi-log false \ # This would keep the slurm output log a bit cleaner but gives less info.
 
 module purge
 module load amd
@@ -49,7 +53,7 @@ mv resistances.txt $launchDir/${RUN_ID}_transfer_result
 
 cd $launchDir/${RUN_ID}_transfer_result/
 cp $MAIN_DIR/bin/Dashboard_tabset.Rmd .
-module load singularityce/3.10.2
+module load singularityce/4.1.0
 source activate env_immense
 
 # Use R to render this dashboard

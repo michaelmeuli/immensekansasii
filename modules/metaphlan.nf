@@ -14,10 +14,11 @@ process metaphlan4 {
     publishDir("assembly/results/${sample_id}/3_quality/Metaphlan4", mode: 'copy')
     tag { sample_id }
     container params.CONTAINER
-    containerOptions "-B ${params.metaphlan_db}"
+    // containerOptions "-B ${params.metaphlan_db}"
 
     input:
     tuple val (sample_id), path (fastq_r1), path (fastq_r2)
+    path metaphlan_database
 
     output:
     tuple val (sample_id), path ("${sample_id}_profiled_metagenome.txt"), emit: profile
@@ -31,7 +32,7 @@ process metaphlan4 {
 
     metaphlan ${fastq_r1},${fastq_r2} --input_type fastq --nproc ${task.cpus} \
               --index ${params.metaphlan_db_name} \
-              --bowtie2db ${params.metaphlan_db} \
+              --bowtie2db ${metaphlan_database} \
               --bowtie2out ${sample_id}.bowtie2.bz2 \
               -o ${sample_id}_profiled_metagenome.txt \
               > ${sample_id}.error.txt
@@ -53,10 +54,11 @@ process metaphlan4SE {
     publishDir("assembly/results/${sample_id}/3_quality/Metaphlan4", mode: 'copy')
     tag { sample_id }
     container params.CONTAINER
-    containerOptions "-B ${params.metaphlan_db}"
+    // containerOptions "-B ${params.metaphlan_db}"
 
     input:
     tuple val (sample_id), path (fastq)
+    path metaphlan_database
 
     output:
     tuple val (sample_id), path ("${sample_id}_profiled_metagenome.txt"), emit: profile
@@ -69,12 +71,12 @@ process metaphlan4SE {
     """
     bowtie2 --sam-no-hd --sam-no-sq --no-unal --very-sensitive  \
             -S ${sample_id}_alignment.sam \
-            -x ${params.metaphlan_db}/${params.metaphlan_db_name} \
+            -x ${metaphlan_database}/${params.metaphlan_db_name} \
             -U ${fastq}
 
     metaphlan ${sample_id}_alignment.sam --input_type sam --nproc ${task.cpus} \
               --index ${params.metaphlan_db_name} \
-              --bowtie2db ${params.metaphlan_db} \
+              --bowtie2db ${metaphlan_database} \
               > ${sample_id}_profiled_metagenome.txt \
               2> ${sample_id}.error.txt
 
