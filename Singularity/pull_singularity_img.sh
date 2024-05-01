@@ -18,7 +18,6 @@ singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-multiqc-1.1
 singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-pilon-1.24--hdfd78af_0.img docker://quay.io/biocontainers/pilon:1.24--hdfd78af_0
 singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-prokka-1.14.6--pl5262hdfd78af_1.img docker://quay.io/biocontainers/prokka:1.14.6--pl5262hdfd78af_1
 singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-quast-5.0.2--py37pl5262h190e900_4.img docker://quay.io/biocontainers/quast:5.0.2--py37pl5262h190e900_4
-#singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-samtools-1.13--h8c37831_0.img docker://quay.io/biocontainers/samtools:1.13--h8c37831_0
 singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-samtools-1.19.2--h50ea8bc_1.img docker://quay.io/biocontainers/samtools:1.19.2--h50ea8bc_1
 singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-trimmomatic-0.39--hdfd78af_2.img docker://quay.io/biocontainers/trimmomatic:0.39--hdfd78af_2
 singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-unicycler-0.4.8--py39h98c8e45_5.img docker://quay.io/biocontainers/unicycler:0.4.8--py39h98c8e45_5

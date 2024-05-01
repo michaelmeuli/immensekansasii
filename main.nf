@@ -50,7 +50,7 @@ else if (params.input_type == "fastq") {
       Channel
         .fromFilePairs( "${params.input}/${params.single_sample}**_{R1,R2,1,2}.fastq*" )
         .ifEmpty { error "Cannot find any reads matching: ${params.input}/${params.single_sample}**_{R1,R2,1,2}.fastq.gz" }
-        .view { "Identified files: $it" }
+        //.view { "Identified files: $it" }
         .branch{
           sarscov2: it =~ /sarscov-2/
           undet: it =~ /Undetermined/
@@ -62,7 +62,7 @@ else if (params.input_type == "fastq") {
       Channel
           .fromPath( "${params.input}/${params.single_sample}**{_R1,_1,}.fastq*")
           .filter{ it =~/^(?!.*(_raw_reads))/ }
-          .view { "Identified files: $it" }
+          //.view { "Identified files: $it" }
           .ifEmpty { error "Cannot find any reads matching: ${params.input}/${params.single_sample}**{_R1,_1,}.fastq*" }
           .map { file -> tuple(file.simpleName.replaceAll(/_R1|_1$/,''), file) }
           .branch{
@@ -73,7 +73,6 @@ else if (params.input_type == "fastq") {
 }
 
 else if (params.input_type == "fasta") {
-  //TODO: check if it makes sense that fromFilePairs is used for fasta files
   Channel
       .fromFilePairs( "${params.input}/*.{fasta,fna}", size: -1 )
       .ifEmpty { error "Cannot find any fasta matching: ${params.input}/*.{fasta,fna}" }

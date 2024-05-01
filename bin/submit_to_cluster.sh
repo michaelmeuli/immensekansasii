@@ -29,9 +29,7 @@ ADDITIONAL_ARGS=$6
 
 #nextflow run $MAIN_DIR/main.nf \
 nextflow -trace nextflow.executor run $MAIN_DIR/main.nf \
-          -with-singularity -with-report -profile slurm \
-          -with-trace \
-          -with-timeline \
+          -profile s3it \
           -resume \
           --run_id "$RUN_ID" \
           --input_type "$INPUT_TYPE" \

@@ -19,7 +19,6 @@ process generate_resistance_table {
 
     script:
     """
-    #cd ${params.output_dir}/${sample_id}/4_resistance_virulence
     resistance_table.py --sample_id ${sample_id}
     
     mv resistances.tsv ${sample_id}_resistances.tsv
