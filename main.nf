@@ -16,11 +16,13 @@ may be ripe for automation.
 — Doug McIlroy
 
 =============================================
-run ID                 : ${params.run_id}
-input type             : ${params.input_type}
-input directory        : ${params.input}
-single_sample          : ${params.single_sample}
-single-end reads       : ${params.SE}
+run ID                     : ${params.run_id}
+input type                 : ${params.input_type}
+input directory            : ${params.input}
+single_sample              : ${params.single_sample}
+single-end reads           : ${params.SE}
+singularity_container_cache: ${params.singularity_container_cache}
+GTDB Database              : ${params.gtdb_db}
 """
 
 /*
@@ -45,62 +47,29 @@ else if (params.input_type == "fastq") {
 
   if (params.SE == "NO") {
 
-    if (params.single_sample == "-") {
-
       Channel
-        .fromFilePairs( "${params.input}/**_{R1,R2,1,2}.fastq*" )
-        .ifEmpty { error "Cannot find any reads matching: ${params.input}/**_{R1,R2,1,2}.fastq.gz" }
+        .fromFilePairs( "${params.input}/${params.single_sample}**_{R1,R2,1,2}.fastq*" )
+        .ifEmpty { error "Cannot find any reads matching: ${params.input}/${params.single_sample}**_{R1,R2,1,2}.fastq.gz" }
+        .view { "Identified files: $it" }
         .branch{
           sarscov2: it =~ /sarscov-2/
           undet: it =~ /Undetermined/
           other: true}.set{ reads_for_trimming }
-    }
-
-    //TODO: make this ELSE statement obsolete by making params.single_sample default to ""
-    else {  
-
-      Channel
-        .fromPath( "${params.input}/**${params.single_sample}_{R1,R2,1,2}.fastq*" )
-        .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}_{R1,R2,1,2}.fastq*" }
-        .map { file -> tuple(file.simpleName.replaceAll(/_R1|_R2|_1|_2$/,''), file) }
-        .groupTuple(sort:true)
-        .branch{
-          sarscov2: it =~ /sarscov-2/
-          undet: it =~ /Undetermined/
-          other: true}.set{ reads_for_trimming }
-    }
   }
 
   else if (params.SE == "YES") {
 
-    if (params.single_sample == "-") {
-
       Channel
-          .fromPath( "${params.input}/**{_R1,_1,}.fastq*")
+          .fromPath( "${params.input}/${params.single_sample}**{_R1,_1,}.fastq*")
           .filter{ it =~/^(?!.*(_raw_reads))/ }
-          .ifEmpty { error "Cannot find any reads matching: ${params.input}**{_R1,_1,}.fastq*" }
+          .view { "Identified files: $it" }
+          .ifEmpty { error "Cannot find any reads matching: ${params.input}/${params.single_sample}**{_R1,_1,}.fastq*" }
           .map { file -> tuple(file.simpleName.replaceAll(/_R1|_1$/,''), file) }
           .branch{
             sarscov2: it =~ /sarscov-2/
             undet: it =~ /Undetermined/
             other: true}.set{ reads_for_trimming }
-    }
-
-    // TODO: Make this ELSE statement obsolete by setting params.single_sample to empty string
-    else {
-      Channel
-          .fromPath( "${params.input}/${params.single_sample}**{_R1,_1,}.fastq*")
-          .filter{ it =~/^(?!.*(_raw_reads))/ }
-          .ifEmpty { error "Cannot find any reads matching: ${params.input}**${params.single_sample}{_R1,_1,}.fastq*" }
-          .map { file -> tuple(file.simpleName.replaceAll(/_R1|_1$/,''), file) }
-          .branch{
-            sarscov2: it =~ /sarscov-2/
-            undet: it =~ /Undetermined/
-            other: true
-            }
-            .set{ reads_for_trimming }
-    }
-
+    
   }
 
 }
@@ -183,9 +152,9 @@ workflow {
   multiqc_raw_fastqc_out = multiqc_raw_fastqc(fastqc_raw_reads_out.output.collect())
   
   if (params.SE == "NO") {  
-      trimm_out = trimmomaticPE(reads_for_trimming.other, params.illuminaclip)
+      trimm_out = trimmomaticPE(reads_for_trimming.other)
     } else if (params.SE == "YES") {
-      trimm_out = trimmomaticSE(reads_for_trimming.other, params.illuminaclip)
+      trimm_out = trimmomaticSE(reads_for_trimming.other)
     }
   
   // Run fastqc on trimmed reads & create multiQC report
