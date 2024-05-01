@@ -145,7 +145,7 @@ else {
           to "${params.email}"
           subject "IMMENSE ${params.run_id} complete"
           body msg
-          attach "${params.run_id}_transfer_result/${params.run_id}_quality.tab"
+          attach "${params.run_id}_transfer_result/${params.run_id}_quality.tsv"
           if (dashb.exists()) { attach "${params.run_id}_transfer_result/QC_dashboard.html" }
           if (mulQC_ass.exists()) { attach "${params.run_id}_transfer_result/multiqc_assembly/multiqc_report.html", fileName: "multiqc_report_assembly.html" }
           if (mulQC_reads.exists()) { attach "demultiplexing/multiqc/multiqc_report.html", fileName: "multiqc_report_reads.html" }

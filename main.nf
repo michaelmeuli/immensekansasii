@@ -338,7 +338,7 @@ workflow.onComplete {
             Error report: ${workflow.errorReport ?: '-'}
             """.stripIndent()
 
-        quality_tab = file("${params.run_id}_transfer_result/${params.run_id}_quality.tab")
+        quality_tab = file("${params.run_id}_transfer_result/${params.run_id}_quality.tsv")
         //dashb = file("${params.run_id}_transfer_result/QC_dashboard.html")
         mulQC_ass = file("${params.run_id}_transfer_result/${params.run_id}_multiqc_assembly.html")
         //mulQC_reads = file("${params.run_id}_transfer_result/${params.run_id}_multiqc_trimmed.html")
@@ -349,7 +349,7 @@ workflow.onComplete {
                 to "${params.email}"
                 subject "IMMENSE ${params.run_id} complete"
                 
-                if (quality_tab.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_quality.tab" }
+                if (quality_tab.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_quality.tsv" }
                 //if (dashb.exists()) { attach "${params.run_id}_transfer_result/QC_dashboard.html" }
                 if (mulQC_ass.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_multiqc_assembly.html", fileName: "multiqc_report_assembly.html" }
                 //if (mulQC_reads.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_multiqc_trimmed.html", fileName: "multiqc_report_reads.html" }

@@ -87,10 +87,10 @@ process merge_summaries {
 
     echo -e "Sample\\tinitial_species\\tRead_quality\\tPassed_reads\\tRead_depth\\tAlternative_bases\\tInsert_size\\tContig_count\\tTotal_length\\tN50\\tGC_percent\\tComplete_BUSCOs\\tBUSCO_groups_searched\\tBUSCO_Lineage\\t16S_species\\tAlignment_length\\tAlignment_identity\\tMetaPhlAn4_species\\tMetaPhlAn4_purity\\trMLST_best_species\\trMLST_best_rST\\tAlleles_missing\\tgtdb_species\\tgtdb_fastani_reference\\tgtdb_fastani_ani\\tgtdb_fastani_af\\tgtdb_closest_placement_reference\\tgtdbdb_warnings\\tQC_Warnings\\trun_id" > quality_temp.tab
     for sample in ${sample_quality}; do cat \$sample >> quality_temp.tab; printf "\n" >> quality_temp.tab; done
-    (head -n 1 quality_temp.tab && tail -n +2 quality_temp.tab | sort) > ${params.run_id}_quality.tab
-    let sample_count=\$(grep -c "" ${params.run_id}_quality.tab)-1
-    echo "analysed_samples: \$sample_count" >> ${params.run_id}_quality.tab
+    (head -n 1 quality_temp.tab && tail -n +2 quality_temp.tab | sort) > ${params.run_id}_quality.tsv
+    let sample_count=\$(grep -c "" ${params.run_id}_quality.tsv)-1
+    echo "analysed_samples: \$sample_count" >> ${params.run_id}_quality.tsv
 
-    sed 's/,/;/' ${params.run_id}_quality.tab | sed 's/\t/,/g' > ${params.run_id}_quality.csv
+    sed 's/,/;/' ${params.run_id}_quality.tsv | sed 's/\t/,/g' > ${params.run_id}_quality.csv
     """
 }
