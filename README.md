@@ -236,25 +236,28 @@ Clone IMMENSE repository.
 git clone https://gitlab.uzh.ch/appliedmicrobiologyresearch/amr_research/immense.git
 ```
 
-Install [minionda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) or Mamba. Then the `run_IMMENSE.sh` script automatically checks if you have all dependencies installed and if not installs them based on `environment.yml`. Alternatively, manually use the `environment.yml` file to install the dependencies.
+Install [minionda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) or Mamba. Then the `run_IMMENSE.sh` script automatically checks if you have all dependencies installed and if not installs them based on `environment.yml`. Alternatively, manually use the `environment.yml` file to install the dependencies:
 
 ```
 cd path/to/IMMENSE_repo
 conda env update -n env_IMMENSE --file ./environment.yml
+# This creates a conda environment called `env_immense` which can be activated by:
+# conda activate env_immense
 ```
 
-### Prepare Singular containers
+### Download Singular containers
 Get all the required singularity images by starting an interactive S3IT session on SLURM: (login node will run out of memory)
 
->If you want to change where the singularity containers are stored, change the line `cacheDir =` under the singularity settings in the nextflow.config file
+>If you want to change where the singularity containers are stored, also change the line `cacheDir =` under the singularity settings in your infrastructure specific config file
 
 ```
 srun --pty -n 1 -c 6 --time=01:00:00 --mem=16G bash -l
 ```
-Then loading singularity and using the script in the repo to load all the container images to the location where they should be saved. You supply the path to the script as the only argument. This should match with your path in `params.config`
+
+Then loading singularity and using the script in the repo to load all the container images to the location where they should be saved. You supply the path to the script as the only argument. This should match with your path in `conf/<your-profile>.config`
 
 ```
-module load singularityce # Or load `env_immense` conda environment for singularity (conda activate env_immense)
+module load singularityce # Or load `env_immense` conda environment for singularity (`conda activate env_immense`)
 
 # Navigate to the pipeline repository
 cd path/to/IMMENSE_repo
@@ -263,63 +266,120 @@ cd path/to/IMMENSE_repo
 bash Singularity/pull_singularity_img.sh path/to/directory/singularity_images_cache
 ```
 
-### Prepare required Databases
+## Adjusting the Config files
 
-```
-# Put the metaphlan4 database where you want and update path in params.config
-cd path/to/metaphlan4/database
-# To download Jun23 database, the following links were used
-wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJun23_CHOCOPhlAnSGB_202307.tar
-wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJun23_CHOCOPhlAnSGB_202307.md5
-wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJun23_CHOCOPhlAnSGB_202307_marker_info.txt.bz2
-wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/mpa_vJun23_CHOCOPhlAnSGB_202307_species.txt.bz2
-# Unpack the database:
+Global configurations are set in `nextflow.config` (should not need changing) and infrastructure specific configurations are specified in specific profiles in der `conf` directory.
+To run on UZH's S3IT cluster, we use the `s3it.config`, to run on the IMM cluster without slurm we use the `imm.config`.
 
-```
+To run the pipeline somewhere else (or if the setup changes) either modify the existing configs, or create a new "profile" by copying one of the existing `.config` files and changing the profile name and the **database paths** and any other settings you need.
 
-## Adjusting the nextflow.config file
+### Setting up on a new infrastructure
 
-Change the path of **singularity cacheDir** in the **nextflow.config** file to the path were you stored the singularity images.
+Adjust the paths in the infrastructure specific `.config` files to location of the different databases/files. 
 
-If the infrastructure is not based on SLURM, a **new profile** for the given executor needs to be defined.
+The following databases/files are required (see below how to install/download):
 
-If the infrastructure is based on SLURM, the **--qos** directive of the processes may be adjusted to the available --qos of the infrastructure. Possibly also other directives need to be adjusted.
-
-## Adjusting the params.config file
-
-Adjust the paths in the params.config file to location of the different databases/files. 
-
-The following databases/files are required:
-
-* Illuminaclip fasta
+* Metaphlan4 database
 * BUSCO database
 * GTDB 
-* rMLST database
 * 16S database
-* Metaphlan4 database
+* rMLST database
+
+### Prepare required Databases
+
+#### metaphlan4
+```{bash}
+# Put the metaphlan4 database where you want and update path in params.config
+
+# The easiest way to download metaphlan4 database is to use metaphlan (depending on your system you may have to start an interactive SLURM session)
+# Load singularity by `module` or activate conda environment
+# module load singularity
+# conda activate env_immense
+
+singularity shell path/to/singularity/containers/quay.io-biocontainers-metaphlan-4.1.0--pyhca03a8a_0.img 
+cd path/to/metaphlan4/database # where you want the database to exist
+
+# To download the June 2023 database use the following command
+metaphlan --bowtie2db mpa_vJun23_CHOCOPhlAnSGB_202307 --install
+```
+
+#### BUSCO
+
+```{bash}
+singularity shell /home/progalla/data/immense_dependencies/singularity/ezlabgva-busco_v5.3.2_cv1.img
+busco --download --download_path /path/to/immense_dependencies/busco_downloads
+```
+
+#### GTDBtk
+
+```{bash}
+# To download the GTDBtk r207v2 dataset we used the following paths
+mkdir -p /path/to/immense_dependencies/gtdb/gtdbtk_r207_v2
+cd /path/to/immense_dependencies/gtdb/gtdbtk_r207_v2
+
+wget https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/auxillary_files/gtdbtk_r207_v2_data.tar.gz
+# wget https://data.gtdb.ecogenomic.org/releases/release207/207.0/auxillary_files/gtdbtk_r207_v2_data.tar.gz # Alternative mirror if the first url is too slow
+
+tar xvzf gtdbtk_r207_v2_data.tar.gz
+```
+
+#### NCBI 16S Database:
+
+```{bash}
+mkdir -p /path/to/immense_dependencies/BLAST/16S_ribosomal_RNA
+cd /path/to/immense_dependencies/BLAST/16S_ribosomal_RNA
+
+# Download it from https://ftp.ncbi.nlm.nih.gov/blast/db/
+wget https://ftp.ncbi.nlm.nih.gov/blast/db/16S_ribosomal_RNA.tar.gz
+
+# Unpack it
+tar -xzvf 16S_ribosomal_RNA.tar.gz
+```
+
+#### Download rMLST Database:
+
+For this you need an account at [https://pubmlst.org/data](https://pubmlst.org/data):
+1. make an account
+1. request access to the entire dataset under <MY ACCOUNT>: Ribosomal MLST genomes (pubmlst_rmlst_isolates) and Ribosomal MLST typing (pubmlst_rmlst_seqdef)
+1. download from https://pubmlst.org/data
+
+```{bash}
+#TODO: instructions for downloading rMLST
+```
 
 ## Launching the pipeline
 
 For S3IT the launching of the pipeline was defined in the run_IMMENSE.sh. 
 
-The general command to launch the pipeline locally is: 
+```
+# By default the output is always written in the current directory
+cd /directory/where/you/want/output
+bash /path/to/IMMENSE/run_IMMENSE.sh -j test_run -t fq_PE -r test_run -i /path/to/IMMENSE/data/test_dataset
+```
+
+To run the pipeline directly without SLURM, the general command to launch the pipeline locally is: 
 
 ```
 nextflow run /path/to/IMMENSE/main.nf -with-singularity -with-report -with-trace -with-timeline -profile <profile-name> --run_id <run_id> --input_type <input_type> --input <input_dir> --SE YES/NO
+
+# Make sure you specify a `profile` that works with your infrastructure or create a new one
+nextflow run /path/to/IMMENSE/main.nf -profile <profile-name> --run_id <run_name> --input_type fastq/bcl/fasta --input /path/to/IMMENSE/data/test_dataset --SE YES/NO
+
+# For example:
+nextflow run /path/to/IMMENSE/main.nf -profile imm --run_id test_run --input_type fastq --input /path/to/IMMENSE/data/test_dataset --SE NO
 ```
 
-```
--profile	Name of the executer profile defined in the nextflow.config file  
+>**Arguments**
+>-profile	Name of the executer profile defined in `conf` directory
+>--run_id	Name of the run
+>--input_type	Type of the input data: bcl (for raw data), fastq, or fasta
+>--input		Absolute path to the input data
+>--SE		Single-end reads: YES or NO
 
---run_id	Name of the run
---input_type	Type of the input data: bcl (for raw data), fastq, or fasta
---input		Absolute path to the input data
---SE		Single-end reads: YES or NO
-```
 
 The **additional options** as described for the usage on S3IT can be added in the same manner to the command and all parameters defined in the params.config file can be overwritten on the command line with `--<parames-name> <params-value>`.
 
-### Pipeline does not finish / Missing quality files (DEPRECAITED)
+### Pipeline does not finish / Missing quality files (DEPRECIATED)
 
 If the pipeline does not finish properly due to failed processes that leave input channels open, it can happen that the **BUSCO plot, the MultiQC report for the assembly, the quality file** and the **software version file** are not produced. 
 
