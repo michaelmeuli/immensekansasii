@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added local execution profile (for running on IMM cluster)
 - Simplified workflow for doing single sample analysis
 - Added Singularity into conda environment
+- Included test datasets in `data/test_dataset` to check if everything works
+- Modularized `Config` files making it easier to run on new infrastructure
 
 ## [1.0.0] - 2024-04-24
 
