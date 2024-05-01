@@ -107,6 +107,19 @@ Example command for analysing the raw paired-end data of run500:
 ``` 
 bash /home/progal/software/IMMENSE_phil_dev/run_IMMENSE.sh -j IMMENSE_run500 -t raw_PE -r run500 -i /scicore/home/egliadr/GROUP/runQC/run500/demultiplexing
 
+# To run locally or on IMM cluster, the nextflow script is started directly:
+
+# Use tmux so you can close the command line but keep the job running (RECOMMENDED)
+tmux
+nextflow run /path/to/IMMENSE/main.nf -profile imm --run_id run500 --input_type fastq --input /path/to/IMMENSE/data/test_dataset --SE NO
+# Later you can re-enter the tmux session by 
+tmux a -t 0
+
+#TODO: Below method doesn't work yet, find out why.
+# Or run the pipeline in the background and you can monitor the progress looking at the pipeline.log file
+# nohup nextflow run your_pipeline.nf > pipeline.log 2>&1 &
+#NOTE: Remember the process ID because you need it to kill your pipeline if it gets stuck or takes too long:
+#kill <pid>
 ```
 **Note**: There must be no quotes around the paths.
 
