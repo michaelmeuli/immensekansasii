@@ -41,26 +41,5 @@ nextflow -trace nextflow.executor run $MAIN_DIR/main.nf \
 
 #-ansi-log false \ # This would keep the slurm output log a bit cleaner but gives less info.
 
-module purge
-module load amd
-module load mamba
-# Make sure all relevant R packages are install for resistance_table.R (within conda nextflow environment)
-
-cp $MAIN_DIR/bin/resistance_table.R assembly/
-cd $launchDir/assembly/
-Rscript resistance_table.R
-mv resistances.txt $launchDir/${RUN_ID}_transfer_result
-
-cd $launchDir/${RUN_ID}_transfer_result/
-cp $MAIN_DIR/bin/Dashboard_tabset.Rmd .
-module load singularityce/4.1.0
-source activate env_immense
-
-# Use R to render this dashboard
-
-R -e "rmarkdown::render('Dashboard_tabset.Rmd',output_file='QC_dashboard.html')"
-
-cd $launchDir
-
 touch pipeline.complete
 chmod -R 775 $launchDir

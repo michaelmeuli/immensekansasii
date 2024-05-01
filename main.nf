@@ -68,10 +68,8 @@ else if (params.input_type == "fastq") {
           .branch{
             sarscov2: it =~ /sarscov-2/
             undet: it =~ /Undetermined/
-            other: true}.set{ reads_for_trimming }
-    
+            other: true}.set{ reads_for_trimming } 
   }
-
 }
 
 else if (params.input_type == "fasta") {
@@ -89,7 +87,6 @@ Channel
 Channel
     .value( params.bigsdb_rMLST)
     .set { bigsdb_rMLST }
-
 
 /*
 * include the modules
@@ -119,6 +116,7 @@ include { typing_16S }                                       from "./modules/typ
 include { abricate }                                         from "./modules/abricate"
 include { summary_sample; merge_summaries }                  from "./modules/summary"
 include { write_software_versions }                          from "./modules/write_software_versions"
+include { generate_resistance_table; merge_run_resistances }  from "./modules/resistance_table"
 
 
 /*
@@ -128,7 +126,7 @@ include { write_software_versions }                          from "./modules/wri
 workflow {
 
   if (params.input_type != "fasta") {
-  // if starting from bcl files, first process to fastq
+  // if starting from bcl files, first generate fastq
   if (params.input_type == "bcl") { 
     bcl2fastq_out = bcl2fastq(rundir, samplesheet)
 
@@ -147,22 +145,23 @@ workflow {
     multiqc_bcl_out             = multiqc_bcl(bcl2fastq_out.reports) 
   }
   
-  // Running fastq on fastq reads before trimming and generating multiQC report
+  // Running fastQC on fastq reads before trimming and generating multiQC report
   fastqc_raw_reads_out   = fastqc_raw_reads(reads_for_trimming.other) // extract only the reads without sample_id
   multiqc_raw_fastqc_out = multiqc_raw_fastqc(fastqc_raw_reads_out.output.collect())
   
+  // Trimming reads with trimmomatic
   if (params.SE == "NO") {  
       trimm_out = trimmomaticPE(reads_for_trimming.other)
     } else if (params.SE == "YES") {
       trimm_out = trimmomaticSE(reads_for_trimming.other)
     }
   
-  // Run fastqc on trimmed reads & create multiQC report
+  // Run fastQC on trimmed reads & create multiQC report
   fastqc_trimmed_reads_out   = fastqc_trimmed_reads(trimm_out.trimmed_reads) // extract only the reads without sample_id
   multiqc_trimmed_fastqc_out = multiqc_trimmed_fastqc(fastqc_trimmed_reads_out.output.collect(), trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect())
 
-  // Checking that input files are large enough (otherwise processes fail)
-  // After trimming, check that reads are still at least 1MB: if too small then put in failed channel to track them.
+  // Checking that input files are large enough (otherwise processes often fail)
+  // After trimming, check that reads are still at least 1MB: if too small then put in failed channel to track them in output file but skip processing.
   if (params.SE == "NO") {  
       trimm_out.trimmed_reads.branch { // check paired-end reads
         failed: (file(it[1]).size() <  1.MB && file(it[2]).size() <  1.MB) //it[1] is read_r1 and it[2] is read_r2
@@ -183,7 +182,7 @@ workflow {
                                                      }
     qc_size_failed    = trimm_out_checked.failed.map { sample ->
                                                        // the note to put into the quality.csv file
-                                                       return [sample[0], "Trimmed fastq below 1MB - Assembly skipped"] 
+                                                       return [sample[0], "Fastq below 1MB after trimming - Assembly skipped"] 
                                                      }
     // collect warning if files are not large enough
     qc_size_warning   = qc_size_passed.concat(qc_size_failed)
@@ -235,32 +234,37 @@ workflow {
       typ16S       = typing_16S(one_contig, params.db_16s)
       abricate_out = abricate(annotation.fna)
 
+      // Summarize Abricate output and create summary for run
+      summarized_resistances = generate_resistance_table(abricate_out.sample_id, abricate_out.resistance)
+      merge_run_resistances(summarized_resistances.output_file.collect(sort: true))
+
+
       summary_channel = trimm_out.passed_reads_percentage.join(trimm_out.passed_reads_number, remainder: true)
-                                                        .join(coverage.read_depth, remainder: true)
-                                                        .join(coverage.alt_bases, remainder: true)  
-                                                        .join(insertsize.insert_size, remainder: true)
-                                                        .join(assembly_stats.number_contigs, remainder: true)
-                                                        .join(assembly_stats.total_length, remainder: true)
-                                                        .join(assembly_stats.n50, remainder: true)
-                                                        .join(assembly_stats.gc_percent, remainder: true)
-                                                        .join(typ16S.taxa, remainder: true)
-                                                        .join(typ16S.aln_length, remainder: true)
-                                                        .join(typ16S.aln_identity, remainder: true)
-                                                        .join(metaphlan_out.taxa, remainder: true)
-                                                        .join(metaphlan_out.purity, remainder: true)
-                                                        .join(rmlst_out.taxa, remainder: true)    
-                                                        .join(rmlst_out.best_rST, remainder: true)    
-                                                        .join(rmlst_out.alleles_missing, remainder: true)    
-                                                        .join(busco_out.complete_busco, remainder: true)
-                                                        .join(busco_out.busco_groups, remainder: true)
-                                                        .join(busco_out.busco_lineage, remainder: true)                                                     
-                                                        .join(gtdb_out.species, remainder: true)
-                                                        .join(gtdb_out.ani_ref, remainder: true)
-                                                        .join(gtdb_out.ani_ani, remainder: true)
-                                                        .join(gtdb_out.ani_af, remainder: true)
-                                                        .join(gtdb_out.placement_ref, remainder: true)
-                                                        .join(gtdb_out.gtdb_notes, remainder: true)
-                                                        .join(qc_size_warning, remainder: true)
+                                                          .join(coverage.read_depth, remainder: true)
+                                                          .join(coverage.alt_bases, remainder: true)  
+                                                          .join(insertsize.insert_size, remainder: true)
+                                                          .join(assembly_stats.number_contigs, remainder: true)
+                                                          .join(assembly_stats.total_length, remainder: true)
+                                                          .join(assembly_stats.n50, remainder: true)
+                                                          .join(assembly_stats.gc_percent, remainder: true)
+                                                          .join(typ16S.taxa, remainder: true)
+                                                          .join(typ16S.aln_length, remainder: true)
+                                                          .join(typ16S.aln_identity, remainder: true)
+                                                          .join(metaphlan_out.taxa, remainder: true)
+                                                          .join(metaphlan_out.purity, remainder: true)
+                                                          .join(rmlst_out.taxa, remainder: true)    
+                                                          .join(rmlst_out.best_rST, remainder: true)    
+                                                          .join(rmlst_out.alleles_missing, remainder: true)    
+                                                          .join(busco_out.complete_busco, remainder: true)
+                                                          .join(busco_out.busco_groups, remainder: true)
+                                                          .join(busco_out.busco_lineage, remainder: true)                                                     
+                                                          .join(gtdb_out.species, remainder: true)
+                                                          .join(gtdb_out.ani_ref, remainder: true)
+                                                          .join(gtdb_out.ani_ani, remainder: true)
+                                                          .join(gtdb_out.ani_af, remainder: true)
+                                                          .join(gtdb_out.placement_ref, remainder: true)
+                                                          .join(gtdb_out.gtdb_notes, remainder: true)
+                                                          .join(qc_size_warning, remainder: true)
       // summary_channel.view() // To see what gets passed to the summary processes
 
       single_summary  = summary_sample(summary_channel)

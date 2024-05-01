@@ -8,7 +8,7 @@ params.OUTPUT = "abricate_output"
 
 process abricate {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/${sample_id}/4_virulence", mode: 'copy')
+    publishDir("assembly/results/${sample_id}/4_resistance_virulence", mode: 'copy')
     tag { fasta }
     container params.CONTAINER
 
@@ -19,6 +19,7 @@ process abricate {
     path ("${sample_id}_resistance.tab"), emit: resistance
     path ("${sample_id}_virulence.tab"), emit: virulence
     path "abricate_version.txt", emit: version
+    val ("${sample_id}"), emit:sample_id
 
     script:
     """
