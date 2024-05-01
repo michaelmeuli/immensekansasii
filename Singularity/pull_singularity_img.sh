@@ -3,8 +3,7 @@
 module load singularityce/4.1.0
 
 # Get the path where nextflow expects the singularity containers
-INSTALL_PATH=`grep 'singularity_container_cache' ../params.config | cut -d '"' -f 2` # default is /shares/amr.imm.uzh/.singularity_IMMENSE
-
+INSTALL_PATH=$1
 echo ""
 echo "Installing Singularity Containers at:            ${INSTALL_PATH}"
 echo ""

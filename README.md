@@ -251,16 +251,16 @@ Get all the required singularity images by starting an interactive S3IT session 
 ```
 srun --pty -n 1 -c 6 --time=01:00:00 --mem=16G bash -l
 ```
-Then loading singularity and using the script in the repo to load all the container images to the location where they should be saved. The script pulls the target location from the `params.config` file
+Then loading singularity and using the script in the repo to load all the container images to the location where they should be saved. You supply the path to the script as the only argument. This should match with your path in `params.config`
 
 ```
-module load singularityce
+module load singularityce # Or load `env_immense` conda environment for singularity (conda activate env_immense)
 
 # Navigate to the pipeline repository
 cd path/to/IMMENSE_repo
 
-# Then run the script to pull all the container images to the directory specified in nextflow.config
-bash Singularity/pull_singularity_img.sh
+# Then run the script to pull all the container images to the directory you specify
+bash Singularity/pull_singularity_img.sh path/to/directory/singularity_images_cache
 ```
 
 ### Prepare required Databases
