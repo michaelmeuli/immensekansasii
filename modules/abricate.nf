@@ -2,7 +2,7 @@
 *  abricate module
 */
 
-params.CONTAINER = "quay.io/biocontainers/abricate:1.0.1--ha8f3691_1"
+params.CONTAINER = "quay.io/biocontainers/abricate:1.0.1--ha8f3691_2"
 //params.CONTAINER = "https://depot.galaxyproject.org/singularity/abricate:1.0.1--ha8f3691_1"
 params.OUTPUT = "abricate_output"
 

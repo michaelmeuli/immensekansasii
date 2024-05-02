@@ -8,7 +8,7 @@ echo ""
 echo "Installing Singularity Containers at:            ${INSTALL_PATH}"
 echo ""
 
-singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-abricate-1.0.1--ha8f3691_1.img docker://quay.io/biocontainers/abricate:1.0.1--ha8f3691_1
+singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-abricate-1.0.1--ha8f3691_2.img docker://quay.io/biocontainers/abricate:1.0.1--ha8f3691_2
 singularity build --sandbox -F ${INSTALL_PATH}/jlboat-BioinfoContainers_bcl2fastq.img shub://jlboat/BioinfoContainers:bcl2fastq
 singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-blast-2.12.0--pl5262h3289130_0.img docker://quay.io/biocontainers/blast:2.12.0--pl5262h3289130_0
 singularity build --sandbox -F ${INSTALL_PATH}/ezlabgva-busco_v5.3.2_cv1.img docker://ezlabgva/busco:v5.3.2_cv1
