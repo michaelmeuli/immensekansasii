@@ -4,13 +4,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+
+## [1.1.0] - 2024-05-1
+
+### `Added`
 - Added local execution profile (for running on IMM cluster)
 - Simplified workflow for doing single sample analysis
 - Added Singularity into conda environment
 - Included test datasets in `data/test_dataset` to check if everything works
-- Modularized `Config` files making it easier to run on new infrastructure
+
+### `Changed`
 - Updated Readme to include database downloading, config changes and running locally on IMM
 - Updated Abricate to include NCBI database from 2023-Nov-4
+- Modularized `Config` files making it easier to run on new infrastructure
 
 ## [1.0.0] - 2024-04-24
 
