@@ -213,6 +213,17 @@ bash /home/progal/software/IMMENSE_phil_dev/run_IMMENSE.sh -j IMMENSE_run500 -t 
 
 ## Troubleshooting
 
+### Lacking Write permission
+
+If you receive this error when starting the pipeline:
+```
+ERROR ~ .nextflow/history.lock (No such file or directory)
+
+ -- Check '.nextflow.log' file for details
+```
+Then this usually means you don't have permission to write into your current working directory. Add write permissions to current working directory with `sudo chmod 777 .`
+
+
 ### Additional samples
 
 If there are additional samples for a run or samples need to be rerun start the pipeline again in the run folder but use a different **run_id**, for example ```run500_2```. 
@@ -281,10 +292,10 @@ bash Singularity/pull_singularity_img.sh path/to/directory/singularity_images_ca
 
 ## Adjusting the Config files
 
-Global configurations are set in `nextflow.config` (should not need changing) and infrastructure specific configurations are specified in specific profiles in der `conf` directory.
+Global configurations are set in `nextflow.config` (should not need changing) and infrastructure specific configurations are specified in specific profiles in the `conf` directory.
 To run on UZH's S3IT cluster, we use the `s3it.config`, to run on the IMM cluster without slurm we use the `imm.config`.
 
-To run the pipeline somewhere else (or if the setup changes) either modify the existing configs, or create a new "profile" by copying one of the existing `.config` files and changing the profile name and the **database paths** and any other settings you need.
+To run the pipeline somewhere else (or if the setup changes) create a new "profile" by copying one of the existing `.config` files and changing the profile name and the **database paths** and any other settings you need. If using the `run_IMMENSE.sh` script to submit the pipeline to the SLURM scheduler, also adjust the *profile* name in the `bin/submit_to_cluster.sh` script which contains the nextflow command.
 
 ### Setting up on a new infrastructure
 
