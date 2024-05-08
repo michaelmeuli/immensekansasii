@@ -19,6 +19,7 @@ may be ripe for automation.
 run ID                     : ${params.run_id}
 input type                 : ${params.input_type}
 input directory            : ${params.input}
+input directory (absolute) : ${params.input_absolutePath}
 single_sample              : ${params.single_sample}
 single-end reads           : ${params.SE}
 singularity_container_cache: ${params.singularity_container_cache}
