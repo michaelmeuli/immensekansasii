@@ -4,8 +4,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- Added troubleshooting errors for readme
 
+### `Added`
+- Added more errors troubleshooting in readme
+- Created standalone config to define container images
+
+
+### `Changed`
+- Removed R packages from conda environment yml file
+- Output directories for *sample outputs* and *run outputs* are now specified in config profiles instead of declared in each process definition
+- Cleaned up process definitions
+- FastQC and multiQC results are now put int *00_QC* subfolder of the *output_directory_run* (transfer folder)
+- Fixed bug that failed to link raw reads if input was given as relative path
 
 ## [1.1.0] - 2024-05-1
 
