@@ -2,11 +2,10 @@
 *  rMLST module
 */
 // Using prokka container because it contains blast & python
-params.CONTAINER = "quay.io/biocontainers/prokka:1.14.6--pl5262hdfd78af_1"
+//params.CONTAINER = "quay.io/biocontainers/prokka:1.14.6--pl5262hdfd78af_1"
 
 process rMLST {
     tag { fasta }
-    container params.CONTAINER
     //containerOptions "-B ${params.db_rMLST}"
 
 
@@ -32,16 +31,15 @@ process rMLST {
 
     echo "rMLST \$(blastn -version | head -1)" > blastn_rMLST_vers.txt
     echo ${rMLST_database} > db_version_rMLST.txt
-    echo ${params.CONTAINER} > blastn_rMLST_singularity.txt
+    echo ${task.container} > blastn_rMLST_singularity.txt
     cat blastn_rMLST_vers.txt blastn_rMLST_singularity.txt db_version_rMLST.txt | tr "\n" "\t" > blastn_rMLST_version.txt
     """
 }
 
-process call_rMLST {
+process rMLST_call {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/${sample_id}/3_quality/rMLST", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/rMLST", mode: 'copy')
     tag { sample_id }
-    container params.CONTAINER
     // containerOptions "-B ${params.bigsdb_rMLST}"
     
 

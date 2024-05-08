@@ -292,8 +292,8 @@ bash Singularity/pull_singularity_img.sh path/to/directory/singularity_images_ca
 
 ## Adjusting the Config files
 
-Global configurations are set in `nextflow.config` (should not need changing) and infrastructure specific configurations are specified in specific profiles in the `conf` directory.
-To run on UZH's S3IT cluster, we use the `s3it.config`, to run on the IMM cluster without slurm we use the `imm.config`.
+Global configurations are set in `nextflow.config` (should not need changing) and infrastructure specific configurations are specified in specific profiles in the `conf/profiles` directory.
+To run on UZH's S3IT cluster, we use the `s3it.config`, to run on the IMM cluster without slurm we use the `imm.config` by specifying `-profile s3it` or `-profile imm`.
 
 To run the pipeline somewhere else (or if the setup changes) create a new "profile" by copying one of the existing `.config` files and changing the profile name and the **database paths** and any other settings you need. If using the `run_IMMENSE.sh` script to submit the pipeline to the SLURM scheduler, also adjust the *profile* name in the `bin/submit_to_cluster.sh` script which contains the nextflow command.
 

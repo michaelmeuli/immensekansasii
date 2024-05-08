@@ -3,16 +3,14 @@
 */
 
  // "bioconda::prokka=1.14.6"
-params.CONTAINER = "quay.io/biocontainers/prokka:1.14.6--pl5262hdfd78af_1"
+//params.CONTAINER = "quay.io/biocontainers/prokka:1.14.6--pl5262hdfd78af_1"
 //params.CONTAINER = "https://depot.galaxyproject.org/singularity/prokka:1.14.6--pl5262hdfd78af_1"
-params.OUTPUT = "prokka_output"
+//params.OUTPUT = "prokka_output"
 
 process prokka {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/${sample_id}", pattern: "2_annotation/*", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}", pattern: "2_annotation/*", mode: 'copy')
     tag { sample_id }
-    container params.CONTAINER
-
 
     input:
     tuple val (sample_id), path (fasta)
@@ -30,7 +28,7 @@ process prokka {
       --strain ${sample_id} --outdir 2_annotation --cpus ${task.cpus} ${fasta}
 
     echo \$(prokka --version 2>&1) > prokka_vers.txt
-    echo ${params.CONTAINER} > prokka_singularity.txt
+    echo ${task.container} > prokka_singularity.txt
     cat prokka_vers.txt prokka_singularity.txt | tr "\n" "\t" > prokka_version.txt
     """
 }

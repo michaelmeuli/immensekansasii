@@ -2,12 +2,11 @@
 *  BUSCO module
 */
 
-params.CONTAINER = "ezlabgva-busco_v5.3.2_cv1"
+//params.CONTAINER = "ezlabgva-busco_v5.3.2_cv1"
 
 process busco {
-    publishDir("assembly/results/${sample_id}/3_quality/BUSCO", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/BUSCO", mode: 'copy')
     tag { sample_id }
-    container params.CONTAINER
     // containerOptions "-B ${params.busco_files}"
 
     input:
@@ -27,7 +26,7 @@ process busco {
     """
     busco -f -m genome -i ${fasta} -o ${sample_id} --auto-lineage --offline --download_path ${busco_lineages_path}
     busco --version > busco_vers.txt
-    echo ${params.CONTAINER} > busco_singularity.txt
+    echo ${task.container} > busco_singularity.txt
     grep "Running BUSCO using lineage dataset" ${sample_id}/logs/busco.log | cut -f2 | cut -d" "  -f6-10 | sed 's/ (prokaryota,//g' | tr ")" " " > busco_lineages_version.txt
     cat busco_vers.txt busco_singularity.txt busco_lineages_version.txt | tr "\n" "\t" > ${sample_id}_busco_version.txt
 
@@ -61,9 +60,8 @@ process get_busco_lineages {
 
 
 process busco_plot {
-    publishDir("${params.run_id}_transfer_result", mode: 'copy')
+    publishDir("${params.output_dir_run}", mode: 'copy')
     tag { "${params.run_id}" }
-    container params.CONTAINER
 
     input:
     path (short_summaries)

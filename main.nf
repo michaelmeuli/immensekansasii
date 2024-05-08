@@ -103,13 +103,13 @@ include { prokka }                                           from "./modules/pro
 include { busco; get_busco_lineages; busco_plot }            from "./modules/busco"
 include { quast }                                            from "./modules/quast"
 include { gtdbtk_classify_wf }                               from "./modules/gtdbtk"
-include { rMLST; call_rMLST }                                from "./modules/rMLST"
+include { rMLST; rMLST_call }                                from "./modules/rMLST"
 include { metaphlan4; metaphlan4SE }                         from "./modules/metaphlan"
 include { make_one_contig; parse_sam_for_insertsize; 
           coverage_pilon_corrected }                         from "./modules/python_functions"
 include { bwaIndex as indexRemapping }                       from "./modules/bwa_index"
-include { bwaAlign as alignRemapping; 
-          bwaAlignSE as alignRemappingSE }                   from "./modules/bwa-mem"
+include { bwaAlign; 
+          bwaAlignSE }                                       from "./modules/bwa-mem"
 include { samtools as samtoolsRemapping}                     from "./modules/samtools"
 include { typing_16S }                                       from "./modules/typing_16S.nf"
 include { abricate }                                         from "./modules/abricate"
@@ -209,21 +209,21 @@ workflow {
                                           )
       gtdb_out            = gtdbtk_classify_wf(annotation.fna, params.gtdb_db)
       typing_rMLST        = rMLST(annotation.fna, params.db_rMLST)
-      rmlst_out           = call_rMLST(typing_rMLST.blast_tabs, params.bigsdb_rMLST)
+      rmlst_out           = rMLST_call(typing_rMLST.blast_tabs, params.bigsdb_rMLST)
       one_contig          = make_one_contig(annotation.fna)
       bwa_index_remapping = indexRemapping(one_contig)
 
       // Different metaphlan4 & alignment depending on single-end or paired-end reads
       if (params.SE == "NO") {  
         metaphlan_out      = metaphlan4(trimm_out_checked.passed.concat(trimm_out_checked.failed), params.metaphlan_db)
-        remapping          = alignRemapping(trimm_out_checked.passed.join(bwa_index_remapping.index))
+        remapping          = bwaAlign(trimm_out_checked.passed.join(bwa_index_remapping.index))
         insertsize         = parse_sam_for_insertsize(remapping.sam)
         bam_remapping      = samtoolsRemapping(remapping.sam)
         remapping_polished = pilon_remapping(bam_remapping.bam.join(one_contig))
 
       } else if (params.SE == "YES") {
         metaphlan_out      = metaphlan4SE(trimm_out_checked.passed.concat(trimm_out_checked.failed), params.metaphlan_db)
-        remapping          = alignRemappingSE(trimm_out_checked.passed.join(bwa_index_remapping.index))
+        remapping          = bwaAlignSE(trimm_out_checked.passed.join(bwa_index_remapping.index))
         insertsize         = parse_sam_for_insertsize(remapping.sam)
         bam_remapping      = samtoolsRemapping(remapping.sam)
         remapping_polished = pilon_remappingSE(bam_remapping.bam.join(one_contig))
@@ -297,7 +297,7 @@ workflow {
       annotation     = prokka(genome)
       gtdb_out       = gtdbtk_classify_wf(annotation.fna)
       typing_rMLST   = rMLST(annotation.fna, db_rMLST)
-      rmlst_out      = call_rMLST(typing_rMLST.blast_tabs, bigsdb_rMLST)
+      rmlst_out      = rMLST_call(typing_rMLST.blast_tabs, bigsdb_rMLST)
       one_contig     = make_one_contig(annotation.fna)
       typ16S         = typing_16S(one_contig)
       abricate_out   = abricate(annotation.fna)
@@ -338,9 +338,9 @@ workflow.onComplete {
             Error report: ${workflow.errorReport ?: '-'}
             """.stripIndent()
 
-        quality_tab = file("${params.run_id}_transfer_result/${params.run_id}_quality.tsv")
+        quality_tab = file("${params.output_dir_run}/${params.run_id}_quality.tsv")
         //dashb = file("${params.run_id}_transfer_result/QC_dashboard.html")
-        mulQC_ass = file("${params.run_id}_transfer_result/${params.run_id}_multiqc_assembly.html")
+        mulQC_ass = file("${params.output_dir_run}/${params.run_id}_multiqc_assembly.html")
         //mulQC_reads = file("${params.run_id}_transfer_result/${params.run_id}_multiqc_trimmed.html")
         
 
@@ -349,9 +349,9 @@ workflow.onComplete {
                 to "${params.email}"
                 subject "IMMENSE ${params.run_id} complete"
                 
-                if (quality_tab.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_quality.tsv" }
+                if (quality_tab.exists()) { attach "${params.output_dir_run}/${params.run_id}_quality.tsv" }
                 //if (dashb.exists()) { attach "${params.run_id}_transfer_result/QC_dashboard.html" }
-                if (mulQC_ass.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_multiqc_assembly.html", fileName: "multiqc_report_assembly.html" }
+                if (mulQC_ass.exists()) { attach "${params.output_dir_run}/${params.run_id}_multiqc_assembly.html", fileName: "multiqc_report_assembly.html" }
                 //if (mulQC_reads.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_multiqc_trimmed.html", fileName: "multiqc_report_reads.html" }
 
                 body msg

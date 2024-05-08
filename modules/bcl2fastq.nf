@@ -3,7 +3,7 @@
 */
 
 // Make sure this container is installed
-params.CONTAINER = "jlboat-BioinfoContainers_bcl2fastq"   // shub://jlboat/BioinfoContainers:bcl2fastq
+//params.CONTAINER = "jlboat-BioinfoContainers_bcl2fastq"   // shub://jlboat/BioinfoContainers:bcl2fastq
 //params.CONTAINER = "quay.io/biocontainers/bcl2fastq-nextseq:1.3.0--pyh5e36f6f_0" // bioconda version but not compatible with current code
 
 params.OUTPUT = "bcl2fastq_output"
@@ -12,7 +12,6 @@ process bcl2fastq {
     // publishDir(params.OUTPUT, mode: 'copy')
     publishDir("demultiplexing", mode: 'copy', pattern: "result/**")
     tag { "${params.run_id}" }
-    container params.CONTAINER
 
     input:
     path (rundir)
@@ -54,7 +53,7 @@ process bcl2fastq {
 
     bcl2fastq --version &> bcl2fastq_info.txt
     cat bcl2fastq_info.txt | grep bcl2fastq > bcl2fastq_vers.txt
-    echo ${params.CONTAINER} > bcl2fastq_singularity.txt
+    echo ${task.container} > bcl2fastq_singularity.txt
     cat bcl2fastq_vers.txt bcl2fastq_singularity.txt | tr "\n" "\t" > bcl2fastq_version.txt
     """
 }

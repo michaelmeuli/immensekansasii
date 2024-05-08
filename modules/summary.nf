@@ -5,10 +5,9 @@
 params.OUTPUT = "summary"
 
 process summary_sample {
-    publishDir("assembly/results/${sample_id}/3_quality/summary", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/summary", mode: 'copy')
     // execute on the main node (no special software needed so no need to submit a job and use a container)
     tag { sample_id }
-    //containerOptions "-B ${params.input}"
     
 
     input:
@@ -71,7 +70,7 @@ process summary_sample {
 
 
 process merge_summaries {
-    publishDir("${params.run_id}_transfer_result", mode: 'copy')
+    publishDir("${params.output_dir_run}", mode: 'copy')
     tag { "${params.run_id}" }
     // execute on the main node (no special software needed so no need to submit a job and use a container)
 

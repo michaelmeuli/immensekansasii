@@ -2,15 +2,14 @@
 *  16S module
 */
 
-params.CONTAINER = "quay.io/biocontainers/blast:2.12.0--pl5262h3289130_0"
+//params.CONTAINER = "quay.io/biocontainers/blast:2.12.0--pl5262h3289130_0"
 
-params.OUTPUT = "typing16s_output"
+//params.OUTPUT = "typing16s_output"
 
 process typing_16S {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/${sample_id}/3_quality/16S", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/16S", mode: 'copy')
     tag { sample_id }
-    container params.CONTAINER
     // containerOptions "-B ${params.db_16s}"
 
     input:
@@ -36,7 +35,7 @@ process typing_16S {
 
     echo "16S \$(blastn -version | head -1)" > blastn_16S_vers.txt
     if [[ ${database_16s} == *16S_* ]]; then basename ${database_16s} > db_version_16S.txt; else echo "database as of 20171115" > db_version_16S.txt; fi
-    echo ${params.CONTAINER} > blastn_16S_singularity.txt
+    echo ${task.container} > blastn_16S_singularity.txt
     cat blastn_16S_vers.txt blastn_16S_singularity.txt db_version_16S.txt | tr "\n" "\t" > blastn_16S_version.txt
 
     # Extracting key information:

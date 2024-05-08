@@ -2,10 +2,10 @@
 *  write software versions module
 */
 
-params.OUTPUT = "write_software_versions"
+//params.OUTPUT = "write_software_versions"
 
 process write_software_versions {
-    publishDir("${params.run_id}_transfer_result", mode: 'copy')
+    publishDir("${params.output_dir_run}", mode: 'copy')
     tag { "${params.run_id}" }
 
     input:

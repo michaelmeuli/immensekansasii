@@ -2,17 +2,16 @@
 *  trimmomatic module
 */
 
-params.CONTAINER = "quay.io/biocontainers/trimmomatic:0.39--hdfd78af_2"
-//params.CONTAINER = "https://depot.galaxyproject.org/singularity/trimmomatic:0.39--hdfd78af_2"
-params.OUTPUT = "trimmomatic_output"
+//params.CONTAINER = "quay.io/biocontainers/trimmomatic:0.39--hdfd78af_2"
+//params.OUTPUT = "trimmomatic_output"
 
 
 process trimmomaticPE {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/${sample_id}/0_trimming", mode: 'copy', pattern: "*.quality_read_trimm_info")
-    publishDir("assembly/results/${sample_id}/0_trimming", mode: 'copy', pattern: "trimmomatic_version.txt")
+    publishDir("${params.output_dir_sample}/${sample_id}/0_trimming", mode: 'copy', pattern: "*.quality_read_trimm_info")
+    publishDir("${params.output_dir_sample}/${sample_id}/0_trimming", mode: 'copy', pattern: "trimmomatic_version.txt")
     tag { sample_id }
-    container params.CONTAINER
+    
 
     input:
     tuple val (sample_id), path (fastq)
@@ -40,7 +39,7 @@ process trimmomaticPE {
     2> ${sample_id}.quality_read_trimm_info
 
     echo "trimmomatic \$(trimmomatic -version)" > trimmomatic_vers.txt
-    echo ${params.CONTAINER} > trimmomatic_singularity.txt
+    echo ${task.container} > trimmomatic_singularity.txt
     cat trimmomatic_vers.txt trimmomatic_singularity.txt | tr "\n" "\t" > trimmomatic_version.txt
     
     # Extracting passed-reads percentage info for summary
@@ -54,10 +53,9 @@ process trimmomaticPE {
 
 process trimmomaticSE {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/${sample_id}/0_trimming", mode: 'copy', pattern: "*.quality_read_trimm_info")
-    publishDir("assembly/results/${sample_id}/0_trimming", mode: 'copy', pattern: "trimmomatic_version.txt")
+    publishDir("${params.output_dir_sample}/${sample_id}/0_trimming", mode: 'copy', pattern: "*.quality_read_trimm_info")
+    publishDir("${params.output_dir_sample}/${sample_id}/0_trimming", mode: 'copy', pattern: "trimmomatic_version.txt")
     tag { sample_id }
-    container params.CONTAINER
     // containerOptions "-B ${params.illuminaclip}"
 
     input:
@@ -81,7 +79,7 @@ process trimmomaticSE {
     2> ${sample_id}.quality_read_trimm_info
 
     echo "trimmomatic \$(trimmomatic -version)" > trimmomatic_vers.txt
-    echo ${params.CONTAINER} > trimmomatic_singularity.txt
+    echo ${task.container} > trimmomatic_singularity.txt
     cat trimmomatic_vers.txt trimmomatic_singularity.txt | tr "\n" "\t" > trimmomatic_version.txt
 
     # Extracting passed-reads percentage info for summary

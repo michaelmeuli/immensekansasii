@@ -2,13 +2,12 @@
 *  Resistance table module
 */
 
-params.CONTAINER = "ezlabgva-busco_v5.3.2_cv1" // this includes python and pandas library
+//params.CONTAINER = "ezlabgva-busco_v5.3.2_cv1" // this includes python and pandas library
 
 process generate_resistance_table {
-    publishDir("assembly/results/${sample_id}/4_resistance_virulence", mode: 'copy')
-    //publishDir("${params.output_dir}/${sample_id}/4_resistance_virulence", mode:'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/4_resistance_virulence", mode: 'copy')
     tag { "${params.run_id}" }
-    container params.CONTAINER
+    
 
     input:
     val (sample_id)
@@ -29,9 +28,9 @@ process generate_resistance_table {
 
 
 process merge_run_resistances {
-    publishDir("${params.run_id}_transfer_result", mode: 'copy')
+    publishDir("${params.output_dir_run}", mode: 'copy')
     tag { "${params.run_id}" }
-
+    
     input:
     path (resistance_file)
 

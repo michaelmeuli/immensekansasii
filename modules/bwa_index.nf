@@ -2,13 +2,12 @@
 *  bwa index module
 */
 
-params.CONTAINER = "quay.io/biocontainers/bwa:0.7.17--h5bf99c6_8"
-//params.CONTAINER = "https://depot.galaxyproject.org/singularity/bwa:0.7.17--h5bf99c6_8"
+//params.CONTAINER = "quay.io/biocontainers/bwa:0.7.17--h5bf99c6_8"
+
 params.OUTPUT = ""
 
 process bwaIndex {
     tag { sample_id }
-    container params.CONTAINER
 
     input:
     tuple val (sample_id), path(assembly)
@@ -22,7 +21,7 @@ process bwaIndex {
     bwa index ${assembly} 2> bwa_index.err
 
     echo "bwa index \$(bwa 2>&1 | grep Version | cut -f2 -d " ")" > bwa_index_vers.txt
-    echo ${params.CONTAINER} > bwa_index_singularity.txt
+    echo ${task.container} > bwa_index_singularity.txt
     cat bwa_index_vers.txt bwa_index_singularity.txt | tr "\n" "\t" > bwa_index_version.txt
     """
 }

@@ -2,14 +2,13 @@
 * gtdbtk module
 */
 
-// params.CONTAINER = "mleemann-usbacto-gtdbtk_2.1.0_with_ps"
-params.CONTAINER = "quay.io/biocontainers/gtdbtk:2.3.2--pyhdfd78af_0"
+//params.CONTAINER = "quay.io/biocontainers/gtdbtk:2.3.2--pyhdfd78af_0"
 params.OUTPUT = "gtdb_output"
 
 process gtdbtk_classify_wf {
-  publishDir("assembly/results/${sample_id}/3_quality/GTDB", mode: 'copy')
+  publishDir("${params.output_dir_sample}/${sample_id}/3_quality/GTDB", mode: 'copy')
   tag { sample_id }
-  container params.CONTAINER
+  
   //containerOptions "-B ${params.gtdb_db}"
 
   input:
@@ -34,7 +33,7 @@ process gtdbtk_classify_wf {
   gtdbtk classify_wf --genome_dir . --out_dir ${sample_id} --prefix ${sample_id} --cpus ${task.cpus} --skip_ani_screen
 
   echo \$(basename ${gtdb_database}) > db_version_gtdb.txt
-  echo ${params.CONTAINER} > gtdb_singularity.txt
+  echo ${task.container} > gtdb_singularity.txt
   gtdbtk -v | cut -d\\  -f1-3 >> gtdb_vers.txt
   cat gtdb_vers.txt gtdb_singularity.txt db_version_gtdb.txt | tr "\n" "\t" > gtdb_version.txt
 

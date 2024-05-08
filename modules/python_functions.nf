@@ -6,7 +6,7 @@ params.OUTPUT = ""
 
 process make_one_contig {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/${sample_id}/3_quality/remapping", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", mode: 'copy')
     tag { fasta }
 
     input:
@@ -25,7 +25,7 @@ process make_one_contig {
 
 process parse_sam_for_insertsize {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/${sample_id}/3_quality/remapping", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", mode: 'copy')
     tag { sam }
 
     input:
@@ -48,7 +48,7 @@ process parse_sam_for_insertsize {
 
 process coverage_pilon_corrected {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/${sample_id}/3_quality/remapping", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", mode: 'copy')
     tag { vcf }
 
     input:
