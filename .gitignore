@@ -1,0 +1,8 @@
+work/
+.nextflow/
+assembly/
+slurm*
+.nextflow*
+IMMENSE*/
+pipeline.complete
+report*
