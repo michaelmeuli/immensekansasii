@@ -3,7 +3,6 @@
 */
 
 // Make sure this container is installed
-//params.CONTAINER = "jlboat-BioinfoContainers_bcl2fastq"   // shub://jlboat/BioinfoContainers:bcl2fastq
 //params.CONTAINER = "quay.io/biocontainers/bcl2fastq-nextseq:1.3.0--pyh5e36f6f_0" // bioconda version but not compatible with current code
 
 params.OUTPUT = "bcl2fastq_output"

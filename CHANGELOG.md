@@ -6,9 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### `Added`
-- Added more errors troubleshooting in readme
+- Added more errors troubleshooting in `README.md`
 - Created standalone config to define container images
-
 
 ### `Changed`
 - Removed R packages from conda environment yml file
@@ -16,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cleaned up process definitions
 - FastQC and multiQC results are now put int *00_QC* subfolder of the *output_directory_run* (transfer folder)
 - Fixed bug that failed to link raw reads if input was given as relative path
+- Updated `README.md` to include more examples and code
 
 ## [1.1.0] - 2024-05-1
 

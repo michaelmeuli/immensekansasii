@@ -3,8 +3,6 @@
 */
 
 //params.CONTAINER = "quay.io/biocontainers/trimmomatic:0.39--hdfd78af_2"
-//params.OUTPUT = "trimmomatic_output"
-
 
 process trimmomaticPE {
     // publishDir(params.OUTPUT, mode: 'copy')

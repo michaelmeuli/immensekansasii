@@ -3,11 +3,9 @@
 */
 
 //params.CONTAINER = "quay.io/biocontainers/abricate:1.0.1--ha8f3691_2"
-//params.CONTAINER = "https://depot.galaxyproject.org/singularity/abricate:1.0.1--ha8f3691_1"
 params.OUTPUT = "abricate_output"
 
 process abricate {
-    // publishDir(params.OUTPUT, mode: 'copy')
     publishDir("${params.output_dir_sample}/${sample_id}/4_resistance_virulence", mode: 'copy')
     tag { fasta }
 
