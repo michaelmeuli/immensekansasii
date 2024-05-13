@@ -23,8 +23,10 @@ The steps that are included are:
 	* Quast (5.0.2)
 	* GenomeQC - BUSCO (5.3.2)
 * Taxonomy
-	* GTDB-tk1 (2.3.2)
+	* GTDB-tk (2.3.2)
 	* Metaphlan4 (4.1.0)
+	* 16S blastn (2.12.0+)
+	* rMLST blastn (2.11.0+)
 * Genome annotation
 	* Prokka (1.14.6)
 * Genome inspection (antimicrobial resistance genes, virulence factors)
@@ -363,13 +365,64 @@ tar -xzvf 16S_ribosomal_RNA.tar.gz
 #### Download rMLST Database:
 
 For this you need an account at [https://pubmlst.org/data](https://pubmlst.org/data):
-1. make an account
-1. request access to the entire dataset under <MY ACCOUNT>: Ribosomal MLST genomes (pubmlst_rmlst_isolates) and Ribosomal MLST typing (pubmlst_rmlst_seqdef)
-1. download from https://pubmlst.org/data
+1. Make an account
+2. Request access to the entire dataset under <MY ACCOUNT>: Ribosomal MLST genomes (pubmlst_rmlst_isolates) and Ribosomal MLST typing (pubmlst_rmlst_seqdef)
+3. Go to *SPECIES ID* in the menu and then the *Typing* link. [Link to Tab](https://pubmlst.org/bigsdb?db=pubmlst_rmlst_seqdef)
+4. On the right under *DOWNLOADS* section, right click on *Ribosomal MLST profiles* and save-link-as. This file refers to the `bigsdb_rMLST` path in the config file.
+> Downloading with command line is not possible because it needs authentication
+5. Download all Sequences by clicking *Allele Sequence* then expand the *Typing* tree selector and click *Ribosomal MLST*. On the bottom you will see the option to download each Sequence file from `BACT000001 (rpsA)` to `BACT000065 (rpmJ)`. Download each of them and save all fasta files together with the *Ribosomal MLST profiles* file (Step 4) in the same directory and move to wherever you want to store this database. This path should be added as `db_rMLST` variable in your config profile under `conf/profiles/`. And the path to the specific `Ribosomal MLST profiles` text file is added as `bigsdb_rMLST` variable.
+6. Create blastn databases from each fasta file
 
 ```{bash}
-#TODO: instructions for downloading rMLST
+# Making tar archive to compress files and send to server where IMMense will run
+tar -zcvf archive_name.tar.gz directory_to_compress/
+
+# Sending over to server
+rsync -az --progress bigMLST.tar.gz "<USERNAME>@<SERVER_NAME>:/directory/for/saved/databases/rMLST/"
+
+# Unpacking the archive:
+tar -xzvf bigMLST.tar.gz
+
+# If you compressed on a Mac and extract in linux, you may get some warning such as:
+--------
+MLST/._BACT000017.fas
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.quarantine'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.metadata:kMDItemWhereFroms'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.macl'
+MLST/BACT000017.fas
+--------
+
+# You can ignore these and remove all the ._... files created by running:
+`rm ._*` in the directory
+
 ```
+
+Create blastn database using the blastn contained in the prokka singularity image (because this image contains blastn)
+
+```{bash}
+conda activate env_immense
+
+singularity shell --bind $(pwd):/mnt path/to/singularity/containers/quay.io-biocontainers-prokka-1.14.6--pl5262hdfd78af_1.img
+
+cd mnt/database_directory
+
+bash directory/to/immense/pipeline/bin/
+make_MLST_blast_database.sh .
+
+# Exit the singularity container
+exit
+
+# Now you should have these file extensions for each of the .fas files:
+#fas.nin
+#fas.ntf
+#fas.ndb
+#fas.not
+#fas.nto
+#fas.nhr
+#fas.nsq
+```
+
+This is your ribosomal MLST database. Make sure you link to this directory and the profile.txt file in your profile config file `conf/profiles`
 
 ## Launching the pipeline
 
@@ -394,28 +447,17 @@ nextflow run /path/to/IMMENSE/main.nf -profile imm --run_id test_run --input_typ
 ```
 
 >**Arguments**
->-profile	Name of the executer profile defined in `conf` directory
+>-profile	Name of the executer profile defined in `conf/profiles` directory
 >--run_id	Name of the run
 >--input_type	Type of the input data: bcl (for raw data), fastq, or fasta
 >--input		Absolute path to the input data
 >--SE		Single-end reads: YES or NO
+> **OPTIONAL ARGUMENTS:**
+>--single_sample <NAME_OF_SAMPLE>
 
 
 The **additional options** as described for the usage on S3IT can be added in the same manner to the command and all parameters defined in the params.config file can be overwritten on the command line with `--<parames-name> <params-value>`.
 
-### Pipeline does not finish / Missing quality files (DEPRECIATED)
+## License
 
-If the pipeline does not finish properly due to failed processes that leave input channels open, it can happen that the **BUSCO plot, the MultiQC report for the assembly, the quality file** and the **software version file** are not produced. 
-
-[<img src="pics/missing_jobs.png" width="500" />](pics/missing_jobs.png)
-
-With the following workaround the creation of the **BUSCO plot, the MultiQC report**, and the **quality file** can be triggered for the finished samples. 
-
-```
-# DEPRECIATED
-#sbatch pipeline_completion.sh <run_id>
-```
-
-The **run_id** needs to be same as used for the run that did not finish. 
-
-For the sample(s) that failed, find out what the problem was and rerun it in single_sample mode with a different **run_id**.
+[GNU General Public License, version 3](https://www.gnu.org/licenses/gpl-3.0.html)
