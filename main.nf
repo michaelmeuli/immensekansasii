@@ -217,14 +217,14 @@ workflow {
 
       // Only run checkM it it's a prokaryote. Use BUSCO results to check.
       // checkM only works for bacteria and algae
-      run_checkM_ch = unicycler_out.assembly
+      samples_to_run_checkM_ch = unicycler_out.assembly
                         .join(busco_out.eukaryota, remainder: true)
                         // Assuming the busco_out.eukaryota data is in the third position (index 2) of the tuple
                         // Check if the busco data is null (then it's not eukayote and checkM should run)
                         .filter { item -> item[2] == null}          
                         .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple
       
-      checkm_out          = checkm(run_checkM_ch)      
+      checkm_out          = checkm(samples_to_run_checkM_ch)      
       
       // Different metaphlan4 & alignment depending on single-end or paired-end reads
       if (params.SE == "NO") {  
