@@ -53,6 +53,6 @@ process bcl2fastq {
     bcl2fastq --version &> bcl2fastq_info.txt
     cat bcl2fastq_info.txt | grep bcl2fastq > bcl2fastq_vers.txt
     echo ${task.container} > bcl2fastq_singularity.txt
-    cat bcl2fastq_vers.txt bcl2fastq_singularity.txt | tr "\n" "\t" > bcl2fastq_version.txt
+    cat bcl2fastq_vers.txt bcl2fastq_singularity.txt | tr "\\n" "\\t" > bcl2fastq_version.txt
     """
 }

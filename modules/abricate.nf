@@ -24,9 +24,9 @@ process abricate {
     abricate --quiet --nopath --db vfdb ${fasta} > ${sample_id}_virulence.tab
 
     abricate --version > abricate_vers.txt
-    abricate --list | grep ncbi | cut -f1,4 | sed 's/\t/ version /g' > abricate_ncbi_version.txt
-    abricate --list | grep vfdb | cut -f1,4 | sed 's/\t/ version /g' > abricate_vfdb_version.txt
+    abricate --list | grep ncbi | cut -f1,4 | sed 's/\\t/ version /g' > abricate_ncbi_version.txt
+    abricate --list | grep vfdb | cut -f1,4 | sed 's/\\t/ version /g' > abricate_vfdb_version.txt
     echo ${task.container} > abricate_singularity.txt
-    cat abricate_vers.txt abricate_singularity.txt abricate_ncbi_version.txt abricate_vfdb_version.txt | tr "\n" "\t" > abricate_version.txt
+    cat abricate_vers.txt abricate_singularity.txt abricate_ncbi_version.txt abricate_vfdb_version.txt | tr "\\n" "\\t" > abricate_version.txt
     """
 }

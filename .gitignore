@@ -6,3 +6,6 @@ slurm*
 IMMENSE*/
 pipeline.complete
 report*
+/.fleet
+/.idea
+/.vscode
