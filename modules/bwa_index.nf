@@ -22,6 +22,6 @@ process bwaIndex {
 
     echo "bwa index \$(bwa 2>&1 | grep Version | cut -f2 -d " ")" > bwa_index_vers.txt
     echo ${task.container} > bwa_index_singularity.txt
-    cat bwa_index_vers.txt bwa_index_singularity.txt | tr "\n" "\t" > bwa_index_version.txt
+    cat bwa_index_vers.txt bwa_index_singularity.txt | tr "\\n" "\\t" > bwa_index_version.txt
     """
 }

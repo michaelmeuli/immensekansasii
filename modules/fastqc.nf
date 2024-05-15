@@ -25,7 +25,7 @@ process fastqc_raw_reads {
     fastqc -t 2 ${fastqs.join(' ')} && echo "Success" || echo "Failed to run fastqc completely" > fastqc_error.log
     fastqc --version > fastqc_vers.txt
     echo ${task.container} > fastqc_singularity.txt
-    cat fastqc_vers.txt fastqc_singularity.txt | tr "\n" "\t" > fastqc_version.txt
+    cat fastqc_vers.txt fastqc_singularity.txt | tr "\\n" "\\t" > fastqc_version.txt
     """
 }
 
@@ -49,6 +49,6 @@ process fastqc_trimmed_reads {
 
     fastqc --version > fastqc_vers.txt
     echo ${task.container} > fastqc_singularity.txt
-    cat fastqc_vers.txt fastqc_singularity.txt | tr "\n" "\t" > fastqc_version.txt
+    cat fastqc_vers.txt fastqc_singularity.txt | tr "\\n" "\\t" > fastqc_version.txt
     """
 }

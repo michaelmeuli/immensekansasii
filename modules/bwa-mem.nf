@@ -24,7 +24,7 @@ process bwaAlign{
 
     echo "bwa \$(bwa 2>&1 | grep Version | cut -f2 -d " ")" > bwa_mem_vers.txt
     echo ${task.container} > bwa_mem_singularity.txt
-    cat bwa_mem_vers.txt bwa_mem_singularity.txt | tr "\n" "\t" > bwa_mem_version.txt
+    cat bwa_mem_vers.txt bwa_mem_singularity.txt | tr "\\n" "\\t" > bwa_mem_version.txt
     """
 }
 
@@ -47,6 +47,6 @@ process bwaAlignSE{
 
     echo "bwa mem \$(bwa 2>&1 | grep Version | cut -f2 -d " ")" > bwa_mem_vers.txt
     echo ${task.container} > bwa_mem_singularity.txt
-    cat bwa_mem_vers.txt bwa_mem_singularity.txt | tr "\n" "\t" > bwa_mem_version.txt
+    cat bwa_mem_vers.txt bwa_mem_singularity.txt | tr "\\n" "\\t" > bwa_mem_version.txt
     """
 }

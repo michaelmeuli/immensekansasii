@@ -49,7 +49,7 @@ else if (params.input_type == "fastq") {
   if (params.SE == "NO") {
 
       Channel
-        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,R2,1,2}.fastq*" )
+        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,R2,1,2}*.fastq*" )
         .ifEmpty { error "Cannot find any reads matching: ${params.input}/${params.single_sample}**_{R1,R2,1,2}.fastq.gz" }
         //.view { "Identified files: $it" }
         .branch{
@@ -61,7 +61,7 @@ else if (params.input_type == "fastq") {
   else if (params.SE == "YES") {
 
       Channel
-          .fromPath( "${params.input}/**${params.single_sample}*{_R1,_1,}.fastq*")
+          .fromPath( "${params.input}/**${params.single_sample}*{_R1,_1,}*.fastq*")
           .filter{ it =~/^(?!.*(_raw_reads))/ }
           //.view { "Identified files: $it" }
           .ifEmpty { error "Cannot find any reads matching: ${params.input}/${params.single_sample}**{_R1,_1,}.fastq*" }
@@ -102,6 +102,7 @@ include { unicycler; unicyclerSE }                           from "./modules/uni
 include { pilon_remapping; pilon_remappingSE }               from "./modules/pilon"
 include { prokka }                                           from "./modules/prokka"
 include { busco; get_busco_lineages; busco_plot }            from "./modules/busco"
+include { checkm }                                           from "./modules/checkm"
 include { quast }                                            from "./modules/quast"
 include { gtdbtk_classify_wf }                               from "./modules/gtdbtk"
 include { rMLST; rMLST_call }                                from "./modules/rMLST"
@@ -214,6 +215,17 @@ workflow {
       one_contig          = make_one_contig(annotation.fna)
       bwa_index_remapping = indexRemapping(one_contig)
 
+      // Only run checkM it it's a prokaryote. Use BUSCO results to check.
+      // checkM only works for bacteria and algae
+      run_checkM_ch = unicycler_out.assembly
+                        .join(busco_out.eukaryota, remainder: true)
+                        // Assuming the busco_out.eukaryota data is in the third position (index 2) of the tuple
+                        // Check if the busco data is null (then it's not eukayote and checkM should run)
+                        .filter { item -> item[2] == null}          
+                        .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple
+      
+      checkm_out          = checkm(run_checkM_ch)      
+      
       // Different metaphlan4 & alignment depending on single-end or paired-end reads
       if (params.SE == "NO") {  
         metaphlan_out      = metaphlan4(trimm_out_checked.passed.concat(trimm_out_checked.failed), params.metaphlan_db)
@@ -238,7 +250,7 @@ workflow {
       summarized_resistances = generate_resistance_table(abricate_out.sample_id, abricate_out.resistance)
       merge_run_resistances(summarized_resistances.output_file.collect(sort: true))
 
-
+      // the `remainder: true` ensures that if some result doesn't exist, it will be replaced by `NA` in the output summary file. Therefore each value must represent 1 column in the summary output.
       summary_channel = trimm_out.passed_reads_percentage.join(trimm_out.passed_reads_number, remainder: true)
                                                           .join(coverage.read_depth, remainder: true)
                                                           .join(coverage.alt_bases, remainder: true)  
@@ -257,7 +269,10 @@ workflow {
                                                           .join(rmlst_out.alleles_missing, remainder: true)    
                                                           .join(busco_out.complete_busco, remainder: true)
                                                           .join(busco_out.busco_groups, remainder: true)
-                                                          .join(busco_out.busco_lineage, remainder: true)                                                     
+                                                          .join(busco_out.busco_lineage, remainder: true)      
+                                                          .join(checkm_out.checkm_completeness, remainder: true)
+                                                          .join(checkm_out.checkm_contamination, remainder: true)
+                                                          .join(checkm_out.checkm_heterogeneity, remainder: true)                                               
                                                           .join(gtdb_out.species, remainder: true)
                                                           .join(gtdb_out.ani_ref, remainder: true)
                                                           .join(gtdb_out.ani_ani, remainder: true)
@@ -277,16 +292,18 @@ workflow {
                                  fastqc_raw_reads_out.version.first(),
                                  unicycler_out.version.first(),
                                  annotation.version.first(),
+                                 checkm_out.version.first(),
                                  busco_lineages,
                                  assembly_stats.version.first(),
                                  mqc_assembly_out.version,
                                  gtdb_out.version.first(),
+                                 bwa_index_remapping.version.first(),
                                  typing_rMLST.version.first(),
                                  metaphlan_out.version.first(),
                                  typ16S.version.first(),
                                  abricate_out.version.first()).collect()
 
-    if (params.input_type == "bcl") { // if `bcl` input, then bcl2fastq and fastqc where also used
+    if (params.input_type == "bcl") { // if `bcl` input, then bcl2fastq was also used
       software_version_channel = software_version_channel.concat(
                                     bcl2fastq_out.version).collect()
       }
