@@ -6,10 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### `Added`
-- 
+- BWA version is now included in version output
+- CheckM module to assess assembly quality of bacterial genomes (only runs for prokaryotes)
+//- Quality Checking module to assess quality of outcomes per sample
+
 
 ### `Changed`
-- 
+- Replaced `\t` with `\\t` for version file creation to ensure better output format
+
 
 
 ## [1.1.1] - 2024-05-13
