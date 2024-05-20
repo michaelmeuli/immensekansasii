@@ -118,6 +118,8 @@ include { abricate }                                         from "./modules/abr
 include { summary_sample; merge_summaries }                  from "./modules/summary"
 include { write_software_versions }                          from "./modules/write_software_versions"
 include { generate_resistance_table; merge_run_resistances }  from "./modules/resistance_table"
+include { pymlst_add_strain; pymlst_distance; pymlst_subgraph} from "./modules/pymlst"
+
 
 
 /*
@@ -133,12 +135,12 @@ workflow {
 
     // send raw reads to trimmomatic
     bcl2fastq_out.fastq.flatten().branch{
-                                  sarscov2: it =~ /sarscov-2/
                                   undet:    it =~ /Undetermined/
                                   other:    true
                                   }
                                  .set{ fastqs }
 
+    // Send reads to trimmomatic, format it the exact same as if input were fastq files
     reads_for_trimming          = [:]
     reads_for_trimming['other'] = fastqs.other.map{ file -> tuple(file.simpleName.replaceAll(/_R1|_R2$/,''), file)}.groupTuple(sort:true)
     // wait for all files to be converted and then put reads in demultiplex subfolder
@@ -202,7 +204,7 @@ workflow {
       annotation          = prokka(unicycler_out.assembly)
       busco_out           = busco(unicycler_out.assembly, params.busco_files)
       busco_lineages      = get_busco_lineages(busco_out.version.collect())
-      busco_plot(busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect())
+      busco_plot(busco_out.summary_specific)
       assembly_stats      = quast(annotation.fna)
       mqc_assembly_out    = multiqc_assembly(trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect(), 
                                           assembly_stats.stats.collect(), 
@@ -215,12 +217,17 @@ workflow {
       one_contig          = make_one_contig(annotation.fna)
       bwa_index_remapping = indexRemapping(one_contig)
 
+      // Run pyMLST based on rMLST species identification
+      pymlst_out          = pymlst_add_strain(rmlst_out.rmlst.join(unicycler_out.assembly))
+      distance            = pymlst_distance(pymlst_out.summary_specific.join(rmlst_out.rmlst))
+      pymlst_subgraph(pymlst_out.summary_specific.join(rmlst_out.rmlst).join(distance.pymlst_distance))
+      
       // Only run checkM it it's a prokaryote. Use BUSCO results to check.
       // checkM only works for bacteria and algae
       samples_to_run_checkM_ch = unicycler_out.assembly
                         .join(busco_out.eukaryota, remainder: true)
                         // Assuming the busco_out.eukaryota data is in the third position (index 2) of the tuple
-                        // Check if the busco data is null (then it's not eukayote and checkM should run)
+                        // Check if the busco data is null (then it's not eukayota and checkM should run)
                         .filter { item -> item[2] == null}          
                         .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple
       
@@ -301,7 +308,9 @@ workflow {
                                  typing_rMLST.version.first(),
                                  metaphlan_out.version.first(),
                                  typ16S.version.first(),
-                                 abricate_out.version.first()).collect()
+                                 abricate_out.version.first(),
+                                 pymlst_out.version.first()
+                                 ).collect()
 
     if (params.input_type == "bcl") { // if `bcl` input, then bcl2fastq was also used
       software_version_channel = software_version_channel.concat(

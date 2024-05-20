@@ -39,7 +39,7 @@ process trimmomaticPE {
 
     echo "trimmomatic \$(trimmomatic -version)" > trimmomatic_vers.txt
     echo ${task.container} > trimmomatic_singularity.txt
-    cat trimmomatic_vers.txt trimmomatic_singularity.txt | tr "\n" "\t" > trimmomatic_version.txt
+    cat trimmomatic_vers.txt trimmomatic_singularity.txt | tr "\\n" "\\t" > trimmomatic_version.txt
     
     # Extracting passed-reads percentage info for summary
     PASSED_PERC=`grep "Both Surviving" ${sample_id}.quality_read_trimm_info | awk '{print \$8}' | tr -d '()%'`
@@ -81,7 +81,7 @@ process trimmomaticSE {
 
     echo "trimmomatic \$(trimmomatic -version)" > trimmomatic_vers.txt
     echo ${task.container} > trimmomatic_singularity.txt
-    cat trimmomatic_vers.txt trimmomatic_singularity.txt | tr "\n" "\t" > trimmomatic_version.txt
+    cat trimmomatic_vers.txt trimmomatic_singularity.txt | tr "\\n" "\\t" > trimmomatic_version.txt
 
     # Extracting passed-reads percentage info for summary
     PASSED_PERC=`grep "Surviving" ${sample_id}.quality_read_trimm_info | awk '{print \$6}' | tr -d '()%'`

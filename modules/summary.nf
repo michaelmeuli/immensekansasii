@@ -93,6 +93,9 @@ process merge_summaries {
     let sample_count=\$(grep -c "" ${params.run_id}_quality.tsv)-1
     echo "analysed_samples: \$sample_count" >> ${params.run_id}_quality.tsv
 
-    sed 's/,/;/' ${params.run_id}_quality.tsv | sed 's/\t/,/g' > ${params.run_id}_quality.csv
+    sed 's/,/;/' ${params.run_id}_quality.tsv | sed 's/\\t/,/g' > ${params.run_id}_quality.csv
+    # Run the evaluate QC script
+    #evaluate_QC.py --qcfile ${params.run_id}_quality.tab --rulesfile ${params.quality_rules}
+
     """
 }

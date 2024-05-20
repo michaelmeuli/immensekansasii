@@ -28,7 +28,7 @@ process pilon_remapping {
 
     pilon --version | cut -d\\  -f1-3 > pilon_vers.txt
     echo ${task.container} > pilon_singularity.txt
-    cat pilon_vers.txt pilon_singularity.txt | tr "\n" "\t" > pilon_version.txt
+    cat pilon_vers.txt pilon_singularity.txt | tr "\\n" "\\t" > pilon_version.txt
     """
 }
 
@@ -55,6 +55,6 @@ process pilon_remappingSE {
 
     pilon --version | cut -d\\  -f1-3 > pilon_vers.txt
     echo ${task.container} > pilon_singularity.txt
-    cat pilon_vers.txt pilon_singularity.txt | tr "\n" "\t" > pilon_version.txt
+    cat pilon_vers.txt pilon_singularity.txt | tr "\\n" "\\t" > pilon_version.txt
     """
 }

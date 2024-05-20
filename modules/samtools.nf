@@ -35,6 +35,6 @@ process samtools {
 
     samtools --version | head -1 > samtools_vers.txt
     echo ${task.container} > samtools_singularity.txt
-    cat samtools_vers.txt samtools_singularity.txt | tr "\n" "\t" > samtools_version.txt
+    cat samtools_vers.txt samtools_singularity.txt | tr "\\n" "\\t" > samtools_version.txt
     """
 }
