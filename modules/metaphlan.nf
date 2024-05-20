@@ -39,7 +39,7 @@ process metaphlan4 {
     metaphlan --version > metaphlan_vers.txt
     echo ${params.metaphlan_db_name} > metaphlan_db_version.txt
     echo ${task.container} > metaphlan_singularity.txt
-    cat metaphlan_vers.txt metaphlan_singularity.txt metaphlan_db_version.txt | tr "\n" "\t" > metaphlan_version.txt
+    cat metaphlan_vers.txt metaphlan_singularity.txt metaphlan_db_version.txt | tr "\\n" "\\t" > metaphlan_version.txt
 
     TAXA=`grep "s__" ${sample_id}_profiled_metagenome.txt  | grep -v "t__" | awk '{split(\$0,a,"|"); print a[7],"\\t",\$3}'| awk -F __ '{print \$2}' | cut -f1 | head -n 1`
     PURITY=`grep "s__" ${sample_id}_profiled_metagenome.txt  | grep -v "t__" | awk '{split(\$0,a,"|"); print a[7],"\\t",\$3}'| awk -F __ '{print \$2}' | cut -f3 | head -n 1`
@@ -81,7 +81,7 @@ process metaphlan4SE {
     metaphlan --version > metaphlan_vers.txt
     echo ${params.metaphlan_db_name} > metaphlan_db_version.txt
     echo ${task.container} > metaphlan_singularity.txt
-    cat metaphlan_vers.txt metaphlan_singularity.txt metaphlan_db_version.txt | tr "\n" "\t" > metaphlan_version.txt
+    cat metaphlan_vers.txt metaphlan_singularity.txt metaphlan_db_version.txt | tr "\\n" "\\t" > metaphlan_version.txt
     
     TAXA=`grep "s__" ${sample_id}_profiled_metagenome.txt  | grep -v "t__" | awk '{split(\$0,a,"|"); print a[7],"\\t",\$3}'| awk -F __ '{print \$2}' | cut -f1 | head -n 1`
     PURITY=`grep "s__" ${sample_id}_profiled_metagenome.txt  | grep -v "t__" | awk '{split(\$0,a,"|"); print a[7],"\\t",\$3}'| awk -F __ '{print \$2}' | cut -f3 | head -n 1`

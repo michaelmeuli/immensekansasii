@@ -445,6 +445,27 @@ This is your ribosomal MLST database. Make sure you link to this directory and t
 
 Pat yourself on the shoulder if you made it this far. 🥳 
 
+#### cgMLST
+
+The Species-specific cgMLST profiles are downloaded during the analysis as needed (based on rMLST results). 
+If you need to run the pipeline in offline environments, you can download the profiles beforehand as follows:
+To download cgMLST profiles, we use pyMLST to get the newest profiles from [https://www.cgmlst.org](https://www.cgmlst.org/ncs)
+
+```{bash}
+#NOTE: Replace </path/to/immense_dependencies> to your path in the code below
+
+# Start the pyMLST singularity container that you downloaded before and bind necessary paths:
+singularity shell --bind </path/to/immense_dependencies>:</path/to/immense_dependencies> </path/to/immense_dependencies>/singularity/quay.io-biocontainers-pymlst-2.1.6--pyhdfd78af_0.img
+
+# Use `wgMLST import` to download each species
+# For example:
+wgMLST import "/path/to/immense_dependencies/pyMLST/cgMLST/Acinetobacter baumannii" Acinetobacter baumannii
+```
+
+> Repeat for all species that you need, check cgmlst.org for which species a 
+> profile exists or leave out the Species and you'll be prompted about which 
+> Species to download
+
 ## Testing the pipeline
 
 For SLURM-systems the launching of the pipeline is handled by `run_IMMENSE.sh`. 

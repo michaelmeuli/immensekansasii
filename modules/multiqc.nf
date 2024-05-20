@@ -28,7 +28,7 @@ process multiqc_bcl {
 
     multiqc --version > multiqc_vers.txt
     echo ${task.container} > multiqc_singularity.txt
-    cat multiqc_vers.txt multiqc_singularity.txt | tr "\n" "\t" > ${params.run_id}_multiqc_bcl_data/multiqc_version.txt
+    cat multiqc_vers.txt multiqc_singularity.txt | tr "\\n" "\\t" > ${params.run_id}_multiqc_bcl_data/multiqc_version.txt
     """
 }
 
@@ -55,7 +55,7 @@ process multiqc_raw_fastqc {
 
     multiqc --version > multiqc_vers.txt
     echo ${task.container} > multiqc_singularity.txt
-    cat multiqc_vers.txt multiqc_singularity.txt | tr "\n" "\t" > ${params.run_id}_multiqc_fastq_data/multiqc_version.txt
+    cat multiqc_vers.txt multiqc_singularity.txt | tr "\\n" "\\t" > ${params.run_id}_multiqc_fastq_data/multiqc_version.txt
     """
 }
 
@@ -81,7 +81,7 @@ process multiqc_trimmed_fastqc {
 
     multiqc --version > multiqc_vers.txt
     echo ${task.container} > multiqc_singularity.txt
-    cat multiqc_vers.txt multiqc_singularity.txt | tr "\n" "\t" > ${params.run_id}_multiqc_trimmed_data/multiqc_version.txt
+    cat multiqc_vers.txt multiqc_singularity.txt | tr "\\n" "\\t" > ${params.run_id}_multiqc_trimmed_data/multiqc_version.txt
     """
 }
 
@@ -109,6 +109,6 @@ process multiqc_assembly {
 
     multiqc --version > multiqc_vers.txt
     echo ${task.container} > multiqc_singularity.txt
-    cat multiqc_vers.txt multiqc_singularity.txt | tr "\n" "\t" > ${params.run_id}_multiqc_assembly_data/multiqc_version.txt
+    cat multiqc_vers.txt multiqc_singularity.txt | tr "\\n" "\\t" > ${params.run_id}_multiqc_assembly_data/multiqc_version.txt
     """
 }

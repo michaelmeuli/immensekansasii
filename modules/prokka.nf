@@ -25,10 +25,10 @@ process prokka {
     prokka \\
       --addgenes --mincontiglen 200 --genus Genus \\
       --species species --prefix ${sample_id} --rfam --locustag ${sample_id} \\
-      --strain ${sample_id} --outdir 2_annotation --cpus ${task.cpus} ${fasta}
+      --strain ${sample_id} --force --outdir 2_annotation --cpus ${task.cpus} ${fasta}
 
     echo \$(prokka --version 2>&1) > prokka_vers.txt
     echo ${task.container} > prokka_singularity.txt
-    cat prokka_vers.txt prokka_singularity.txt | tr "\n" "\t" > prokka_version.txt
+    cat prokka_vers.txt prokka_singularity.txt | tr "\\n" "\\t" > prokka_version.txt
     """
 }
