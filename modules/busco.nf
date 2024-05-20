@@ -2,33 +2,40 @@
 *  BUSCO module
 */
 
-params.CONTAINER = "ezlabgva-busco_v5.3.2_cv1"
-params.OUTPUT = "busco_output"
+//params.CONTAINER = "ezlabgva-busco_v5.3.2_cv1"
 
 process busco {
-    // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/${sample_id}/3_quality/BUSCO", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/BUSCO", mode: 'copy')
     tag { sample_id }
-    container params.CONTAINER
-    containerOptions "-B ${params.busco_lineage}, -B ${params.busco_files}"
+    // containerOptions "-B ${params.busco_files}"
 
     input:
     tuple val (sample_id), path (fasta)
+    path busco_lineages_path
 
     output:
     tuple val (sample_id), path ("${sample_id}/*"), emit: busco_all
     tuple val (sample_id), path ("${sample_id}/short_summary.specific.*.txt"), emit: summary_specific
-    tuple val (sample_id), path ("${sample_id}/short_summary.generic.*.txt"), emit: summary_generic
+    tuple val (sample_id), path ("${sample_id}/short_summary.generic.*.txt"), optional: true
     path "${sample_id}_busco_version.txt", emit: version
+    tuple val (sample_id), env(COMPLETE_BUSCO), emit: complete_busco
+    tuple val (sample_id), env(BUSCO_GROUPS), emit: busco_groups
+    tuple val (sample_id), env(BUSCO_LINEAGE), emit: busco_lineage
 
     script:
     """
-    busco -m genome -i ${fasta} -o ${sample_id} --auto-lineage-prok --offline --download_path ${params.busco_files}
-
+    busco -f -m genome -i ${fasta} -o ${sample_id} --auto-lineage --offline --download_path ${busco_lineages_path}
     busco --version > busco_vers.txt
-    echo ${params.CONTAINER} > busco_singularity.txt
-    grep "Running BUSCO using lineage dataset" ${sample_id}/logs/busco.log | cut -f2 | cut -d\\  -f6-10 | sed 's/ (prokaryota,//g' | tr ")" " " > busco_lineages_version.txt
+    echo ${task.container} > busco_singularity.txt
+    grep "Running BUSCO using lineage dataset" ${sample_id}/logs/busco.log | cut -f2 | cut -d" "  -f6-10 | sed 's/ (prokaryota,//g' | tr ")" " " > busco_lineages_version.txt
     cat busco_vers.txt busco_singularity.txt busco_lineages_version.txt | tr "\n" "\t" > ${sample_id}_busco_version.txt
+
+    # Extract key information:
+    grep "C:" ${sample_id}/short_summary.specific.*.txt | sed 's/,D/;D/g' | tr "," "\t" | cut -f2,5 > ${sample_id}_busco_classification.txt
+    COMPLETE_BUSCO=`grep "C:" ${sample_id}/short_summary.specific.*.txt | sed 's/,D/;D/g' | tr "," "\t" | cut -f2`
+    BUSCO_GROUPS=`grep "C:" ${sample_id}/short_summary.specific.*.txt | sed 's/,D/;D/g' | tr "," "\t" | cut -f5`
+    BUSCO_LINEAGE=`grep "lineage dataset is:" ${sample_id}/short_summary.specific.*.txt | awk '{print \$6}'`
+    
     """
 }
 
@@ -53,9 +60,8 @@ process get_busco_lineages {
 
 
 process busco_plot {
-    publishDir("${params.run_id}_transfer_result", mode: 'copy')
+    publishDir("${params.output_dir_run}", mode: 'copy')
     tag { "${params.run_id}" }
-    container params.CONTAINER
 
     input:
     path (short_summaries)

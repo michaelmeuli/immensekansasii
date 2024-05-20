@@ -1,73 +1,196 @@
 #!/bin/bash
 
-#SBATCH --time=1-00:00:00
-#SBATCH --mem=2G
-#SBATCH --cpus-per-task=1
-#SBATCH --job-name=IMMENSE
+# This script checks that the dependencies are all installed.
+# If everything exists, it then submits the nextflow controller job as a sbatch job
+
+###############################################################
+## Parse and Check arguments
+###############################################################
+
+# Display usage
+usage() {
+    echo "Usage: $0 -j <Slurm Job Name> -t <Input Type> -r <Run ID> -i <Input Directory> [-x <Additional Options>]"
+    echo ""
+    echo "-j    Name of the SLURM job"
+    echo "-t    Specifies the input type: raw_PE, raw_SE, fq_PE, fq_SE, or fasta"
+    echo "-r    Used to tag the transfer folder, the quality file, and the software version file"
+    echo "-i    This is where input files are"
+    echo '-x    Optional. Used for specifying single samples, email address, or different parameters for trimmomatic. Several additional options can be combined by listing them one after the other inside double quotes "option1 option2 ...".'
+    exit 1
+}
+
+# Initialize variables
+jobName=""
+inputType=""
+runId=""
+inputDirectory=""
+additionalArguments=""
+
+# Loop through arguments and process them
+while getopts ":j:t:r:i:x:" opt; do
+    case ${opt} in
+        j )
+            jobName=$OPTARG
+            ;;
+        t )
+            inputType=$OPTARG
+            ;;
+        r )
+            runId=$OPTARG
+            ;;
+        i )
+            inputDirectory=$OPTARG
+            ;;
+        x )
+            additionalArguments=$OPTARG
+            ;;
+        \? )
+            echo "Invalid option: $OPTARG" 1>&2
+            usage
+            ;;
+        : )
+            echo "Invalid option: $OPTARG requires an argument" 1>&2
+            usage
+            ;;
+    esac
+done
+shift $((OPTIND -1))
+
+# Check if all required options were provided
+if [ -z "$jobName" ] || [ -z "$runId" ] || [ -z "$inputType" ] || [ -z "$inputDirectory" ]; then
+    echo "Options -j -t -r -i  are required."
+    usage
+fi
+
+# Print the given arguments
+echo "Job Name:             $jobName"
+echo "Run ID:               $runId"
+echo "Input Type:           $inputType"
+echo "Input Directory:      $inputDirectory"
+echo "Additional Arguments: $additionalArguments"
+
+# Check that input directory exists:
+if [ -d $inputDirectory ]; then
+    echo ""
+else
+  echo ""
+  echo "ERROR => Input directory does not exist. Please check your path."
+  echo ""
+  exit 1
+fi
+
+###############################################################
+###############################################################
+
+module load mamba # Using mamba instead of anaconda because its smaller and faster
+
+###############################################################
+## Check that Conda Environment has access to all Required Packages
+###############################################################
+
+# Main directory is the directory where the pipeline is located
+MAIN_DIR="$(dirname "$(readlink -f "$0")")"
+
+echo "Pipeline is located at: $MAIN_DIR"
+
+# Conda Environment name
+ENV_NAME="env_immense"
+
+# Path to the environment.yml file
+env_file="$MAIN_DIR/environment.yml"
+
+extract=false # Helper variable for checking packages
+# Create an empty array to hold package names
+PACKAGES=()
+
+# Read the environment.yml line by line
+while IFS= read -r line; do
+    if [[ $line == "dependencies:" ]]; then
+        extract=true
+        continue
+    fi
+
+    # Extract package names if within the dependencies block
+    if $extract && [[ $line =~ ^[[:space:]]*-[[:space:]]*([^=]+)= ]]; then
+        PACKAGES+=("${BASH_REMATCH[1]}")
+    elif $extract && [[ $line =~ ^[[:space:]]*- ]]; then
+        break # Stop if another block starts
+    fi
+done < "$env_file"
+
+# Check that the `env_immense` conda environment exists
+if conda info --envs | grep -qw $ENV_NAME; then
+    echo "Environment '$ENV_NAME' exists. Checking for packages..."
+
+    # Activate environment
+    source activate $ENV_NAME
+
+    # Loop through packages and install if missing
+    for pkg in "${PACKAGES[@]}"; do
+        if ! conda list -n $ENV_NAME | grep -qw $pkg; then
+            echo "Package '$pkg' is missing. Installing..."
+            #conda install -n $ENV_NAME $pkg -y
+            # If the package is missing, just install all required packages from the environment file.
+            conda env update -n $ENV_NAME --file $MAIN_DIR/environment.yml
+        else
+            echo "Package '$pkg' was found."
+        fi
+    done
+else
+    echo "Conda environment '$ENV_NAME' does not exist. Creating it now."
+    echo ""
+    echo "This may take a few minutes"
+    echo ""
+    conda env create -f $MAIN_DIR/environment.yml
+    echo "Done installing Conda environment."
+    echo "Please restart pipeline again."
+    exit 1
+fi
+
+echo "Done checking environment."
+echo "==============================="
+echo "==============================="
+
+#########################################################
+## Now the conda environment exists and is loadable
+#########################################################
+
+# For future if we need current edge version 24.02.0
+# This will automatically install this version before running the pipeline (if needed)
+#TODO: Remove this once conda can install this version
+#NXF_VER=24.02.0-edge 
 
 
-if [[ $1 == raw_PE ]]
+#########################################################
+## Checking input arguments:
+#TODO check arguments more robustly.
+
+if [[ $inputType == raw_PE ]]
 then input_type="bcl" && single_end="NO"
-elif [[ $1 == raw_SE ]]
+elif [[ $inputType == raw_SE ]]
 then
   input_type="bcl" && single_end="YES"
-elif [[ $1 == fq_PE ]]
+elif [[ $inputType == fq_PE ]]
 then
   input_type="fastq" && single_end="NO"
-elif [[ $1 == fq_SE ]]
+elif [[ $inputType == fq_SE ]]
 then
   input_type="fastq" && single_end="YES"
-elif [[ $1 == fasta ]]
+elif [[ $inputType == fasta ]]
 then
   input_type="fasta" && single_end="NO"
 else
   echo "you must specify an input option of raw_PE, raw_SE, fq_PE, fq_SE, or fasta!" && exit 1
 fi
 
-export SINGULARITY_BINDPATH=/scratch,/data,/home/$USER,/shares
-export SINGULARITY_CACHEDIR=/shares/amr.imm.uzh/.singularity
-export SINGULARITY_TMPDIR=/tmp
-export TMPDIR="/tmp"
+#########################################################
 
-module purge
-module load anaconda3
-module load singularityce/3.10.2
-source activate /home/$USER/data/miniconda3/envs/nextflow
+### Submitting the nextflow script to SLURM
 
-launchDir=$PWD
+echo "Submitting nextflow coordinator to SLURM."
+sbatch --job-name=$jobName $MAIN_DIR/bin/submit_to_cluster.sh $MAIN_DIR $input_type $single_end $runId $inputDirectory $additionalArguments
+# The submit_to_cluster.sh script expects the inputs in this exact order.
 
-MAIN_DIR="/shares/amr.imm.uzh/bioinfo/pipelines/USBacto"
-
-nextflow run $MAIN_DIR/main.nf \
-          -with-singularity -with-report -profile slurm \
-          --run_id "$2" \
-          --input_type "$input_type" \
-          --input "$3" \
-          --SE "$single_end" \
-          $4
-
-
-module purge
-module load amd
-module load rstudio
-
-cp $MAIN_DIR/bin/resistance_table.R assembly/
-cd $launchDir/assembly/
-Rscript resistance_table.R
-mv resistances.txt $launchDir/${2}_transfer_result
-
-cd $launchDir/${2}_transfer_result/
-cp $MAIN_DIR/bin/Dashboard_tabset.Rmd .
-module load singularityce/3.10.2
-source activate /home/$USER/data/miniconda3/envs/nextflow
-module load rstudio
-
-R -e "rmarkdown::render('Dashboard_tabset.Rmd',output_file='QC_dashboard.html')"
-
-cd $launchDir
-rm work/*/*/*.sam work/*/*/*.bam* work/*/*/*.fastq.gz
-
-touch pipeline.complete
-chmod -R 775 $launchDir
-
-
+# To run this script run:
+# cd where/you/want/your/output
+# bash /home/progal/software/IMMENSE_phil_dev/run_IMMENSE.sh -j IMMENSE_phil_test -t fq_PE -r phil_test -i /home/progal/data/IMMense_optimisation/reads/bursta

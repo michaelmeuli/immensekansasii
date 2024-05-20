@@ -2,15 +2,14 @@
 *  unicycler module
 */
 
-params.CONTAINER = "quay.io/biocontainers/unicycler:0.4.8--py37h13b99d1_3"
-//params.CONTAINER = "https://depot.galaxyproject.org/singularity/unicycler:0.4.8--py37h13b99d1_3"
-params.OUTPUT = "unicycler_output"
+//params.CONTAINER = "quay.io/biocontainers/unicycler:0.4.8--py39h98c8e45_5"
+
+//params.OUTPUT = "unicycler_output"
 
 process unicycler {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/${sample_id}/1_unicycler", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/1_unicycler", mode: 'copy')
     tag { sample_id }
-    container params.CONTAINER
 
     input:
     tuple val (sample_id), path (fastq_r1), path (fastq_r2)
@@ -30,7 +29,7 @@ process unicycler {
     mv unicycler.log ${sample_id}_unicyler.log
 
     unicycler --version > unicycler_vers.txt
-    echo ${params.CONTAINER} > unicycler_singularity.txt
+    echo ${task.container} > unicycler_singularity.txt
     cat unicycler_vers.txt unicycler_singularity.txt | tr "\n" "\t" > unicycler_version.txt
     """
 }
@@ -38,9 +37,8 @@ process unicycler {
 
 process unicyclerSE {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/${sample_id}/1_unicycler", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/1_unicycler", mode: 'copy')
     tag { sample_id }
-    container params.CONTAINER
 
     input:
     tuple val (sample_id), path (fastq)
@@ -58,7 +56,7 @@ process unicyclerSE {
     mv unicycler.log ${sample_id}_unicyler.log
 
     unicycler --version > unicycler_vers.txt
-    echo ${params.CONTAINER} > unicycler_singularity.txt
+    echo ${task.container} > unicycler_singularity.txt
     cat unicycler_vers.txt unicycler_singularity.txt | tr "\n" "\t" > unicycler_version.txt
     """
 }

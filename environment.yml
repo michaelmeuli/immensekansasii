@@ -1,0 +1,13 @@
+name: env_immense
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+  - r
+dependencies:
+  - python=3.8
+  - nextflow=23.10.1
+  - singularity=3.8
+#  - r-dt=0.23
+#  - r-ggplot2=3.3.6
+#  - r-flexdashboard=0.6.2

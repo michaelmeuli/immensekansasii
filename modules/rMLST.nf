@@ -1,20 +1,17 @@
 /*
 *  rMLST module
 */
-
-params.CONTAINER = "quay.io/biocontainers/blast:2.12.0--pl5262h3289130_0"
-//params.CONTAINER = "https://depot.galaxyproject.org/singularity/blast:2.12.0--pl5262h3289130_0"
-params.OUTPUT = "rmlst_output"
+// Using prokka container because it contains blast & python
+//params.CONTAINER = "quay.io/biocontainers/prokka:1.14.6--pl5262hdfd78af_1"
 
 process rMLST {
-    // publishDir(params.OUTPUT, mode: 'copy')
-    // publishDir("results/${fasta.getBaseName()}/3_quality/rMLST", mode: 'copy')
     tag { fasta }
-    container params.CONTAINER
+    //containerOptions "-B ${params.db_rMLST}"
+
 
     input:
     tuple val (sample_id), path (fasta)
-    path (db_rMLST)
+    path rMLST_database
 
     output:
     tuple val (sample_id), path ("rMLST_blast_*.tab"), emit: blast_tabs
@@ -24,7 +21,7 @@ process rMLST {
     """
     #!/bin/bash
 
-    for gene in ${db_rMLST}/*.fas
+    for gene in ${rMLST_database}/*.fas
     do
     let counter=counter+1
     blastn -num_threads ${task.cpus} -db "\$gene" -query ${fasta} -max_target_seqs 100 -max_hsps 1 \
@@ -33,27 +30,36 @@ process rMLST {
     done
 
     echo "rMLST \$(blastn -version | head -1)" > blastn_rMLST_vers.txt
-    echo ${db_rMLST} > db_version_rMLST.txt
-    echo ${params.CONTAINER} > blastn_rMLST_singularity.txt
+    echo ${rMLST_database} > db_version_rMLST.txt
+    echo ${task.container} > blastn_rMLST_singularity.txt
     cat blastn_rMLST_vers.txt blastn_rMLST_singularity.txt db_version_rMLST.txt | tr "\n" "\t" > blastn_rMLST_version.txt
     """
 }
 
-process call_rMLST {
+process rMLST_call {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/${sample_id}/3_quality/rMLST", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/rMLST", mode: 'copy')
     tag { sample_id }
+    
 
     input:
     tuple val (sample_id), path (blast_tabs)
-    path (bigsdb_rMLST)
+    path bigs_database_rMLST
 
     output:
     tuple val (sample_id), path ("${sample_id}_rMLST.tab"), emit: rmlst
+    tuple val (sample_id), env(TAXA), emit: taxa
+    tuple val (sample_id), env(BEST_rST), emit: best_rST
+    tuple val (sample_id), env(ALLELES_MISSING), emit: alleles_missing
 
     script:
     """
-    call_rMLST_updated_P3.py ${bigsdb_rMLST} \
+    call_rMLST_updated_P3.py ${bigs_database_rMLST} \
     ${blast_tabs} > ${sample_id}_rMLST.tab
+
+    # Extracting key information
+    TAXA=`cut -f1 -d\$'\t' ${sample_id}_rMLST.tab`
+    BEST_rST=`cut -f2 -d\$'\t' ${sample_id}_rMLST.tab`
+    ALLELES_MISSING=`cut -f3 -d\$'\t' ${sample_id}_rMLST.tab`
     """
 }

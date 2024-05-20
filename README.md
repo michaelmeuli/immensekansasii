@@ -6,7 +6,8 @@ IMM Extended Nextflow Sequencing Environment
 
 ## Author
 
-* Michèle Leemann and Marco Meola (mmeola@imm.uzh.ch)
+* Michèle Leemann, Marco Meola (mmeola@imm.uzh.ch)
+* Updated/extended by Philipp v. Bieberstein
 
 Institution: Applied Microbiology Research - Institute of Medical Microbiology - University of Zurich (UZH)
 
@@ -22,8 +23,10 @@ The steps that are included are:
 	* Quast (5.0.2)
 	* GenomeQC - BUSCO (5.3.2)
 * Taxonomy
-	* GTDB-tk1 (2.1.0)
-	* Metaphlan3 (3.0.13)
+	* GTDB-tk (2.3.2)
+	* Metaphlan4 (4.1.0)
+	* 16S blastn (2.12.0+)
+	* rMLST blastn (2.11.0+)
 * Genome annotation
 	* Prokka (1.14.6)
 * Genome inspection (antimicrobial resistance genes, virulence factors)
@@ -44,38 +47,43 @@ The steps that are included are:
 	* [Troubleshooting](#Troubleshooting)
 		* [Additional samples](#Additional-samples)
 		* [Inspecting failed processes](#Inspecting-failed-processes)
-		* [Pipeline does not finish / Missing quality files](#Pipeline-does-not-finish-/-Missing-quality-files)
 
 * [Preparations for usage on other infrastructure](#Preparations-for-usage-on-other-infrastructure)
 	* [Requirements](#Requirements)
 	* [Adjusting the nextflow.config file](#Adjusting-the-nextflow.config-file)
 	* [Adjusting the params.config file](#Adjusting-the-params.config-file)
-	* [Launching the pipeline](#Launching-the-pipeline)
+	* [Launching the pipeline](#Testing-the-pipeline)
 		
 
 # Introduction
 
 IMMENSE is a nextflow pipeline. Information about Nextflow can be found under https://www.nextflow.io/ and in the [Nextflow documentation](https://www.nextflow.io/docs/latest/index.html).   
 
-The workflow of the pipeline is defined in the **main.nf** file. The underlying processes are defined in the **modules** of each tool. The configuration for the usage of the containers (Singularity) and the ressource management for the executor (SLURM) are defined in the **nextflow.config** file. The locations of the required databases and default values are specified in the **params.config** file. 
+The workflow of the pipeline is defined in the **main.nf** file. The underlying processes are defined in the **modules** of each tool. The configuration for the usage of the containers (Singularity) and the resource management for the executor (SLURM) are defined in the config files **nextflow.config** (for general settings) and **conf/profiles/*.config** for infrastructure specific settings. The infrastructure-specific profiles define where the locations of the required databases are on that system.
 
-Each process of the pipeline has its own working directory that is located in the **work** folder, where all the output and log files for each process are stored. The favoured output files are copied to the results folder and therefore it is useful to **remove the work directory** if the pipeline finished satisfactorily.  
+Each process of the pipeline has its own working directory that is located in the **work** folder, where all the output and log files for each process are stored. The favoured output files are copied to the results folder and therefore the **work directory can be removed if the results are satisfactory**. Otherwise this **work** directory is needed to resume the pipeline after making changes.
 
-While the pipeline is running the status can be monitored in **.nextflow.log** or in the slurm file. With successful completion the **report.html** is produced which gives information about each process inlcuding the used ressources. 
+While the pipeline is running the status can be monitored in **.nextflow.log** or in the slurm file. With successful completion the **report.html**, **timeline.html** and **trace.txt** files are produced which give information about each process including the used ressources. 
 
-# Running IMMENSE on S3IT
+>**NOTE:** To run IMMENSE on a SLURM cluster, the `run_IMMENSE.sh` will submit a SLURM job which will start the nextflow pipeline. If you run IMMENSE locally on a computer, you will directly launch the nextflow pipeline with `nextflow run main.nf ...`
 
-The pipeline can be run on **raw data**, **fastq files**, or **fasta files**.
+# Running IMMENSE on S3IT (UZH SLURM cluster)
 
-The general command to run the pipeline is:
+> Make sure all the required databases and software is installed: [Requirements](#Requirements)
+
+>The pipeline can be run on **raw BCL data**, **fastq files**, or **fasta files**. By default, the output and work directory is saved in the current working directory (can be changed in infrastructure-specific profiles).
+
+The general command to run the pipeline on a SLURM cluster:
 
 ```
-sbatch --job-name=IMMENSE_<run_ID> /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh <input_type> <run_id> </absolute_path/to/input> "<additional_options>"
+# Go to directory where you want to save your output
+cd where/you/want/your/output
+
+# Start Pipeline
+bash path/to/pipeline/run_IMMENSE.sh -j <SLURM_JOB_NAME> -t <input_type> -r <run_id> -i </absolute_path/to/input> -x "<additional_options>"
 ```
 
-**input_type run_id /absolute_path/to/data "additional_options"** must be provided in this order!
-
-**--job-name** is optional. If not provided the name of the job is IMMENSE.
+**SLURM_JOB_NAME**: Job name for the SLURM job name
 
 **input_type**: raw_PE, raw_SE, fq_PE, fq_SE, or fasta
 
@@ -83,7 +91,15 @@ sbatch --job-name=IMMENSE_<run_ID> /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE
 
 **"additional_options"**: is optional and is used for specifying single samples, email address, or different parameters for trimmomatic. Several additional options can be combined by listing them one after the other inside double quotes (```"option1 option2 ... "```). 
 
-After completion of the pipeline and if everything is ok, it is useful to **remove the work folder**. 
+>After completion of the pipeline and if everything is ok, you can free disk space by **removing the work folder**.
+
+The general command to run the pipeline locally:
+
+>**NOTE:** For local run, the `--input_type` is one of: [fasta, fastq, bcl] and the `--SE` is one of[YES, NO] which specifies single-end (YES) or paired-end (NO).
+
+```
+nextflow run /path/to/IMMENSE/main.nf -profile <configuration-profile-name> --run_id <run_id> --input_type <input_type> --input /path/to/IMMENSE/data/test_dataset --SE <YES/NO>
+```
 
 ## Running the pipeline on raw data
 
@@ -100,9 +116,24 @@ Provide the absolute path to where the **samplesheet** and the **data** is locat
 Example command for analysing the raw paired-end data of run500:  
 
 ``` 
-sbatch --job-name=IMMENSE_run500 /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh raw_PE run500 /scicore/home/egliadr/GROUP/runQC/run500/demultiplexing
+bash path/to/pipeline/run_IMMENSE.sh -j IMMENSE_run500 -t raw_PE -r run500 -i /scicore/home/egliadr/GROUP/runQC/run500/demultiplexing
 ```
-**Note**: There must be no quotes around the paths.
+To run locally or on IMM cluster, the nextflow script is started directly without the *run_IMMENSE.sh* script:
+
+> NOTE: Use **tmux** sessions so that the pipeline continues running even if you disconnect your terminal session.
+
+```
+# Use tmux so you can close the command line but keep the job running (RECOMMENDED)
+tmux
+
+nextflow run /path/to/IMMENSE/main.nf -profile imm --run_id run500 --input_type fastq --input /path/to/IMMENSE/data/test_dataset --SE NO
+
+# Later you can re-enter the tmux session by 
+tmux a -t 0 
+# Or replace 0 with your session-ID if you have multiple tmux sessions
+
+```
+>**Note**: There must be no quotes around the paths.
 
 ## Running the pipeline on fastq files
 
@@ -119,11 +150,12 @@ or for a single species
 ``` 
 /shares/amr.imm.uzh/data/illumina/routine/run500/reads/esccol 
 ``` 
+> The pipeline uses the parent directory name that contains the *fastq.gz* files as the predicted species name. If you don't follow this convention, the expected species will be meaningless but everything should still work.
 
 Example command for analysing the paired-end reads of run500:  
 
 ``` 
-sbatch --job-name=IMMENSE_run500 /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh fq_PE run500 /scicore/home/egliadr/GROUP/runQC/run500/reads
+bash path/to/pipeline/run_IMMENSE.sh -j IMMENSE_run500 -t fq_PE -r run500 -i /scicore/home/egliadr/GROUP/runQC/run500/reads
 ``` 
 **Note**: There must be no quotes around the paths.
 
@@ -131,18 +163,18 @@ sbatch --job-name=IMMENSE_run500 /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/r
 
 It is possible to run one or several single samples out of the reads folder. 
 
-For **one single sample** add ```"--single_sample <sample_id>"``` at the end of the sbatch command (i.e. **"additional_options"**).
+For **one single sample** add ```"--single_sample <sample_id>"``` with the `-x` flag in the bash command (i.e. **"additional_options"**).
 
 Example to run one **single sample**: 
 ``` 
-sbatch --job-name=IMMENSE_singleSample /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh fq_PE run_singleSample /scicore/home/egliadr/GROUP/runQC/IMMENSETestHSS/reads/pseaer "--single_sample 401915-22"
+bash path/to/pipeline/run_IMMENSE.sh -j IMMENSE_singleSample -t fq_PE -r run_singleSample -i /scicore/home/egliadr/GROUP/runQC/IMMENSETestHSS/reads/pseaer -x "--single_sample 401915-22"
 ``` 
 
 For **several individual samples** add ```"--single_sample {sample_id_1,sample_id_2,...,sample_id_X}"``` at the end of the sbatch command (i.e. **"additional_options"**).
 
 Example to run **three samples**:
 ``` 
-sbatch --job-name=IMMENSE_threeSamples /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh fq_PE run_threeSamples /scicore/home/egliadr/GROUP/runQC/IMMENSETestHSS/reads "--single_sample {401915-22,502637-1-21,202315-22}"
+bash path/to/pipeline/run_IMMENSE.sh -j IMMENSE_threeSamples -t fq_PE -r run_threeSamples -i /scicore/home/egliadr/GROUP/runQC/IMMENSETestHSS/reads -x "--single_sample {401915-22,502637-1-21,202315-22}"
 ``` 
 ## Running the pipeline on fasta files
 
@@ -151,22 +183,23 @@ To run the pipeline on fasta files provide a directory with the genome files to 
 The **input_type** to be used is **fasta**.
 
 ``` 
-sbatch --job-name=IMMENSE_genomes /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh fasta run_genomes /S3IT/home/egliadr/GROUP/Michele/example_genomes
+bash path/to/pipeline/run_IMMENSE.sh -j IMMENSE_genomes -t fasta -r run_genomes -i /S3IT/home/egliadr/GROUP/Michele/example_genomes
 ``` 
 
 ## Email-notification
 
 To receive an email notification when the pipeline is finished including multiqc files and the quality file use  
-```"--email <email_address1,email_address2,...>"``` at the end of the sbatch command (i.e. **"additional_options"**).
+```"--email <email_address1,email_address2,...>"``` at the end of the sbatch command (i.e. **"additional_options"**). Or specify the email address in the infrastructure specifc config profile with the *email parameter*.
 
 ``` 
-sbatch --job-name=IMMENSE_run500 /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh raw_PE run500 /S3IT/home/egliadr/GROUP/runQC/run500/demultiplexing "--email michele.leemann@unibas.ch"
+bash path/to/pipeline/run_IMMENSE.sh -j IMMENSE_run500 -t raw_PE -r run500 -i /scicore/home/egliadr/GROUP/runQC/run500/demultiplexing -x "--email username@imm.uzh.ch"
+
 ```
 
 You can also use it in combination with the single_sample option:
 
 ``` 
-sbatch --job-name=IMMENSE_run500 /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh fq_PE run_threeSamples /S3IT/home/egliadr/GROUP/runQC/IMMENSETestHSS/reads "--single_sample {sample_id_1,sample_id_2,...,sample_id_X} --email michele.leemann@unibas.ch"
+bash path/to/pipeline/run_IMMENSE.sh -j IMMENSE_run500 -t raw_PE -r run500 -i /scicore/home/egliadr/GROUP/runQC/run500/demultiplexing -x "--single_sample {sample_id_1,sample_id_2,...,sample_id_X} --email username@imm.uzh.ch"
 ``` 
 
 ## Change parameters for Trimmomatic
@@ -187,22 +220,35 @@ Both, SLIDINGWINDOW and MINLEN need to be specified, but also additional trimmom
 Full command:
 
 ``` 
-sbatch --job-name=IMMENSE_run500 /shares/amr.imm.uzh/bioinfo/pipelines/IMMENSE/run_IMMENSE.sh raw_PE run500 /S3IT/home/egliadr/GROUP/runQC/run500/demultiplexing "--trimmomatic_PE_extra SLIDINGWINDOW:4:12 MINLEN:80"
+bash path/to/pipeline/run_IMMENSE.sh -j IMMENSE_run500 -t raw_PE -r run500 -i /scicore/home/egliadr/GROUP/runQC/run500/demultiplexing -x "--trimmomatic_PE_extra SLIDINGWINDOW:4:12 MINLEN:80"
 ```
 
 ## Troubleshooting
 
+### Lacking Write permission
+
+If you receive this error when starting the pipeline:
+```
+ERROR ~ .nextflow/history.lock (No such file or directory)
+
+ -- Check '.nextflow.log' file for details
+```
+Then this usually means you don't have permission to write into your current working directory. Add write permissions to current working directory with `sudo chmod 777 .`
+
+
 ### Additional samples
 
-If there are additional samples for a run or samples need to be rerun start the pipeline again in the run folder but use a different **run_id**, for example ```run500_2```. 
+If there are additional samples for a run or samples need to be re-run just re-start the pipeline again.It may help to use a different **run_id**, for example ```run500_2``` so that you know which results have been updated.
 
-The results for the samples will be added to ```assembly/results``` and a second transfer folder will be created. 
+The results for the samples will be added to ```assembly/results``` and the transfer_folder will either update or a new one will be created if you change the **run_id**.
 
 If the same **run_id** is used, the existing quality and software version files will get overwritten. 
 
 ### Inspecting failed processes
 
 In the slurm file all processes run in the pipeline are visible. If a job fails, the exit status is displayed. 
+
+>**NOTE:** The `trace.txt` file can be esspecially helpful to see which processes failed and what their *work* directory is.
 
 [<img src="pics/slurm_fail.png" width="800" />](pics/slurm_fail.png)
 
@@ -212,76 +258,232 @@ Besides input and output files, the working directory of each process has the fo
 
 [<img src="pics/command_files.png" width="400" />](pics/command_files.png)
 
-The **.command.sh** file shows the command that was run in the process, and the **.command.err** the error that caused the failing of the process.
+The `.command.sh` file shows the command that was run in the process, and the `.command.err` the error that caused the failing of the process.
 
 [<img src="pics/error.png" width="600" />](pics/error.png)
 
-Sometimes the .command.log or the .command.out file can give further information about the problem. 
+Often the `.command.log` or the `.command.out` file can give further information about the problem. 
 
-### Pipeline does not finish / Missing quality files
-
-If the pipeline does not finish properly due to failed processes that leave input channels open, it can happen that the **BUSCO plot, the MultiQC report for the assembly, the quality file** and the **software version file** are not produced. 
-
-[<img src="pics/missing_jobs.png" width="500" />](pics/missing_jobs.png)
-
-With the following workaround the creation of the **BUSCO plot, the MultiQC report**, and the **quality file** can be triggered for the finished samples. 
-
-```
-sbatch pipeline_completion.sh <run_id>
-```
-
-The **run_id** needs to be same as used for the run that did not finish. 
-
-For the sample(s) that failed, find out what the problem was and rerun it in single_sample mode with a different **run_id**.
+The hidden `.nextflow.log` file in the main working directory also has a lot of helpful information for debugging.
 
 # Preparations for usage on other infrastructure
 
-## Requirements
-
-Install Nextflow either by using Bioconda or curl (for instructions see https://www.nextflow.io/). The pipeline was tested with Nextflow version 21.10.0.
+### Install Dependencies
 
 Clone IMMENSE repository.
 
-Get all the required singularity images by running ``` bash pull_singularity_img.sh ``` in the designated singularity cache folder.
+```
+git clone https://gitlab.uzh.ch/appliedmicrobiologyresearch/amr_research/immense.git
+```
 
-## Adjusting the nextflow.config file
+Install [miniconda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) or Mamba. Then the `run_IMMENSE.sh` script (used for SLURM clusters with `module load` functionality) automatically checks if you have all dependencies installed and if not installs them based on `environment.yml`. 
 
-Change the path of **singularity cacheDir** in the **nextflow.config** file to the path were you stored the singularity images.
+Alternatively, manually use the `environment.yml` file to install the dependencies:
 
-If the infrastructure is not based on SLURM, a **new profile** for the given executor needs to be defined.
+```
+cd path/to/IMMENSE_repo
+conda env create -f environment.yml
+# This creates a conda environment called `env_immense` which can be activated by:
+# conda activate env_immense
+```
 
-If the infrastructure is based on SLURM, the **--qos** directive of the processes may be adjusted to the available --qos of the infrastructure. Possibly also other directives need to be adjusted.
+### Download Singular containers
+Get all the required singularity images. Either locally or by starting an interactive SLURM session if you're on a cluster: (login node will run out of memory)
 
-## Adjusting the params.config file
+>**NOTE:** Update the `cacheDir =` argument in the `conf/profiles` config file for your infrastructure-specific profile under the singularity settings.
 
-Adjust the paths in the params.config file to location of the different databases/files. 
+```
+srun --pty -n 1 -c 6 --time=01:00:00 --mem=16G bash -l
+```
 
-The following databases/files are required:
+Then loading singularity and using the script in the repo to load all the container images to the location where they should be saved. You supply the path to the script as the only argument. This should match with your path in `conf/profiles/<your-profile>.config`
 
-* Illuminaclip fasta
+```
+conda activate env_immense
+
+# Navigate to the pipeline repository
+cd path/to/IMMENSE_repo
+
+# Then run the script to pull all the container images to the directory you specify
+bash Singularity/pull_singularity_img.sh path/to/directory/singularity_images_cache
+```
+
+## Adjusting the Config files
+
+Global configurations are set in `nextflow.config` (should not need changing) and infrastructure specific configurations are specified in config "profiles" in the `conf/profiles` directory.
+
+To run on UZH's S3IT cluster, we use the `s3it.config`. To run on the IMM cluster without SLURM we use the `imm.config`. These are specified using: `-profile s3it` or `-profile imm`.
+
+To run the pipeline somewhere else (or if the setup changes) create a new "profile" by copying one of the existing `.config` files and changing the profile name and the **database paths** and any other settings you need. If using the `run_IMMENSE.sh` script to submit the pipeline to the SLURM scheduler, also update the `-profile` argument in the `bin/submit_to_cluster.sh` script which contains the nextflow command.
+
+### Setting up on a new infrastructure
+
+Adjust the paths in the infrastructure specific `.config` files to location of the different databases/files. 
+
+The following databases/files are required (see below how to install/download):
+
+* Metaphlan4 database
 * BUSCO database
 * GTDB 
-* rMLST database
 * 16S database
-* Metaphlan3 database
+* rMLST database
 
-## Launching the pipeline
+### Prepare required Databases
 
-For S3IT the launching of the pipeline was defined in the run_IMMENSE.sh (or in the old version run_pipeline.sh respectively). 
+#### metaphlan4
+```{bash}
+# Put the metaphlan4 database where you want and update path in params.config
 
-The general command to launch the pipeline is: 
+# The easiest way to download metaphlan4 database is to use metaphlan4 (depending on your system you may have to start an interactive SLURM session)
+
+conda activate env_immense
+
+singularity shell path/to/singularity/containers/quay.io-biocontainers-metaphlan-4.1.0--pyhca03a8a_0.img 
+
+cd path/to/immense_dependencies/metaphlan4/database # where you want the database to exist
+
+# To download the June 2023 database use the following command
+metaphlan --bowtie2db mpa_vJun23_CHOCOPhlAnSGB_202307 --install
+```
+
+#### BUSCO
+
+```{bash}
+singularity shell path/to/immense_dependencies/singularity/ezlabgva-busco_v5.3.2_cv1.img
+busco --download --download_path /path/to/immense_dependencies/busco_downloads
+```
+
+#### GTDBtk
+
+```{bash}
+# To download the GTDBtk r207v2 dataset we used the following paths
+mkdir -p /path/to/immense_dependencies/gtdb/gtdbtk_r207_v2
+cd /path/to/immense_dependencies/gtdb/gtdbtk_r207_v2
+
+wget https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/auxillary_files/gtdbtk_r207_v2_data.tar.gz
+
+# Alternative mirror if the first url is too slow: https://data.gtdb.ecogenomic.org/releases/release207/207.0/auxillary_files/gtdbtk_r207_v2_data.tar.gz
+
+# Unpack the dataset:
+tar xvzf gtdbtk_r207_v2_data.tar.gz
+```
+
+#### NCBI 16S Database:
+
+```{bash}
+mkdir -p /path/to/immense_dependencies/BLAST/16S_ribosomal_RNA
+cd /path/to/immense_dependencies/BLAST/16S_ribosomal_RNA
+
+# Download it from https://ftp.ncbi.nlm.nih.gov/blast/db/
+wget https://ftp.ncbi.nlm.nih.gov/blast/db/16S_ribosomal_RNA.tar.gz
+
+# Unpack it
+tar -xzvf 16S_ribosomal_RNA.tar.gz
+```
+
+#### Download rMLST Database:
+
+For this you need an account at [https://pubmlst.org/data](https://pubmlst.org/data):
+1. Make an account
+2. Request access to the entire dataset under <MY ACCOUNT>: Ribosomal MLST genomes (pubmlst_rmlst_isolates) and Ribosomal MLST typing (pubmlst_rmlst_seqdef)
+3. Go to *SPECIES ID* in the menu and then the *Typing* link. [Link to Tab](https://pubmlst.org/bigsdb?db=pubmlst_rmlst_seqdef)
+4. On the right under *DOWNLOADS* section, right click on *Ribosomal MLST profiles* and save-link-as. This file refers to the `bigsdb_rMLST` path in the config file.
+> Downloading with command line is not possible because it needs authentication
+5. Download all Sequences by clicking *Allele Sequence* then expand the *Typing* tree selector and click *Ribosomal MLST*. On the bottom you will see the option to download each Sequence file from `BACT000001 (rpsA)` to `BACT000065 (rpmJ)`. Download each of them and save all fasta files together with the *Ribosomal MLST profiles* file (Step 4) in the same directory and move to wherever you want to store this database. This path should be added as `db_rMLST` variable in your config profile under `conf/profiles/`. And the path to the specific `Ribosomal MLST profiles` text file is added as `bigsdb_rMLST` variable.
+6. Create blastn databases from each fasta file
+
+```{bash}
+# Making tar archive to compress files and send to server where IMMense will run
+tar -zcvf bigrMLST.tar.gz directory_to_compress/
+
+# Sending over to server
+rsync -az --progress bigrMLST.tar.gz "<USERNAME>@<SERVER_NAME>:/path/to/immense_dependencies/rMLST/"
+
+# Unpacking the archive:
+tar -xzvf bigrMLST.tar.gz
+
+# If you compressed on a Mac and extract in linux, you may get some warning such as:
+--------
+MLST/._BACT000017.fas
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.quarantine'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.metadata:kMDItemWhereFroms'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.macl'
+MLST/BACT000017.fas
+--------
+
+# You can ignore these and remove all the ._... files created by running:
+`rm ._*` in the directory
 
 ```
-nextflow run /path/to/IMMENSE/main.nf -with-singularity -with-report -profile <profile-name> --run_id <run_id> --input_type <input_type> --input <input_dir> --SE YES/NO
+
+Create blastn database using the blastn contained in the prokka singularity image (because this image contains blastn)
+
+```{bash}
+conda activate env_immense
+
+singularity shell --bind $(pwd):/mnt path/to/singularity/containers/quay.io-biocontainers-prokka-1.14.6--pl5262hdfd78af_1.img
+
+cd mnt/database_directory
+
+bash directory/to/immense/pipeline/bin/
+make_MLST_blast_database.sh .
+
+# Exit the singularity container
+exit
+
+# Now you should have these file extensions for each of the .fas files:
+#fas.nin
+#fas.ntf
+#fas.ndb
+#fas.not
+#fas.nto
+#fas.nhr
+#fas.nsq
 ```
 
-```
--profile	Name of the executer profile defined in the nextflow.config file  
+This is your ribosomal MLST database. Make sure you link to this directory and the profile.txt file in your profile config file `conf/profiles`
 
---run_id	Name of the run
---input_type	Type of the input data: bcl (for raw data), fastq, or fasta
---input		Absolute path to the input data
---SE		Single-end reads: YES or NO
+Pat yourself on the shoulder if you made it this far. 🥳 
+
+## Testing the pipeline
+
+For SLURM-systems the launching of the pipeline is handled by `run_IMMENSE.sh`. 
+
+```
+# By default the output is always written in the current directory
+cd /directory/where/you/want/output
+bash /path/to/IMMENSE/run_IMMENSE.sh -j test_run -t fq_PE -r test_run -i /path/to/IMMENSE/data/test_dataset
 ```
 
-The **additional options** as described for the usage on S3IT can be added in the same manner to the command and all parameters defined in the params.config file can be overwritten on the command line with ```--<parames-name> <params-value>```.
+To run the pipeline directly without SLURM, the general command to launch the pipeline locally is: 
+
+```
+# Make sure you specify a `profile` that works with your infrastructure or create a new one in `conf/profiles/`
+
+nextflow run /path/to/IMMENSE/main.nf -profile <profile-name> --run_id <run_name> --input_type fastq/bcl/fasta --input /path/to/IMMENSE/data/test_dataset --SE YES/NO
+
+# For example:
+nextflow run /path/to/IMMENSE/main.nf -profile imm --run_id test_run --input_type fastq --input /path/to/IMMENSE/data/test_dataset --SE NO
+```
+
+>**Arguments**
+>- -profile	Name of the executer profile defined in `conf/profiles` directory
+>- --run_id	`Name of the run`
+>- --input_type	Type of the input data: `bcl (for raw data), fastq, or fasta`
+>- --input		`Path to the input data`
+>- --SE		Single-end reads: `YES or NO`
+>  
+> **OPTIONAL ARGUMENTS:**
+>- --single_sample `<NAME_OF_SAMPLE>`
+>- --trimmomatic_PE_extra `<SLIDINGWINDOW:4:12 MINLEN:100>`
+>- --trimmomatic_SE_extra `<SLIDINGWINDOW:4:12 MINLEN:70>`
+>- --email `<your@email.address>`
+>- --output_dir_sample `<Where sample specific results should be saved>`
+>- --output_dir_run `<Where run summary files should be saved>`
+
+
+The **additional options** as described for the usage on S3IT can be added in the same manner to the command and all parameters defined in the params.config file can be overwritten on the command line with `--<parames-name> <params-value>`.
+
+## License
+
+[GNU General Public License, version 3](https://www.gnu.org/licenses/gpl-3.0.html)

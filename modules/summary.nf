@@ -5,13 +5,13 @@
 params.OUTPUT = "summary"
 
 process summary_sample {
-    // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/${sample_id}/3_quality/summary", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/summary", mode: 'copy')
+    // execute on the main node (no special software needed so no need to submit a job and use a container)
     tag { sample_id }
-    containerOptions "-B ${params.input}"
+    
 
     input:
-    tuple val (sample_id), path (trim_log), path (coverage), path (insertions), path (quast_tsv), path (blast16S), path (metaphlan), path (rmlst), path (busco), path(gtdbtk)
+    tuple val (sample_id), val (trimm_out_passed_reads_percentage), val (trimm_out_passed_reads_number), val (coverage_read_depth), val (coverage_alt_bases), val (insertsize_insert_size),  val (assembly_stats_number_contigs), val (assembly_stats_total_length), val (assembly_stats_n50), val (assembly_stats_gc_percent), val (typ16S_taxa), val (typ16S_aln_length), val (typ16S_aln_identity), val (metaphlan_out_taxa),  val (metaphlan_out_purity), val (rmlst_out_taxa), val (rmlst_out_best_rST), val (rmlst_out_alleles_missing), val (busco_out_complete_busco), val (busco_out_busco_groups), val (busco_out_busco_lineage), val (gtdb_out_species), val (gtdb_out_ani_ref), val (gtdb_out_ani_ani), val (gtdb_out_ani_af), val (gtdb_out_placement_ref), val (gtdb_out_gtdb_notes), val (qc_size_warning)
 
     output:
     path ("*.txt"), emit: summary_files
@@ -21,38 +21,58 @@ process summary_sample {
 
     """
     #!/bin/bash
-    awk '/Input Read/{print \$6,\$7,\$8}' ${trim_log} | awk -F '%'  '{print \$1}' | awk -F '('  '{print \$2}' > ${sample_id}_1.txt
-    awk '/read_depth/{print \$3}' ${coverage} | sort -n  | awk ' { a[i++]=\$1; } END { print a[int(i/2)]; }' > ${sample_id}_2.txt
-    grep -c alternative_base ${coverage} > ${sample_id}_3.txt
-    grep -v Insert_size ${insertions} | sort -n  | awk ' { a[i++]=\$1; } END { print a[int(i/2)]; }' > ${sample_id}_4.txt
-    tail -n 1 ${quast_tsv} | awk '{print \$14 "\\t" \$16  "\\t" \$18  "\\t" \$17 }' > ${sample_id}_5.txt
-    grep "C:" ${busco} | sed 's/,D/;D/g' | tr "," "\t" | cut -f2,5 > ${sample_id}_6.txt
-    head -n 1 ${blast16S} | awk -F "\\t" '{print \$3 "\\t" \$6  "\\t" \$7}' > ${sample_id}_7.txt
-    grep "s__" ${metaphlan}  | grep -v "t__" | awk '{split(\$0,a,"|"); print a[7],"\\t",\$3}'| awk -F __ '{print \$2}' | cut -f1,3 | head -n 1 > ${sample_id}_8.txt
-    cat ${rmlst} > ${sample_id}_9.txt
-    cat ${gtdbtk} | tail -1 | cut -f2,3,6-8 | awk -F __ '{print \$8}' > ${sample_id}_10.txt
-    if [[ -d $PWD/reads ]]; then find $PWD/reads -name ${sample_id}*.fastq.gz | awk -F/ '{print \$(NF-1)}' | uniq > ${sample_id}_11.txt; else find ${params.input} -name ${sample_id}*.fastq.gz | awk -F/ '{print \$(NF-1)}' | uniq > ${sample_id}_11.txt; fi
+    
+    # Get the predicted species name from the parent directory of the fastq files.
+    if [[ -d $PWD/reads ]]; then find $PWD/reads -name ${sample_id}*.fastq.gz | awk -F/ '{print \$(NF-1)}' | uniq > ${sample_id}_expected_species.txt; else find ${params.input} -name ${sample_id}*.fastq.gz | awk -F/ '{print \$(NF-1)}' | uniq > ${sample_id}_expected_species.txt; fi
+    EXPECTED_SPECIES=`cat ${sample_id}_expected_species.txt`
 
-    if [[ ! -s ${sample_id}_1.txt ]]; then echo -e "NA" >> "${sample_id}_1.txt"; fi
-    if [[ ! -s ${sample_id}_2.txt ]]; then echo -e "NA" >> "${sample_id}_2.txt"; fi
-    if [[ ! -s ${sample_id}_3.txt ]]; then echo -e "NA" >> "${sample_id}_3.txt"; fi
-    if [[ ! -s ${sample_id}_4.txt ]]; then echo -e "NA" >> "${sample_id}_4.txt"; fi
-    if [[ ! -s ${sample_id}_5.txt ]]; then echo -e "NA\\tNA\\tNA\\tNA" >> "${sample_id}_5.txt"; fi
-    if [[ ! -s ${sample_id}_6.txt ]]; then echo -e "NA\\tNA" >> "${sample_id}_6.txt"; fi
-    if [[ ! -s ${sample_id}_7.txt ]]; then echo -e "NA\\tNA" >> "${sample_id}_7.txt"; fi
-    if [[ ! -s ${sample_id}_8.txt ]]; then echo -e "NA\\tNA" >> "${sample_id}_8.txt"; fi
-    if [[ ! -s ${sample_id}_9.txt ]]; then echo -e "NA\\tNA\\tNA" >> "${sample_id}_9.txt"; fi
-    if [[ ! -s ${sample_id}_10.txt ]]; then echo -e "NA\\tNA\\tNA\\tNA\\tNA" >> "${sample_id}_10.txt"; fi
+    # Writing the variables passed as input to the sample specific file
+    # These sample-specific summaries are then merged in the merge_summaries process
+    
+    echo "${sample_id}" > ${sample_id}_tmp.tab
+    # This is an environmental variable in this script, not an input like the others
+    echo "\${EXPECTED_SPECIES}" >> ${sample_id}_tmp.tab
+    echo "${trimm_out_passed_reads_percentage}" >> ${sample_id}_tmp.tab
+    echo "${trimm_out_passed_reads_number}" >> ${sample_id}_tmp.tab
+    echo "${coverage_read_depth}" >> ${sample_id}_tmp.tab
+    echo "${coverage_alt_bases}" >> ${sample_id}_tmp.tab
+    echo "${insertsize_insert_size}" >> ${sample_id}_tmp.tab
+    echo "${assembly_stats_number_contigs}" >> ${sample_id}_tmp.tab
+    echo "${assembly_stats_total_length}" >> ${sample_id}_tmp.tab
+    echo "${assembly_stats_n50}" >> ${sample_id}_tmp.tab
+    echo "${assembly_stats_gc_percent}" >> ${sample_id}_tmp.tab
+    echo "${busco_out_complete_busco}" >> ${sample_id}_tmp.tab
+    echo "${busco_out_busco_groups}" >> ${sample_id}_tmp.tab
+    echo "${busco_out_busco_lineage}" >> ${sample_id}_tmp.tab
+    echo "${typ16S_taxa}" >> ${sample_id}_tmp.tab
+    echo "${typ16S_aln_length}" >> ${sample_id}_tmp.tab
+    echo "${typ16S_aln_identity}" >> ${sample_id}_tmp.tab
+    echo "${metaphlan_out_taxa}" >> ${sample_id}_tmp.tab
+    echo "${metaphlan_out_purity}" >> ${sample_id}_tmp.tab
+    echo "${rmlst_out_taxa}" >> ${sample_id}_tmp.tab
+    echo "${rmlst_out_best_rST}" >> ${sample_id}_tmp.tab
+    echo "${rmlst_out_alleles_missing}" >> ${sample_id}_tmp.tab
+    echo "${gtdb_out_species}" >> ${sample_id}_tmp.tab
+    echo "${gtdb_out_ani_ref}" >> ${sample_id}_tmp.tab
+    echo "${gtdb_out_ani_ani}" >> ${sample_id}_tmp.tab
+    echo "${gtdb_out_ani_af}" >> ${sample_id}_tmp.tab
+    echo "${gtdb_out_placement_ref}" >> ${sample_id}_tmp.tab
+    echo "${gtdb_out_gtdb_notes}" >> ${sample_id}_tmp.tab
+    echo "${qc_size_warning}" >> ${sample_id}_tmp.tab
+    echo "${params.run_id}" >> ${sample_id}_tmp.tab
 
-    cat <(echo ${sample_id}) ${sample_id}_11.txt ${sample_id}_?.txt ${sample_id}_10.txt <(echo ${params.run_id}) | tr "\n" "\t" > ${sample_id}.tab
+    # Replace newline with tabs
+    cat ${sample_id}_tmp.tab | tr "\\n" "\\t" > ${sample_id}.tab
+
     """
 }
 
 
+
 process merge_summaries {
-    // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("${params.run_id}_transfer_result", mode: 'copy')
+    publishDir("${params.output_dir_run}", mode: 'copy')
     tag { "${params.run_id}" }
+    // execute on the main node (no special software needed so no need to submit a job and use a container)
 
     input:
     path (sample_quality)
@@ -64,12 +84,12 @@ process merge_summaries {
     """
     #!/bin/bash
 
-    echo -e "Sample\\tinitial_species\\tRead_quality\\tRead_depth\\tAlternative_bases\\tInsert_size\\tContig_count\\tTotal_length\\tN50\\tGC_percent\\tComplete_BUSCOs\\tBUSCO_groups_searched\\t16S_species\\tAlignment_length\\tAlignment_identity\\tMetaPhlAn3_species\\tMetaPhlAn3_purity\\trMLST_best_species\\trMLST_best_rST\\tAlleles_missing\\tgtdb_species\\tgtdb_fastani_reference\\tgtdb_fastani_ani\\tgtdb_fastani_af\\tgtdb_closest_placement_reference\\trun_id" > quality_temp.tab
+    echo -e "Sample\\tinitial_species\\tRead_quality\\tPassed_reads\\tRead_depth\\tAlternative_bases\\tInsert_size\\tContig_count\\tTotal_length\\tN50\\tGC_percent\\tComplete_BUSCOs\\tBUSCO_groups_searched\\tBUSCO_Lineage\\t16S_species\\tAlignment_length\\tAlignment_identity\\tMetaPhlAn4_species\\tMetaPhlAn4_purity\\trMLST_best_species\\trMLST_best_rST\\tAlleles_missing\\tgtdb_species\\tgtdb_fastani_reference\\tgtdb_fastani_ani\\tgtdb_fastani_af\\tgtdb_closest_placement_reference\\tgtdbdb_warnings\\tQC_Warnings\\trun_id" > quality_temp.tab
     for sample in ${sample_quality}; do cat \$sample >> quality_temp.tab; printf "\n" >> quality_temp.tab; done
-    (head -n 1 quality_temp.tab && tail -n +2 quality_temp.tab | sort) > ${params.run_id}_quality.tab
-    let sample_count=\$(grep -c "" ${params.run_id}_quality.tab)-1
-    echo "analysed_samples: \$sample_count" >> ${params.run_id}_quality.tab
+    (head -n 1 quality_temp.tab && tail -n +2 quality_temp.tab | sort) > ${params.run_id}_quality.tsv
+    let sample_count=\$(grep -c "" ${params.run_id}_quality.tsv)-1
+    echo "analysed_samples: \$sample_count" >> ${params.run_id}_quality.tsv
 
-    sed 's/,/;/' ${params.run_id}_quality.tab | sed 's/\t/,/g' > ${params.run_id}_quality.csv
+    sed 's/,/;/' ${params.run_id}_quality.tsv | sed 's/\t/,/g' > ${params.run_id}_quality.csv
     """
 }
