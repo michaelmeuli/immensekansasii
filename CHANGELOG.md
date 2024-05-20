@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### `Added`
 - BWA version is now included in version output
 - CheckM module to assess assembly quality of bacterial genomes (only runs for prokaryotes)
-//- Quality Checking module to assess quality of outcomes per sample
+- cgMLST module for doing core genome Multilocus Sequence Typing 
+//- Quality Checking module to assess quality of outcomes per sample [in progress]
+
 
 
 ### `Changed`
