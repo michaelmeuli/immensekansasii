@@ -466,6 +466,19 @@ wgMLST import "/path/to/immense_dependencies/pyMLST/cgMLST/Acinetobacter baumann
 > profile exists or leave out the Species and you'll be prompted about which 
 > Species to download
 
+#### QC Module
+
+Comparing the results to specified metrics to decide if results PASS, FAIL or 
+
+```{bash}
+cd </path/to/immense_dependencies>
+git clone https://gitlab.sib.swiss/clinbio/spsp-ng/spsp-ng-bioinformatics/pipelines/qc/ngs-bacteria QC_bacteria
+#TODO: This repository URL might change in the future
+
+# Then include this path for the `quality_rules` parameter in the config file for your profile under conf/profiles
+
+```
+
 ## Testing the pipeline
 
 For SLURM-systems the launching of the pipeline is handled by `run_IMMENSE.sh`. 
