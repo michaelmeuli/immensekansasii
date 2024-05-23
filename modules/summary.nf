@@ -76,6 +76,7 @@ process merge_summaries {
     publishDir("${params.output_dir_run}", mode: 'copy')
     tag { "${params.run_id}" }
     // execute on the main node (no special software needed so no need to submit a job and use a container)
+    containerOptions "-B ${params.quality_rules}"
 
     input:
     path (sample_quality)
@@ -94,8 +95,9 @@ process merge_summaries {
     echo "analysed_samples: \$sample_count" >> ${params.run_id}_quality.tsv
 
     sed 's/,/;/' ${params.run_id}_quality.tsv | sed 's/\\t/,/g' > ${params.run_id}_quality.csv
+    
     # Run the evaluate QC script
-    #evaluate_QC.py --qcfile ${params.run_id}_quality.tab --rulesfile ${params.quality_rules}
+    evaluate_QC.py --qcfile ${params.run_id}_quality.tsv --rulesfile ${params.quality_rules}
 
     """
 }

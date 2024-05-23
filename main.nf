@@ -163,7 +163,7 @@ workflow {
   fastqc_trimmed_reads_out   = fastqc_trimmed_reads(trimm_out.fastqc) // extract only the reads without sample_id
   multiqc_trimmed_fastqc_out = multiqc_trimmed_fastqc(fastqc_trimmed_reads_out.output.collect(), trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect())
 
-  // Checking that input files are large enough (otherwise processes often fail)
+  // Checking that input files have enough data (otherwise processes fail)
   // After trimming, check that reads are still at least 1MB: if too small then put in failed channel to track them in output file but skip processing.
   if (params.SE == "NO") {  
       trimm_out.trimmed_reads.branch { // check paired-end reads
@@ -187,7 +187,8 @@ workflow {
                                                        // the note to put into the quality.csv file
                                                        return [sample[0], "Fastq below 1MB after trimming - Assembly skipped"] 
                                                      }
-    // collect warning if files are not large enough
+
+    // Collect warning if files are not large enough - gets included in summary output file
     qc_size_warning   = qc_size_passed.concat(qc_size_failed)
 
     // Debug: View how files are passed on
@@ -201,6 +202,7 @@ workflow {
         unicycler_out = unicyclerSE(trimm_out_checked.passed)
       }
 
+      // These processes are the same for single-end and paired-end datasets:
       annotation          = prokka(unicycler_out.assembly)
       busco_out           = busco(unicycler_out.assembly, params.busco_files)
       busco_lineages      = get_busco_lineages(busco_out.version.collect())
