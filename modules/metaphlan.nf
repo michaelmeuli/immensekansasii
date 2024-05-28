@@ -67,14 +67,11 @@ process metaphlan4SE {
 
     script:
     """
-    bowtie2 --sam-no-hd --sam-no-sq --no-unal --very-sensitive  \
-            -S ${sample_id}_alignment.sam \
-            -x ${metaphlan_database}/${params.metaphlan_db_name} \
-            -U ${fastq}
-
-    metaphlan ${sample_id}_alignment.sam --input_type sam --nproc ${task.cpus} \
+    
+    metaphlan ${fastq} --input_type fastq --nproc ${task.cpus} \
               --index ${params.metaphlan_db_name} \
               --bowtie2db ${metaphlan_database} \
+              --bowtie2out ${sample_id}.bowtie2.bz2 \
               > ${sample_id}_profiled_metagenome.txt \
               2> ${sample_id}.error.txt
 

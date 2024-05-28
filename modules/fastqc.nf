@@ -35,9 +35,9 @@ process fastqc_trimmed_reads {
     tag { sample_id }
 
     input:
-    tuple val (sample_id), path (read1), path (read2)
+    //tuple val (sample_id), path (read1), path (read2)
     //path (reads)
-    //tuple val(batch), file(fastqs)
+    tuple val(batch), file(fastqs)
 
     output:
     path("*_fastqc*"), emit: output
@@ -45,7 +45,8 @@ process fastqc_trimmed_reads {
 
     script:
     """
-    fastqc -t 2 ${read1} ${read2}
+    #fastqc -t 2 \${read1} \${read2}
+    fastqc -t 2 ${fastqs.join(' ')} && echo "Success" || echo "Failed to run fastqc completely" > fastqc_error.log
 
     fastqc --version > fastqc_vers.txt
     echo ${task.container} > fastqc_singularity.txt

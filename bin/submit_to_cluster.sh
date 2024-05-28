@@ -24,7 +24,10 @@ INPUT_TYPE=$2
 SINGLE_END=$3
 RUN_ID=$4
 INPUT_DIR=$5
-ADDITIONAL_ARGS=$6
+# Caputing all arguments after the 5th and add them as additional Arguments
+shift 5
+ADDITIONAL_ARGS="$@"
+
 
 # The profile has to be updated if running on a different infrastructure
 #nextflow run $MAIN_DIR/main.nf \
