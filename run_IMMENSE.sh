@@ -188,7 +188,9 @@ fi
 ### Submitting the nextflow script to SLURM
 
 echo "Submitting nextflow coordinator to SLURM."
-sbatch --job-name=$jobName $MAIN_DIR/bin/submit_to_cluster.sh $MAIN_DIR $input_type $single_end $runId $inputDirectory $additionalArguments
+echo "This is the command:"
+echo "sbatch --job-name=$jobName $MAIN_DIR/bin/submit_to_cluster.sh $MAIN_DIR $input_type $single_end $runId $inputDirectory $additionalArguments"
+sbatch --job-name=$jobName $MAIN_DIR/bin/submit_to_cluster.sh $MAIN_DIR $input_type $single_end $runId $inputDirectory "$additionalArguments"
 # The submit_to_cluster.sh script expects the inputs in this exact order.
 
 # To run this script run:

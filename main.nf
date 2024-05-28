@@ -6,6 +6,7 @@ nextflow.enable.dsl=2
  * Define the pipeline parameters
  */
 
+def currentUser = System.getenv('USER')
 
 // this prints the input parameters
 log.info """
@@ -22,8 +23,10 @@ input directory            : ${params.input}
 input directory (absolute) : ${params.input_absolutePath}
 single_sample              : ${params.single_sample}
 single-end reads           : ${params.SE}
+User                       : ${currentUser}
 singularity_container_cache: ${params.singularity_container_cache}
 GTDB Database              : ${params.gtdb_db}
+
 """
 
 /*
@@ -47,31 +50,28 @@ if (params.input_type == "bcl") {
 else if (params.input_type == "fastq") {
 
   if (params.SE == "NO") {
-
       Channel
-        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,R2,1,2}.fastq*" )
-        .ifEmpty { error "Cannot find any reads matching: ${params.input}/${params.single_sample}**_{R1,R2,1,2}.fastq.gz" }
+        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,R2,1,2}.fastq*")
+        .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}*_{R1,R2,1,2}.fastq.gz" }
         //.view { "Identified files: $it" }
         .branch{
           sarscov2: it =~ /sarscov-2/
           undet: it =~ /Undetermined/
           other: true}.set{ reads_for_trimming }
   }
-
+  
   else if (params.SE == "YES") {
-
-      Channel
-          .fromPath( "${params.input}/**${params.single_sample}*{_R1,_1,}.fastq*")
-          .filter{ it =~/^(?!.*(_raw_reads))/ }
-          //.view { "Identified files: $it" }
-          .ifEmpty { error "Cannot find any reads matching: ${params.input}/${params.single_sample}**{_R1,_1,}.fastq*" }
-          .map { file -> tuple(file.simpleName.replaceAll(/_R1|_1$/,''), file) }
-          .branch{
-            sarscov2: it =~ /sarscov-2/
-            undet: it =~ /Undetermined/
-            other: true}.set{ reads_for_trimming } 
+        Channel
+        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,1}.fastq*", size: 1)
+        .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}*_{R1,1}.fastq.gz" }
+        //.view { "Identified files: $it" }
+        .branch{
+          sarscov2: it =~ /sarscov-2/
+          undet: it =~ /Undetermined/
+          other: true}.set{ reads_for_trimming }
   }
-}
+  
+  }
 
 else if (params.input_type == "fasta") {
   Channel
@@ -157,7 +157,7 @@ workflow {
     }
   
   // Run fastQC on trimmed reads & create multiQC report
-  fastqc_trimmed_reads_out   = fastqc_trimmed_reads(trimm_out.trimmed_reads) // extract only the reads without sample_id
+  fastqc_trimmed_reads_out   = fastqc_trimmed_reads(trimm_out.fastqc) // extract only the reads without sample_id
   multiqc_trimmed_fastqc_out = multiqc_trimmed_fastqc(fastqc_trimmed_reads_out.output.collect(), trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect())
 
   // Checking that input files are large enough (otherwise processes often fail)
@@ -334,6 +334,7 @@ workflow.onComplete {
             Completed at: ${workflow.complete}
             Duration    : ${workflow.duration}
             Success     : ${workflow.success}
+            User        : ${currentUser}
             workDir     : ${workflow.launchDir}
             exit status : ${workflow.exitStatus}
             Error report: ${workflow.errorReport ?: '-'}

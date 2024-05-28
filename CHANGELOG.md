@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - FastQC and multiQC results are now put int *00_QC* subfolder of the *output_directory_run* (transfer folder)
 - Fixed bug that failed to link raw reads if input was given as relative path
 - Updated `README.md` to include more examples and code
+- Fixed bugs that prevented single-end reads from running through
+- User who started pipeline is now in completion email
 
 ## [1.1.0] - 2024-05-1
 
