@@ -67,7 +67,61 @@ While the pipeline is running the status can be monitored in **.nextflow.log** o
 
 >**NOTE:** To run IMMENSE on a SLURM cluster, the `run_IMMENSE.sh` will submit a SLURM job which will start the nextflow pipeline. If you run IMMENSE locally on a computer, you will directly launch the nextflow pipeline with `nextflow run main.nf ...`
 
-# Running IMMENSE on S3IT (UZH SLURM cluster)
+
+## Quickstart Running the pipeline
+
+After installing the required databases and installing dependencies
+
+### SLURM Cluster (ie. S3IT)
+
+For SLURM-systems the launching of the pipeline is handled by `run_IMMENSE.sh`. 
+
+```
+# By default the output is always written in the current directory
+cd /directory/where/you/want/output
+bash /path/to/IMMENSE/run_IMMENSE.sh -j test_run -t fq_PE -r test_run -i /path/to/IMMENSE/data/test_dataset
+```
+
+>**Arguments**
+>- `-j` job name for SLURM
+>- `-t` mode type for pipeline (fq_PE, fq_SE, fasta, raw_SE, raw_PE)
+>- `-r` run name for output directory and filenames
+>- `-i` path to input data
+>- *Output will be saved in your current working directory*
+
+### Locally on Linux  (ie. IMM server)
+
+To run the pipeline directly without SLURM, the general command to launch the pipeline locally is: 
+
+```
+# Make sure you specify a `profile` that works with your infrastructure or create a new one in `conf/profiles/`
+
+nextflow run /path/to/IMMENSE/main.nf -profile <profile-name> --run_id <run_name> --input_type fastq/bcl/fasta --input /path/to/IMMENSE/data/test_dataset --SE YES/NO
+
+# For example:
+nextflow run /path/to/IMMENSE/main.nf -profile imm --run_id test_run --input_type fastq --input /path/to/IMMENSE/data/test_dataset --SE NO
+```
+
+>**Arguments**
+>- -profile	Name of the executer profile defined in `conf/profiles` directory
+>- --run_id	`Name of the run`
+>- --input_type	Type of the input data: `bcl (for raw data), fastq, or fasta`
+>- --input		`Path to the input data`
+>- --SE		Single-end reads: `YES or NO`
+>  
+> **OPTIONAL ARGUMENTS:**
+>- --single_sample `<NAME_OF_SAMPLE>`
+>- --trimmomatic_PE_extra `<SLIDINGWINDOW:4:12 MINLEN:100>`
+>- --trimmomatic_SE_extra `<SLIDINGWINDOW:4:12 MINLEN:70>`
+>- --email `<your@email.address>`
+>- --output_dir_sample `<Where sample specific results should be saved>`
+>- --output_dir_run `<Where run summary files should be saved>`
+
+
+The **additional options** as described for the usage on S3IT can be added in the same manner to the command and all parameters defined in the params.config file can be overwritten on the command line with `--<parames-name> <params-value>`.
+
+
+# Detailed running IMMENSE on S3IT (UZH SLURM cluster)
 
 > Make sure all the required databases and software is installed: [Requirements](#Requirements)
 
@@ -287,16 +341,23 @@ conda env create -f environment.yml
 # conda activate env_immense
 ```
 
+### Adjusting the Config files
+
+Global configurations are set in `nextflow.config` (should not need changing) and infrastructure specific configurations are specified in config "profiles" in the `conf/profiles` directory.
+
+To run on UZH's S3IT cluster, we use the `s3it.config`. To run locally on the IMM cluster without SLURM we use the `imm.config`. These are specified using: `-profile s3it` or `-profile imm` in the `nextflow run` command.
+
+To run the pipeline somewhere else (or if the setup changes) create a new "profile" by copying one of the existing `.config` files and changing the profile name and the **database paths** and any other settings you need. If using the `run_IMMENSE.sh` script to submit the pipeline to the SLURM scheduler, also update the `-profile` argument in the `bin/submit_to_cluster.sh` script which contains the nextflow command.
+
+
 ### Download Singular containers
 Get all the required singularity images. Either locally or by starting an interactive SLURM session if you're on a cluster: (login node will run out of memory)
-
->**NOTE:** Update the `cacheDir =` argument in the `conf/profiles` config file for your infrastructure-specific profile under the singularity settings.
 
 ```
 srun --pty -n 1 -c 6 --time=01:00:00 --mem=16G bash -l
 ```
 
-Then loading singularity and using the script in the repo to load all the container images to the location where they should be saved. You supply the path to the script as the only argument. This should match with your path in `conf/profiles/<your-profile>.config`
+Then loading singularity and using the script in the repo to load all the container images to the location where they should be saved. You supply the path to the script as the only argument. This must match with your path in `conf/profiles/<your-profile>.config`
 
 ```
 conda activate env_immense
@@ -305,18 +366,10 @@ conda activate env_immense
 cd path/to/IMMENSE_repo
 
 # Then run the script to pull all the container images to the directory you specify
-bash Singularity/pull_singularity_img.sh path/to/directory/singularity_images_cache
+bash Singularity/pull_singularity_img.sh <path/to/directory/singularity_images_cache>
 ```
 
-## Adjusting the Config files
-
-Global configurations are set in `nextflow.config` (should not need changing) and infrastructure specific configurations are specified in config "profiles" in the `conf/profiles` directory.
-
-To run on UZH's S3IT cluster, we use the `s3it.config`. To run on the IMM cluster without SLURM we use the `imm.config`. These are specified using: `-profile s3it` or `-profile imm`.
-
-To run the pipeline somewhere else (or if the setup changes) create a new "profile" by copying one of the existing `.config` files and changing the profile name and the **database paths** and any other settings you need. If using the `run_IMMENSE.sh` script to submit the pipeline to the SLURM scheduler, also update the `-profile` argument in the `bin/submit_to_cluster.sh` script which contains the nextflow command.
-
-### Setting up on a new infrastructure
+### Prepare required Databases
 
 Adjust the paths in the infrastructure specific `.config` files to location of the different databases/files. 
 
@@ -327,10 +380,12 @@ The following databases/files are required (see below how to install/download):
 * GTDB 
 * 16S database
 * rMLST database
+* cgMLST (coming soon)
+* checkM (coming soon)
 
-### Prepare required Databases
 
 #### metaphlan4
+
 ```{bash}
 # Put the metaphlan4 database where you want and update path in params.config
 
@@ -444,45 +499,6 @@ exit
 This is your ribosomal MLST database. Make sure you link to this directory and the profile.txt file in your profile config file `conf/profiles`
 
 Pat yourself on the shoulder if you made it this far. 🥳 
-
-## Testing the pipeline
-
-For SLURM-systems the launching of the pipeline is handled by `run_IMMENSE.sh`. 
-
-```
-# By default the output is always written in the current directory
-cd /directory/where/you/want/output
-bash /path/to/IMMENSE/run_IMMENSE.sh -j test_run -t fq_PE -r test_run -i /path/to/IMMENSE/data/test_dataset
-```
-
-To run the pipeline directly without SLURM, the general command to launch the pipeline locally is: 
-
-```
-# Make sure you specify a `profile` that works with your infrastructure or create a new one in `conf/profiles/`
-
-nextflow run /path/to/IMMENSE/main.nf -profile <profile-name> --run_id <run_name> --input_type fastq/bcl/fasta --input /path/to/IMMENSE/data/test_dataset --SE YES/NO
-
-# For example:
-nextflow run /path/to/IMMENSE/main.nf -profile imm --run_id test_run --input_type fastq --input /path/to/IMMENSE/data/test_dataset --SE NO
-```
-
->**Arguments**
->- -profile	Name of the executer profile defined in `conf/profiles` directory
->- --run_id	`Name of the run`
->- --input_type	Type of the input data: `bcl (for raw data), fastq, or fasta`
->- --input		`Path to the input data`
->- --SE		Single-end reads: `YES or NO`
->  
-> **OPTIONAL ARGUMENTS:**
->- --single_sample `<NAME_OF_SAMPLE>`
->- --trimmomatic_PE_extra `<SLIDINGWINDOW:4:12 MINLEN:100>`
->- --trimmomatic_SE_extra `<SLIDINGWINDOW:4:12 MINLEN:70>`
->- --email `<your@email.address>`
->- --output_dir_sample `<Where sample specific results should be saved>`
->- --output_dir_run `<Where run summary files should be saved>`
-
-
-The **additional options** as described for the usage on S3IT can be added in the same manner to the command and all parameters defined in the params.config file can be overwritten on the command line with `--<parames-name> <params-value>`.
 
 ## License
 
