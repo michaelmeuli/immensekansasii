@@ -37,7 +37,7 @@ The steps that are included are:
 # Table of contents
 
 * [Introduction](#Introduction)
-* [Running IMMENSE on S3IT](#Running-IMMENSE-on-S3IT)
+* [Quickstart](#Quickstart)
 	* [Running the pipeline on raw data](#Running-the-pipeline-on-raw-data)
 	* [Running the pipeline on fastq files](#Running-the-pipeline-on-fastq-files)
 	* [Running the pipeline on single fastq file(s)](#Running-the-pipeline-on-single-fastq-file(s))
@@ -48,11 +48,11 @@ The steps that are included are:
 		* [Additional samples](#Additional-samples)
 		* [Inspecting failed processes](#Inspecting-failed-processes)
 
-* [Preparations for usage on other infrastructure](#Preparations-for-usage-on-other-infrastructure)
+* [Preparations for usage on other infrastructure](#Requirements)
 	* [Requirements](#Requirements)
-	* [Adjusting the nextflow.config file](#Adjusting-the-nextflow.config-file)
-	* [Adjusting the params.config file](#Adjusting-the-params.config-file)
-	* [Launching the pipeline](#Testing-the-pipeline)
+	* [Installing the required databases](#Download-Singular-containers)
+	* [Creating a new config profile for my infrastructure](#Adjusting-the-Config-files)
+	* [Launching the pipeline](#Quickstart)
 		
 
 # Introduction
@@ -68,9 +68,9 @@ While the pipeline is running the status can be monitored in **.nextflow.log** o
 >**NOTE:** To run IMMENSE on a SLURM cluster, the `run_IMMENSE.sh` will submit a SLURM job which will start the nextflow pipeline. If you run IMMENSE locally on a computer, you will directly launch the nextflow pipeline with `nextflow run main.nf ...`
 
 
-## Quickstart Running the pipeline
+## Quickstart
 
-After installing the required databases and installing dependencies
+> Make sure all the required databases and software is installed: [Requirements](#Requirements)
 
 ### SLURM Cluster (ie. S3IT)
 
@@ -122,8 +122,6 @@ The **additional options** as described for the usage on S3IT can be added in th
 
 
 # Detailed running IMMENSE on S3IT (UZH SLURM cluster)
-
-> Make sure all the required databases and software is installed: [Requirements](#Requirements)
 
 >The pipeline can be run on **raw BCL data**, **fastq files**, or **fasta files**. By default, the output and work directory is saved in the current working directory (can be changed in infrastructure-specific profiles).
 
@@ -320,7 +318,9 @@ Often the `.command.log` or the `.command.out` file can give further information
 
 The hidden `.nextflow.log` file in the main working directory also has a lot of helpful information for debugging.
 
-# Preparations for usage on other infrastructure
+# Requirements
+
+>Follow these instructions to run IMMense on other infrastructure
 
 ### Install Dependencies
 
