@@ -3,10 +3,9 @@
 */
 
 //params.CONTAINER = "quay.io/biocontainers/abricate:1.0.1--ha8f3691_2"
-params.OUTPUT = "abricate_output"
 
 process abricate {
-    publishDir("${params.output_dir_sample}/${sample_id}/4_resistance_virulence", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/4_resistance_virulence/01_Abricate", mode: 'copy')
     tag { fasta }
 
     input:

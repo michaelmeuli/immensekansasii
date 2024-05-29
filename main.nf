@@ -119,6 +119,7 @@ include { summary_sample; merge_summaries }                  from "./modules/sum
 include { write_software_versions }                          from "./modules/write_software_versions"
 include { generate_resistance_table; merge_run_resistances }  from "./modules/resistance_table"
 include { pymlst_add_strain; pymlst_distance; pymlst_subgraph} from "./modules/pymlst"
+include { amrfinderplus  }                                    from  "./modules/amrfinderplus"
 
 
 
@@ -254,6 +255,7 @@ workflow {
       coverage     = coverage_pilon_corrected(remapping_polished.vcf)
       typ16S       = typing_16S(one_contig, params.db_16s)
       abricate_out = abricate(annotation.fna)
+      amrfinderplus_out = amrfinderplus(annotation.fna, params.amrfinderplus_db)
 
       // Summarize Abricate output and create summary for run
       summarized_resistances = generate_resistance_table(abricate_out.sample_id, abricate_out.resistance)

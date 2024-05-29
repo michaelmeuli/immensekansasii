@@ -327,6 +327,9 @@ The following databases/files are required (see below how to install/download):
 * GTDB 
 * 16S database
 * rMLST database
+* cgMLST database
+* QC Rules
+* AMRfinderplus database
 
 ### Prepare required Databases
 
@@ -416,7 +419,7 @@ MLST/BACT000017.fas
 
 ```
 
-Create blastn database using the blastn contained in the prokka singularity image (because this image contains blastn)
+Create blastn database using the prokka singularity image (because this image contains blastn)
 
 ```{bash}
 conda activate env_immense
@@ -478,6 +481,29 @@ git clone https://gitlab.sib.swiss/clinbio/spsp-ng/spsp-ng-bioinformatics/pipeli
 # Then include this path for the `quality_rules` parameter in the config file for your profile under conf/profiles
 
 ```
+
+#### AMRfinderplus database
+
+```{bash}
+# Activate conda environment so you have access to singularity
+conda activate env_immense
+
+# Navigate to where you want the database to be stored & run amrfinderplus interactively
+cd <Path/to/IMMense_dependencies/AMRfinderplus>
+
+singularity shell --bind $(pwd):/mnt Path/to/IMMense_dependencies/singularity/quay.io-biocontainers-ncbi-amrfinderplus-3.12.8--h283d18e_0.img
+
+# Navigate to /mnt because that mirrors the current working directory from where you launched the container
+cd /mnt
+
+# Download the newest database to this directory:
+amrfinder_update --force_update --database .
+
+# Look at folder structure, it will create a "YYY-MM-DD" & "latest" directory, 
+# Decide which one you want to use and update path in your config profile.
+ls
+```
+
 
 ## Testing the pipeline
 

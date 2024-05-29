@@ -5,7 +5,7 @@
 //params.CONTAINER = "ezlabgva-busco_v5.3.2_cv1" // this includes python and pandas library
 
 process generate_resistance_table {
-    publishDir("${params.output_dir_sample}/${sample_id}/4_resistance_virulence", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/4_resistance_virulence/01_Abricate", mode: 'copy')
     tag { "${params.run_id}" }
     
 
@@ -35,7 +35,7 @@ process merge_run_resistances {
     path (resistance_file)
 
     output:
-    path ("${params.run_id}_resistances.tsv"), emit: run_resistances
+    path ("${params.run_id}_abricate_resistances.tsv"), emit: run_resistances
 
     script:
     """
@@ -43,7 +43,7 @@ process merge_run_resistances {
     
     # Filename for the summary file
 
-    run_resistance_fn=${params.run_id}_resistances.tsv
+    run_resistance_fn=${params.run_id}_abricate_resistances.tsv
 
     # Get the header from the first file
     head -n 1 \$(ls -1 ${resistance_file} | head -n 1) > \${run_resistance_fn}
