@@ -143,7 +143,6 @@ else
     echo ""
     conda env create -f $MAIN_DIR/environment.yml
     echo "Done installing Conda environment."
-    echo "Please restart pipeline again."
     exit 1
 fi
 
