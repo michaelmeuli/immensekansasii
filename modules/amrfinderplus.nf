@@ -28,8 +28,6 @@ process amrfinderplus {
         --database ${params.amrfinderplus_db} \\
         --threads $task.cpus > ${sample_id}.tsv
 
-  amrfinder --version
-
   amrfinder --version > amrfinder_version.txt
   amrfinder --database_version --database ${params.amrfinderplus_db} | grep "Database version" > db_version.txt
   echo ${task.container} > amrfinder_singularity.txt
