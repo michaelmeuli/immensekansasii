@@ -446,11 +446,10 @@ exit
 
 This is your ribosomal MLST database. Make sure you link to this directory and the profile.txt file in your profile config file `conf/profiles`
 
-Pat yourself on the shoulder if you made it this far. 🥳 
-
 #### cgMLST
 
-The Species-specific cgMLST profiles are downloaded during the analysis as needed (based on rMLST results). 
+You only need to create the directory that you specify in your *config profile* for the `pymlst_cgmlst_db` path. The Species-specific cgMLST profiles are downloaded during the analysis as needed (based on rMLST results).
+
 If you need to run the pipeline in offline environments, you can download the profiles beforehand as follows:
 To download cgMLST profiles, we use pyMLST to get the newest profiles from [https://www.cgmlst.org](https://www.cgmlst.org/ncs)
 
@@ -517,6 +516,7 @@ bakta_db download --output . --type full
 
 ```
 
+Pat yourself on the shoulder if you made it this far. 🥳 
 
 ## Testing the pipeline
 
