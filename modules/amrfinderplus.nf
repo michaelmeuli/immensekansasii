@@ -16,7 +16,8 @@ process amrfinderplus {
   output:
   path("${sample_id}.tsv")          , emit: report
   path("${sample_id}-mutations.tsv"), emit: mutation_report, optional: true
- 
+  path "amrfinder_version.txt", emit: version
+
   script:
   """
   # Run AMRfinderplus
@@ -27,5 +28,12 @@ process amrfinderplus {
         --database ${params.amrfinderplus_db} \\
         --threads $task.cpus > ${sample_id}.tsv
 
+  amrfinder --version
+
+  amrfinder --version > amrfinder_version.txt
+  amrfinder --database_version --database ${params.amrfinderplus_db} | grep "Database version" > db_version.txt
+  echo ${task.container} > amrfinder_singularity.txt
+
+  cat amrfinder_version.txt db_version.txt amrfinder_singularity.txt  | tr "\\n" "\\t" > amrfinder_version.txt
   """
 }

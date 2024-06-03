@@ -120,7 +120,7 @@ include { write_software_versions }                          from "./modules/wri
 include { generate_resistance_table; merge_run_resistances }  from "./modules/resistance_table"
 include { pymlst_add_strain; pymlst_distance; pymlst_subgraph} from "./modules/pymlst"
 include { amrfinderplus  }                                    from  "./modules/amrfinderplus"
-
+include {bakta         }                                      from "./modules/bakta"
 
 
 /*
@@ -204,7 +204,7 @@ workflow {
       }
 
       // These processes are the same for single-end and paired-end datasets:
-      annotation          = prokka(unicycler_out.assembly)
+      annotation          = bakta(unicycler_out.assembly)
       busco_out           = busco(unicycler_out.assembly, params.busco_files)
       busco_lineages      = get_busco_lineages(busco_out.version.collect())
       busco_plot(busco_out.summary_specific)
@@ -313,6 +313,7 @@ workflow {
                                  metaphlan_out.version.first(),
                                  typ16S.version.first(),
                                  abricate_out.version.first(),
+                                 amrfinderplus_out.version.first(),
                                  pymlst_out.version.first()
                                  ).collect()
 
@@ -325,7 +326,7 @@ workflow {
   }
 
   if (params.input_type == "fasta") {
-      annotation     = prokka(genome)
+      annotation     = bakta(genome)
       gtdb_out       = gtdbtk_classify_wf(annotation.fna)
       typing_rMLST   = rMLST(annotation.fna, db_rMLST)
       rmlst_out      = rMLST_call(typing_rMLST.blast_tabs, bigsdb_rMLST)

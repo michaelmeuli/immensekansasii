@@ -27,3 +27,5 @@ singularity build --sandbox -F ${INSTALL_PATH}/r-base-4.3.3.img docker://r-base:
 singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-checkm-genome-1.2.2--pyhdfd78af_1.img docker://quay.io/biocontainers/checkm-genome:1.2.2--pyhdfd78af_1
 singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-pymlst-2.1.6--pyhdfd78af_0.img docker://quay.io/biocontainers/pymlst:2.1.6--pyhdfd78af_0
 singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-ncbi-amrfinderplus-3.12.8--h283d18e_0.img docker://quay.io/biocontainers/ncbi-amrfinderplus:3.12.8--h283d18e_0
+singularity build --sandbox -F ${INSTALL_PATH}/quay.io-biocontainers-bakta-1.9.3--pyhdfd78af_0.img docker://quay.io/biocontainers/bakta:1.9.3--pyhdfd78af_0
+
