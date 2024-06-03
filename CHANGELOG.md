@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Changed`
 - Replaced `\t` with `\\t` for version file creation to ensure better output format
-
+- Replaced Prokka with Bakta for annotation
 
 
 ## [1.1.1] - 2024-05-13
