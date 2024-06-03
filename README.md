@@ -491,7 +491,7 @@ conda activate env_immense
 # Navigate to where you want the database to be stored & run amrfinderplus interactively
 cd <Path/to/IMMense_dependencies/AMRfinderplus>
 
-singularity shell --bind $(pwd):/mnt Path/to/IMMense_dependencies/singularity/quay.io-biocontainers-ncbi-amrfinderplus-3.12.8--h283d18e_0.img
+singularity shell --bind $(pwd):/mnt <Path/to/IMMense_dependencies/singularity>/quay.io-biocontainers-ncbi-amrfinderplus-3.12.8--h283d18e_0.img
 
 # Navigate to /mnt because that mirrors the current working directory from where you launched the container
 cd /mnt
@@ -502,6 +502,19 @@ amrfinder_update --force_update --database .
 # Look at folder structure, it will create a "YYY-MM-DD" & "latest" directory, 
 # Decide which one you want to use and update path in your config profile.
 ls
+```
+
+#### Bakta Database
+
+```{bash}
+# Navigate to where you want the database to be stored & run amrfinderplus interactively
+cd <Path/to/IMMense_dependencies/bakta>
+
+singularity shell --bind $(pwd):/mnt <Path/to/IMMense_dependencies/singularity>/quay.io-biocontainers-bakta-1.9.3--pyhdfd78af_0.img
+
+cd /mnt
+bakta_db download --output . --type full
+
 ```
 
 
