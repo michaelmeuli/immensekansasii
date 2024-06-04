@@ -13,7 +13,7 @@ process bakta {
     output:
     tuple val(sample_id), path ("*/${sample_id}.fna"), emit: fna
     path ("2_annotation/*"), emit: annot_all
-    path "bakta_version.txt", emit: version
+    path "bakta_version_all.txt", emit: version
 
     script:
     """
@@ -27,6 +27,6 @@ process bakta {
         
     bakta --version > bakta_version.txt 2>&1
     echo ${task.container} > bakta_singularity.txt
-    cat bakta_version.txt bakta_singularity.txt | tr "\\n" "\\t" > bakta_version.txt
+    cat bakta_version.txt bakta_singularity.txt | tr "\\n" "\\t" > bakta_version_all.txt
     """
 }
