@@ -14,13 +14,13 @@ process generate_resistance_table {
     path (resistance_file)
 
     output:
-    path ("${sample_id}_resistances.tsv"), emit: output_file
+    path ("${sample_id}_resistances_summary.tsv"), emit: output_file
 
     script:
     """
     resistance_table.py --sample_id ${sample_id}
     
-    mv resistances.tsv ${sample_id}_resistances.tsv
+    mv resistances.tsv ${sample_id}_resistances_summary.tsv
     """
 }
 
