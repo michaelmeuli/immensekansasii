@@ -72,6 +72,19 @@ While the pipeline is running the status can be monitored in **.nextflow.log** o
 
 > Make sure all the required databases and software is installed: [Requirements](#Requirements)
 
+### Download the Pipeline
+
+To download a specific version (ie. version v1.1.1 validated within UZH), download the v1.1.1 branch
+```{bash}
+
+git clone -b v1.1.1 https://gitlab.uzh.ch/appliedmicrobiologyresearch/amr_research/immense.git immense_v1.1.1
+```
+
+Alternatively, to download the latest version, download the master branch:
+```{bash}
+git clone https://gitlab.uzh.ch/appliedmicrobiologyresearch/amr_research/immense.git immense
+```
+
 ### SLURM Cluster (ie. S3IT)
 
 For SLURM-systems the launching of the pipeline is handled by `run_IMMENSE.sh`. 
@@ -573,6 +586,11 @@ bakta_db download --output . --type full
 ```
 
 Pat yourself on the shoulder if you made it this far. 🥳 
+
+## Developing
+
+This repository follows the [trunk-based development methodolgy](https://trunkbaseddevelopment.com/) to working with Git. The master branch is continously developed on and should always be in a working state with the newest features. A specific release is published as it's own branch with a version number (such as v1.1.1) so that it can be validated and frozen in time (only urgent bugfixes should be published to these release branches).
+
 
 ## License
 
