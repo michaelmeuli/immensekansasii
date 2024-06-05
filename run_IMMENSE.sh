@@ -143,7 +143,6 @@ else
     echo ""
     conda env create -f $MAIN_DIR/environment.yml
     echo "Done installing Conda environment."
-    echo "Please restart pipeline again."
     exit 1
 fi
 
@@ -188,8 +187,12 @@ fi
 ### Submitting the nextflow script to SLURM
 
 echo "Submitting nextflow coordinator to SLURM."
-echo "This is the command:"
+echo "This is the command sent to SLURM:"
+echo ""
+echo "==============================="
 echo "sbatch --job-name=$jobName $MAIN_DIR/bin/submit_to_cluster.sh $MAIN_DIR $input_type $single_end $runId $inputDirectory $additionalArguments"
+echo "==============================="
+echo ""
 sbatch --job-name=$jobName $MAIN_DIR/bin/submit_to_cluster.sh $MAIN_DIR $input_type $single_end $runId $inputDirectory "$additionalArguments"
 # The submit_to_cluster.sh script expects the inputs in this exact order.
 
