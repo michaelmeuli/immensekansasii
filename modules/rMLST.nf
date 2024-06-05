@@ -32,7 +32,7 @@ process rMLST {
     echo "rMLST \$(blastn -version | head -1)" > blastn_rMLST_vers.txt
     echo ${rMLST_database} > db_version_rMLST.txt
     echo ${task.container} > blastn_rMLST_singularity.txt
-    cat blastn_rMLST_vers.txt blastn_rMLST_singularity.txt db_version_rMLST.txt | tr "\n" "\t" > blastn_rMLST_version.txt
+    cat blastn_rMLST_vers.txt blastn_rMLST_singularity.txt db_version_rMLST.txt | tr "\\n" "\\t" > blastn_rMLST_version.txt
     """
 }
 

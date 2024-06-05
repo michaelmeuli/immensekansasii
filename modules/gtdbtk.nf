@@ -35,7 +35,7 @@ process gtdbtk_classify_wf {
   echo \$(basename ${gtdb_database}) > db_version_gtdb.txt
   echo ${task.container} > gtdb_singularity.txt
   gtdbtk -v | cut -d\\  -f1-3 >> gtdb_vers.txt
-  cat gtdb_vers.txt gtdb_singularity.txt db_version_gtdb.txt | tr "\n" "\t" > gtdb_version.txt
+  cat gtdb_vers.txt gtdb_singularity.txt db_version_gtdb.txt | tr "\\n" "\\t" > gtdb_version.txt
 
   # Extracting key information for summary quality.csv
   SPECIES=`cat ${sample_id}/*.summary.tsv | tail -1 | cut -f2,3,6-8,20 | awk 'BEGIN{FS=OFS="__"} { if (NF > 1) \$1=\$8; else \$1=\$1; print \$1}' | cut -f1`

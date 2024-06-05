@@ -8,7 +8,7 @@
 
 process quast {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/quast", mode: 'copy')
     tag { fasta }
 
     input:
@@ -25,11 +25,11 @@ process quast {
 
     script:
     """
-    quast --min-contig 0 -o quast_${sample_id}/ ${fasta}
+    quast --min-contig 0 -o quast_${sample_id}/ --labels ${sample_id} ${fasta}
 
     quast --version > quast_vers.txt
     echo ${task.container} > quast_singularity.txt
-    cat quast_vers.txt quast_singularity.txt | tr "\n" "\t" > quast_${sample_id}/quast_version.txt
+    cat quast_vers.txt quast_singularity.txt | tr "\\n" "\\t" > quast_${sample_id}/quast_version.txt
 
     # Extracting key information:
     tail -n 1 quast_${sample_id}/transposed_report.tsv | awk '{print \$14 "\\t" \$16  "\\t" \$18  "\\t" \$17 }' > ${sample_id}_contig_count.txt

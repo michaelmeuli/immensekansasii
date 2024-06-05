@@ -30,7 +30,7 @@ process unicycler {
 
     unicycler --version > unicycler_vers.txt
     echo ${task.container} > unicycler_singularity.txt
-    cat unicycler_vers.txt unicycler_singularity.txt | tr "\n" "\t" > unicycler_version.txt
+    cat unicycler_vers.txt unicycler_singularity.txt | tr "\\n" "\\t" > unicycler_version.txt
     """
 }
 
@@ -57,6 +57,6 @@ process unicyclerSE {
 
     unicycler --version > unicycler_vers.txt
     echo ${task.container} > unicycler_singularity.txt
-    cat unicycler_vers.txt unicycler_singularity.txt | tr "\n" "\t" > unicycler_version.txt
+    cat unicycler_vers.txt unicycler_singularity.txt | tr "\\n" "\\t" > unicycler_version.txt
     """
 }

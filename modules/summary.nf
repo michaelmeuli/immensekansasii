@@ -11,7 +11,7 @@ process summary_sample {
     
 
     input:
-    tuple val (sample_id), val (trimm_out_passed_reads_percentage), val (trimm_out_passed_reads_number), val (coverage_read_depth), val (coverage_alt_bases), val (insertsize_insert_size),  val (assembly_stats_number_contigs), val (assembly_stats_total_length), val (assembly_stats_n50), val (assembly_stats_gc_percent), val (typ16S_taxa), val (typ16S_aln_length), val (typ16S_aln_identity), val (metaphlan_out_taxa),  val (metaphlan_out_purity), val (rmlst_out_taxa), val (rmlst_out_best_rST), val (rmlst_out_alleles_missing), val (busco_out_complete_busco), val (busco_out_busco_groups), val (busco_out_busco_lineage), val (gtdb_out_species), val (gtdb_out_ani_ref), val (gtdb_out_ani_ani), val (gtdb_out_ani_af), val (gtdb_out_placement_ref), val (gtdb_out_gtdb_notes), val (qc_size_warning)
+    tuple val (sample_id), val (trimm_out_passed_reads_percentage), val (trimm_out_passed_reads_number), val (coverage_read_depth), val (coverage_alt_bases), val (insertsize_insert_size),  val (assembly_stats_number_contigs), val (assembly_stats_total_length), val (assembly_stats_n50), val (assembly_stats_gc_percent), val (typ16S_taxa), val (typ16S_aln_length), val (typ16S_aln_identity), val (metaphlan_out_taxa),  val (metaphlan_out_purity), val (rmlst_out_taxa), val (rmlst_out_best_rST), val (rmlst_out_alleles_missing), val (busco_out_complete_busco), val (busco_out_busco_groups), val (busco_out_busco_lineage), val(checkm_completeness), val(checkm_contamination), val(checkm_heterogeneity),val (gtdb_out_species), val (gtdb_out_ani_ref), val (gtdb_out_ani_ani), val (gtdb_out_ani_af), val (gtdb_out_placement_ref), val (gtdb_out_gtdb_notes), val (qc_size_warning)
 
     output:
     path ("*.txt"), emit: summary_files
@@ -52,6 +52,9 @@ process summary_sample {
     echo "${rmlst_out_taxa}" >> ${sample_id}_tmp.tab
     echo "${rmlst_out_best_rST}" >> ${sample_id}_tmp.tab
     echo "${rmlst_out_alleles_missing}" >> ${sample_id}_tmp.tab
+    echo "${checkm_completeness}" >> ${sample_id}_tmp.tab
+    echo "${checkm_contamination}" >> ${sample_id}_tmp.tab
+    echo "${checkm_heterogeneity}" >> ${sample_id}_tmp.tab
     echo "${gtdb_out_species}" >> ${sample_id}_tmp.tab
     echo "${gtdb_out_ani_ref}" >> ${sample_id}_tmp.tab
     echo "${gtdb_out_ani_ani}" >> ${sample_id}_tmp.tab
@@ -73,6 +76,7 @@ process merge_summaries {
     publishDir("${params.output_dir_run}", mode: 'copy')
     tag { "${params.run_id}" }
     // execute on the main node (no special software needed so no need to submit a job and use a container)
+    containerOptions "-B ${params.quality_rules}"
 
     input:
     path (sample_quality)
@@ -84,12 +88,16 @@ process merge_summaries {
     """
     #!/bin/bash
 
-    echo -e "Sample\\tinitial_species\\tRead_quality\\tPassed_reads\\tRead_depth\\tAlternative_bases\\tInsert_size\\tContig_count\\tTotal_length\\tN50\\tGC_percent\\tComplete_BUSCOs\\tBUSCO_groups_searched\\tBUSCO_Lineage\\t16S_species\\tAlignment_length\\tAlignment_identity\\tMetaPhlAn4_species\\tMetaPhlAn4_purity\\trMLST_best_species\\trMLST_best_rST\\tAlleles_missing\\tgtdb_species\\tgtdb_fastani_reference\\tgtdb_fastani_ani\\tgtdb_fastani_af\\tgtdb_closest_placement_reference\\tgtdbdb_warnings\\tQC_Warnings\\trun_id" > quality_temp.tab
+    echo -e "Sample\\tinitial_species\\tRead_quality\\tPassed_reads\\tRead_depth\\tAlternative_bases\\tInsert_size\\tContig_count\\tTotal_length\\tN50\\tGC_percent\\tComplete_BUSCOs\\tBUSCO_groups_searched\\tBUSCO_Lineage\\t16S_species\\tAlignment_length\\tAlignment_identity\\tMetaPhlAn4_species\\tMetaPhlAn4_purity\\trMLST_best_species\\trMLST_best_rST\\tAlleles_missing\\tcheckm_completeness\\tcheckm_contamination\\tcheckm_heterogeneity\\tgtdb_species\\tgtdb_fastani_reference\\tgtdb_fastani_ani\\tgtdb_fastani_af\\tgtdb_closest_placement_reference\\tgtdbdb_warnings\\tQC_Warnings\\trun_id" > quality_temp.tab
     for sample in ${sample_quality}; do cat \$sample >> quality_temp.tab; printf "\n" >> quality_temp.tab; done
     (head -n 1 quality_temp.tab && tail -n +2 quality_temp.tab | sort) > ${params.run_id}_quality.tsv
     let sample_count=\$(grep -c "" ${params.run_id}_quality.tsv)-1
     echo "analysed_samples: \$sample_count" >> ${params.run_id}_quality.tsv
 
-    sed 's/,/;/' ${params.run_id}_quality.tsv | sed 's/\t/,/g' > ${params.run_id}_quality.csv
+    sed 's/,/;/' ${params.run_id}_quality.tsv | sed 's/\\t/,/g' > ${params.run_id}_quality.csv
+    
+    # Run the evaluate QC script
+    evaluate_QC.py --qcfile ${params.run_id}_quality.tsv --rulesfile ${params.quality_rules}
+
     """
 }

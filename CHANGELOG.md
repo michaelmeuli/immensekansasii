@@ -6,10 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### `Added`
-- 
+- BWA version is now included in version output
+- CheckM module to assess assembly quality of bacterial genomes (only runs for prokaryotes)
+- cgMLST module for doing core genome Multilocus Sequence Typing 
+- Quality Checking module to assess quality of outcomes per sample
+- Added AMRfinderplus for Antimicrobial resistance genes identification
+
 
 ### `Changed`
-- 
+- Replaced `\t` with `\\t` for version file creation to ensure better output format
+- Replaced Prokka with Bakta for annotation
 
 
 ## [1.1.1] - 2024-05-13

@@ -20,6 +20,6 @@ process write_software_versions {
     echo -e "Tool - version\\tSingularity image\\tDatabase version" > ${params.run_id}_software_versions.txt
     echo "${workflow.manifest.name} version ${workflow.manifest.version}" >> ${params.run_id}_software_versions.txt
     echo "Nextflow ${workflow.nextflow.version}" >> ${params.run_id}_software_versions.txt
-    for sample in ${version_files}; do cat \$sample >> ${params.run_id}_software_versions.txt; printf "\n" >> ${params.run_id}_software_versions.txt; done
+    for sample in ${version_files}; do cat \$sample >> ${params.run_id}_software_versions.txt; printf "\\n" >> ${params.run_id}_software_versions.txt; done
     """
 }

@@ -393,9 +393,13 @@ The following databases/files are required (see below how to install/download):
 * GTDB 
 * 16S database
 * rMLST database
-* cgMLST (coming soon)
-* checkM (coming soon)
+* cgMLST database
+* QC Rules
+* AMRfinderplus database
+* Bakta Database
+* checkM
 
+### Prepare required Databases
 
 #### metaphlan4
 
@@ -484,7 +488,7 @@ MLST/BACT000017.fas
 
 ```
 
-Create blastn database using the blastn contained in the prokka singularity image (because this image contains blastn)
+Create blastn database using the prokka singularity image (because this image contains blastn)
 
 ```{bash}
 conda activate env_immense
@@ -510,6 +514,76 @@ exit
 ```
 
 This is your ribosomal MLST database. Make sure you link to this directory and the profile.txt file in your profile config file `conf/profiles`
+
+#### cgMLST
+
+You only need to create the directory that you specify in your *config profile* for the `pymlst_cgmlst_db` path. The Species-specific cgMLST profiles are downloaded during the analysis as needed (based on rMLST results).
+
+If you need to run the pipeline in offline environments, you can download the profiles beforehand as follows:
+To download cgMLST profiles, we use pyMLST to get the newest profiles from [https://www.cgmlst.org](https://www.cgmlst.org/ncs)
+
+```{bash}
+#NOTE: Replace </path/to/immense_dependencies> to your path in the code below
+
+# Start the pyMLST singularity container that you downloaded before and bind necessary paths:
+singularity shell --bind </path/to/immense_dependencies>:</path/to/immense_dependencies> </path/to/immense_dependencies>/singularity/quay.io-biocontainers-pymlst-2.1.6--pyhdfd78af_0.img
+
+# Use `wgMLST import` to download each species
+# For example:
+wgMLST import "/path/to/immense_dependencies/pyMLST/cgMLST/Acinetobacter baumannii" Acinetobacter baumannii
+```
+
+> Repeat for all species that you need, check cgmlst.org for which species a 
+> profile exists or leave out the Species and you'll be prompted about which 
+> Species to download
+
+#### QC Module
+
+Comparing the results to specified metrics to decide if results PASS, FAIL or 
+
+```{bash}
+cd </path/to/immense_dependencies>
+git clone https://gitlab.sib.swiss/clinbio/spsp-ng/spsp-ng-bioinformatics/pipelines/qc/ngs-bacteria QC_bacteria
+#TODO: This repository URL might change in the future
+
+# Then include this path for the `quality_rules` parameter in the config file for your profile under conf/profiles
+
+```
+
+#### AMRfinderplus database
+
+```{bash}
+# Activate conda environment so you have access to singularity
+conda activate env_immense
+
+# Navigate to where you want the database to be stored & run amrfinderplus interactively
+cd <Path/to/IMMense_dependencies/AMRfinderplus>
+
+singularity shell --bind $(pwd):/mnt <Path/to/IMMense_dependencies/singularity>/quay.io-biocontainers-ncbi-amrfinderplus-3.12.8--h283d18e_0.img
+
+# Navigate to /mnt because that mirrors the current working directory from where you launched the container
+cd /mnt
+
+# Download the newest database to this directory:
+amrfinder_update --force_update --database .
+
+# Look at folder structure, it will create a "YYY-MM-DD" & "latest" directory, 
+# Decide which one you want to use and update path in your config profile.
+ls
+```
+
+#### Bakta Database
+
+```{bash}
+# Navigate to where you want the database to be stored & run amrfinderplus interactively
+cd <Path/to/IMMense_dependencies/bakta>
+
+singularity shell --bind $(pwd):/mnt <Path/to/IMMense_dependencies/singularity>/quay.io-biocontainers-bakta-1.9.3--pyhdfd78af_0.img
+
+cd /mnt
+bakta_db download --output . --type full
+
+```
 
 Pat yourself on the shoulder if you made it this far. 🥳 
 

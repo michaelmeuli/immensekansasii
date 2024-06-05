@@ -51,8 +51,8 @@ else if (params.input_type == "fastq") {
 
   if (params.SE == "NO") {
       Channel
-        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,R2,1,2}.fastq*")
-        .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}*_{R1,R2,1,2}.fastq.gz" }
+        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,R2,1,2}*.fastq*" )
+        .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}*_{R1,R2,1,2}*.fastq.gz" }
         //.view { "Identified files: $it" }
         .branch{
           sarscov2: it =~ /sarscov-2/
@@ -102,6 +102,7 @@ include { unicycler; unicyclerSE }                           from "./modules/uni
 include { pilon_remapping; pilon_remappingSE }               from "./modules/pilon"
 include { prokka }                                           from "./modules/prokka"
 include { busco; get_busco_lineages; busco_plot }            from "./modules/busco"
+include { checkm }                                           from "./modules/checkm"
 include { quast }                                            from "./modules/quast"
 include { gtdbtk_classify_wf }                               from "./modules/gtdbtk"
 include { rMLST; rMLST_call }                                from "./modules/rMLST"
@@ -117,6 +118,9 @@ include { abricate }                                         from "./modules/abr
 include { summary_sample; merge_summaries }                  from "./modules/summary"
 include { write_software_versions }                          from "./modules/write_software_versions"
 include { generate_resistance_table; merge_run_resistances }  from "./modules/resistance_table"
+include { pymlst_add_strain; pymlst_distance; pymlst_subgraph} from "./modules/pymlst"
+include { amrfinderplus  }                                    from  "./modules/amrfinderplus"
+include {bakta         }                                      from "./modules/bakta"
 
 
 /*
@@ -132,12 +136,12 @@ workflow {
 
     // send raw reads to trimmomatic
     bcl2fastq_out.fastq.flatten().branch{
-                                  sarscov2: it =~ /sarscov-2/
                                   undet:    it =~ /Undetermined/
                                   other:    true
                                   }
                                  .set{ fastqs }
 
+    // Send reads to trimmomatic, format it the exact same as if input were fastq files
     reads_for_trimming          = [:]
     reads_for_trimming['other'] = fastqs.other.map{ file -> tuple(file.simpleName.replaceAll(/_R1|_R2$/,''), file)}.groupTuple(sort:true)
     // wait for all files to be converted and then put reads in demultiplex subfolder
@@ -160,7 +164,7 @@ workflow {
   fastqc_trimmed_reads_out   = fastqc_trimmed_reads(trimm_out.fastqc) // extract only the reads without sample_id
   multiqc_trimmed_fastqc_out = multiqc_trimmed_fastqc(fastqc_trimmed_reads_out.output.collect(), trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect())
 
-  // Checking that input files are large enough (otherwise processes often fail)
+  // Checking that input files have enough data (otherwise processes fail)
   // After trimming, check that reads are still at least 1MB: if too small then put in failed channel to track them in output file but skip processing.
   if (params.SE == "NO") {  
       trimm_out.trimmed_reads.branch { // check paired-end reads
@@ -184,7 +188,8 @@ workflow {
                                                        // the note to put into the quality.csv file
                                                        return [sample[0], "Fastq below 1MB after trimming - Assembly skipped"] 
                                                      }
-    // collect warning if files are not large enough
+
+    // Collect warning if files are not large enough - gets included in summary output file
     qc_size_warning   = qc_size_passed.concat(qc_size_failed)
 
     // Debug: View how files are passed on
@@ -198,10 +203,11 @@ workflow {
         unicycler_out = unicyclerSE(trimm_out_checked.passed)
       }
 
-      annotation          = prokka(unicycler_out.assembly)
+      // These processes are the same for single-end and paired-end datasets:
+      annotation          = bakta(unicycler_out.assembly)
       busco_out           = busco(unicycler_out.assembly, params.busco_files)
       busco_lineages      = get_busco_lineages(busco_out.version.collect())
-      busco_plot(busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect())
+      busco_plot(busco_out.summary_specific)
       assembly_stats      = quast(annotation.fna)
       mqc_assembly_out    = multiqc_assembly(trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect(), 
                                           assembly_stats.stats.collect(), 
@@ -214,6 +220,22 @@ workflow {
       one_contig          = make_one_contig(annotation.fna)
       bwa_index_remapping = indexRemapping(one_contig)
 
+      // Run pyMLST based on rMLST species identification
+      pymlst_out          = pymlst_add_strain(rmlst_out.rmlst.join(unicycler_out.assembly))
+      distance            = pymlst_distance(pymlst_out.summary_specific.join(rmlst_out.rmlst))
+      pymlst_subgraph(pymlst_out.summary_specific.join(rmlst_out.rmlst).join(distance.pymlst_distance))
+      
+      // Only run checkM it it's a prokaryote. Use BUSCO results to check.
+      // checkM only works for bacteria and algae
+      samples_to_run_checkM_ch = unicycler_out.assembly
+                        .join(busco_out.eukaryota, remainder: true)
+                        // Assuming the busco_out.eukaryota data is in the third position (index 2) of the tuple
+                        // Check if the busco data is null (then it's not eukayota and checkM should run)
+                        .filter { item -> item[2] == null}          
+                        .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple
+      
+      checkm_out          = checkm(samples_to_run_checkM_ch)      
+      
       // Different metaphlan4 & alignment depending on single-end or paired-end reads
       if (params.SE == "NO") {  
         metaphlan_out      = metaphlan4(trimm_out_checked.passed.concat(trimm_out_checked.failed), params.metaphlan_db)
@@ -233,12 +255,13 @@ workflow {
       coverage     = coverage_pilon_corrected(remapping_polished.vcf)
       typ16S       = typing_16S(one_contig, params.db_16s)
       abricate_out = abricate(annotation.fna)
+      amrfinderplus_out = amrfinderplus(annotation.fna, params.amrfinderplus_db)
 
       // Summarize Abricate output and create summary for run
       summarized_resistances = generate_resistance_table(abricate_out.sample_id, abricate_out.resistance)
       merge_run_resistances(summarized_resistances.output_file.collect(sort: true))
 
-
+      // the `remainder: true` ensures that if some result doesn't exist, it will be replaced by `NA` in the output summary file. Therefore each value must represent 1 column in the summary output.
       summary_channel = trimm_out.passed_reads_percentage.join(trimm_out.passed_reads_number, remainder: true)
                                                           .join(coverage.read_depth, remainder: true)
                                                           .join(coverage.alt_bases, remainder: true)  
@@ -257,7 +280,10 @@ workflow {
                                                           .join(rmlst_out.alleles_missing, remainder: true)    
                                                           .join(busco_out.complete_busco, remainder: true)
                                                           .join(busco_out.busco_groups, remainder: true)
-                                                          .join(busco_out.busco_lineage, remainder: true)                                                     
+                                                          .join(busco_out.busco_lineage, remainder: true)      
+                                                          .join(checkm_out.checkm_completeness, remainder: true)
+                                                          .join(checkm_out.checkm_contamination, remainder: true)
+                                                          .join(checkm_out.checkm_heterogeneity, remainder: true)                                               
                                                           .join(gtdb_out.species, remainder: true)
                                                           .join(gtdb_out.ani_ref, remainder: true)
                                                           .join(gtdb_out.ani_ani, remainder: true)
@@ -277,16 +303,21 @@ workflow {
                                  fastqc_raw_reads_out.version.first(),
                                  unicycler_out.version.first(),
                                  annotation.version.first(),
+                                 checkm_out.version.first(),
                                  busco_lineages,
                                  assembly_stats.version.first(),
                                  mqc_assembly_out.version,
                                  gtdb_out.version.first(),
+                                 bwa_index_remapping.version.first(),
                                  typing_rMLST.version.first(),
                                  metaphlan_out.version.first(),
                                  typ16S.version.first(),
-                                 abricate_out.version.first()).collect()
+                                 abricate_out.version.first(),
+                                 amrfinderplus_out.version.first(),
+                                 pymlst_out.version.first()
+                                 ).collect()
 
-    if (params.input_type == "bcl") { // if `bcl` input, then bcl2fastq and fastqc where also used
+    if (params.input_type == "bcl") { // if `bcl` input, then bcl2fastq was also used
       software_version_channel = software_version_channel.concat(
                                     bcl2fastq_out.version).collect()
       }
@@ -295,7 +326,7 @@ workflow {
   }
 
   if (params.input_type == "fasta") {
-      annotation     = prokka(genome)
+      annotation     = bakta(genome)
       gtdb_out       = gtdbtk_classify_wf(annotation.fna)
       typing_rMLST   = rMLST(annotation.fna, db_rMLST)
       rmlst_out      = rMLST_call(typing_rMLST.blast_tabs, bigsdb_rMLST)

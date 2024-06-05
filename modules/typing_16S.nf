@@ -36,7 +36,7 @@ process typing_16S {
     echo "16S \$(blastn -version | head -1)" > blastn_16S_vers.txt
     if [[ ${database_16s} == *16S_* ]]; then basename ${database_16s} > db_version_16S.txt; else echo "database as of 20171115" > db_version_16S.txt; fi
     echo ${task.container} > blastn_16S_singularity.txt
-    cat blastn_16S_vers.txt blastn_16S_singularity.txt db_version_16S.txt | tr "\n" "\t" > blastn_16S_version.txt
+    cat blastn_16S_vers.txt blastn_16S_singularity.txt db_version_16S.txt | tr "\\n" "\\t" > blastn_16S_version.txt
 
     # Extracting key information:
     TAXA=`head -n 1 ${sample_id}_16S_blast.tab | awk -F "\\t" '{print \$3}'`
