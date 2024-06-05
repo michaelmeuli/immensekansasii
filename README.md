@@ -380,6 +380,10 @@ The following databases/files are required (see below how to install/download):
 * GTDB 
 * 16S database
 * rMLST database
+* cgMLST database
+* QC Rules
+* AMRfinderplus database
+* Bakta Database
 * checkM
 
 ### Prepare required Databases
