@@ -35,7 +35,7 @@ process gtdbtk_classify_wf {
   # Collecting Versions
   echo \$(basename ${gtdb_database}) > db_version_gtdb.txt
   echo ${task.container} > gtdb_singularity.txt
-  gtdbtk -v | cut -d\\  -f1-3 >> gtdb_vers.txt
+  gtdbtk -v | cut -d\\  -f1-3 | head -n 1 > gtdb_vers.txt
   cat gtdb_vers.txt gtdb_singularity.txt db_version_gtdb.txt | tr "\\n" "\\t" > gtdb_version.txt
 
   # Extracting key information for summary quality.csv

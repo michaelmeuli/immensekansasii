@@ -268,49 +268,43 @@ workflow {
                                                                 sample_id, value -> return [sample_id, "skipped"]
                                                                 }
       empty_version_channel = channel.fromPath( "${workflow.projectDir}/bin/empty_version_channel.txt")
-      
-      // println gtdb_out.species
-      // println gtdb_out
-      
-      // println nextflow.script.WorkflowBinding.test_out ?: "testfds"
-      // println nextflow.script.WorkflowBinding.variables["gtdb_out"]
-      // println binding
-      //println getVariables()
-    
-      // println all_channels.gtdb_out?: "GTDB_OUT does not exist"
-      // println all_channels.gtdb_out.species?: "GTDB.species does not exist"
-      // println all_channels.test_out?: "its not there"
 
+      // Collecting all channels into a variable so we can check which channels exist.
+      // If a channel does not exist, does process was not executed and summary files 
+      // should say "skipped" by passing 'empty_channel_per_sample'
       def all_channels = getVariables()
-      // the `remainder: true` ensures that if some result doesn't exist, it will be replaced by `NA` in the output summary file. Therefore each value must represent 1 column in the summary output.
+      
+      // the `remainder: true` ensures that if some result doesn't exist, it will 
+      // be replaced by `NA` in the output summary file. Therefore each value must 
+      // represent 1 column in the summary output.
       summary_channel = trimm_out.passed_reads_percentage.join(trimm_out.passed_reads_number, remainder: true)
-                                                          .join(coverage.read_depth, remainder: true)
-                                                          .join(coverage.alt_bases, remainder: true)  
-                                                          .join(insertsize.insert_size, remainder: true)
-                                                          .join(assembly_stats.number_contigs, remainder: true)
-                                                          .join(assembly_stats.total_length, remainder: true)
-                                                          .join(assembly_stats.n50, remainder: true)
-                                                          .join(assembly_stats.gc_percent, remainder: true)
-                                                          .join(typ16S.taxa, remainder: true)
-                                                          .join(typ16S.aln_length, remainder: true)
-                                                          .join(typ16S.aln_identity, remainder: true)
-                                                          .join(metaphlan_out.taxa, remainder: true)
-                                                          .join(metaphlan_out.purity, remainder: true)
-                                                          .join(rmlst_out.taxa, remainder: true)    
-                                                          .join(rmlst_out.best_rST, remainder: true)    
-                                                          .join(rmlst_out.alleles_missing, remainder: true)    
-                                                          .join(busco_out.complete_busco, remainder: true)
-                                                          .join(busco_out.busco_groups, remainder: true)
-                                                          .join(busco_out.busco_lineage, remainder: true)      
-                                                          .join(checkm_out.checkm_completeness, remainder: true)
-                                                          .join(checkm_out.checkm_contamination, remainder: true)
-                                                          .join(all_channels.checkm_out.checkm_heterogeneity?: empty_channel_per_sample, remainder: true)    
-                                                          .join(all_channels.gtdb_out.species?: empty_channel_per_sample, remainder: true)                                           
-                                                          .join(all_channels.gtdb_out.ani_ref?: empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.gtdb_out.ani_ani?: empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.gtdb_out.ani_af?: empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.gtdb_out.placement_ref?: empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.gtdb_out.gtdb_notes?: empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.coverage? coverage.read_depth : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.coverage? coverage.alt_bases : empty_channel_per_sample, remainder: true)  
+                                                          .join(all_channels.insertsize? insertsize.insert_size : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.assembly_stats? assembly_stats.number_contigs : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.assembly_stats? assembly_stats.total_length : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.assembly_stats? assembly_stats.n50 : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.assembly_stats? assembly_stats.gc_percent : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.typ16S? typ16S.taxa : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.typ16S? typ16S.aln_length : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.typ16S? typ16S.aln_identity : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.metaphlan_out? metaphlan_out.taxa : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.metaphlan_out? metaphlan_out.purity : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.rmlst_out? rmlst_out.taxa : empty_channel_per_sample, remainder: true)    
+                                                          .join(all_channels.rmlst_out? rmlst_out.best_rST : empty_channel_per_sample, remainder: true)    
+                                                          .join(all_channels.rmlst_out? rmlst_out.alleles_missing : empty_channel_per_sample, remainder: true)    
+                                                          .join(all_channels.busco_out? busco_out.complete_busco : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.busco_out? busco_out.busco_groups : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.busco_out? busco_out.busco_lineage : empty_channel_per_sample, remainder: true)           
+                                                          .join(all_channels.checkm_out? checkm_out.checkm_completeness : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.checkm_out? checkm_out.checkm_contamination: empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.checkm_out? checkm_out.checkm_heterogeneity : empty_channel_per_sample, remainder: true)    
+                                                          .join(all_channels.gtdb_out? gtdb_out.species : empty_channel_per_sample, remainder: true)                                           
+                                                          .join(all_channels.gtdb_out? gtdb_out.ani_ref : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.gtdb_out? gtdb_out.ani_ani : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.gtdb_out? gtdb_out.ani_af : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.gtdb_out? gtdb_out.placement_ref : empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.gtdb_out? gtdb_out.gtdb_notes : empty_channel_per_sample, remainder: true)
                                                           .join(qc_size_warning, remainder: true)
       // summary_channel.view() // To see what gets passed to the summary processes
 
@@ -321,21 +315,21 @@ workflow {
 
       // collecting the versions of the various software
       software_version_channel = trimm_out.version.first().concat(
-                                 fastqc_raw_reads_out.version.first(),
-                                 unicycler_out.version.first(),
-                                 annotation.version.first(),
-                                 checkm_out.version.first(),
-                                 busco_lineages, // Only 1 item so .first() not necessary
-                                 assembly_stats.version.first(),
-                                 mqc_assembly_out.version, // Only 1 item so .first() not necessary
-                                 all_channels.gtdb_out.version?: empty_version_channel,
-                                 bwa_index_remapping.version.first(),
-                                 typing_rMLST.version.first(),
-                                 metaphlan_out.version.first(),
-                                 typ16S.version.first(),
-                                 abricate_out.version.first(),
-                                 amrfinderplus_out.version.first(),
-                                 pymlst_out.version.first()
+                                  all_channels.fastqc_raw_reads_out? fastqc_raw_reads_out.version.first() : empty_version_channel,
+                                  all_channels.unicycler_out? unicycler_out.version.first() : empty_version_channel,
+                                  all_channels.annotation? annotation.version.first() : empty_version_channel,
+                                  all_channels.checkm_out? checkm_out.version.first() : empty_version_channel,
+                                  all_channels.busco_lineages? busco_lineages : empty_version_channel, // first() not needed - only runs once
+                                  all_channels.assembly_stats? assembly_stats.version.first() : empty_version_channel,
+                                  all_channels.mqc_assembly_out? mqc_assembly_out.version : empty_version_channel, // first() not needed - only runs once
+                                  all_channels.gtdb_out? gtdb_out.version.first() : empty_version_channel,
+                                  all_channels.bwa_index_remapping? bwa_index_remapping.version.first() : empty_version_channel,
+                                  all_channels.typing_rMLST? typing_rMLST.version.first() : empty_version_channel,
+                                  all_channels.metaphlan_out? metaphlan_out.version.first() : empty_version_channel,
+                                  all_channels.typ16S? typ16S.version.first() : empty_version_channel,
+                                  all_channels.abricate_out? abricate_out.version.first() : empty_version_channel,
+                                  all_channels.amrfinderplus_out? amrfinderplus_out.version.first() : empty_version_channel,
+                                  all_channels.pymlst_out? pymlst_out.version.first() : empty_version_channel
                                  ).collect()
 
     if (params.input_type == "bcl") { // if `bcl` input, then bcl2fastq was also used
