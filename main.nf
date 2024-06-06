@@ -17,6 +17,7 @@ may be ripe for automation.
 — Doug McIlroy
 
 =============================================
+Pipeline Directory         : ${workflow.projectDir}
 run ID                     : ${params.run_id}
 input type                 : ${params.input_type}
 input directory            : ${params.input}
@@ -24,8 +25,9 @@ input directory (absolute) : ${params.input_absolutePath}
 single_sample              : ${params.single_sample}
 single-end reads           : ${params.SE}
 User                       : ${currentUser}
+Launch Directory           : ${workflow.launchDir}
 singularity_container_cache: ${params.singularity_container_cache}
-GTDB Database              : ${params.gtdb_db}
+Email                      : ${params.email}
 
 """
 
@@ -214,7 +216,31 @@ workflow {
                                           annotation.annot_all.collect(), 
                                           busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect()
                                           )
-      gtdb_out            = gtdbtk_classify_wf(annotation.fna, params.gtdb_db)
+      
+      // Create 
+      // trimm_out.passed_reads_number.map {
+      //   sample_id, value -> return [sample_id, "skipped"]
+      // }.set { empty_channel_per_sample }
+
+      empty_channel_per_sample = trimm_out.passed_reads_number.map {
+                                                                sample_id, value -> return [sample_id, "skipped"]
+                                                                }
+
+      empty_version_channel = channel.fromPath( "${workflow.projectDir}/bin/empty_version_channel.txt")
+      
+      // gtdb_out = [
+      //   "species":empty_channel_per_sample, 
+      //   "ani_ref":empty_channel_per_sample,
+      //   "ani_ani":empty_channel_per_sample,
+      //   "ani_af":empty_channel_per_sample,
+      //   "placement_ref":empty_channel_per_sample,
+      //   "gtdb_notes":empty_channel_per_sample,
+      //   "version":channel.fromPath( "${workflow.projectDir}/bin/empty_version_channel.txt")
+      // ]
+
+      // gtdb_out            = gtdbtk_classify_wf(annotation.fna, params.gtdb_db)
+      
+
       typing_rMLST        = rMLST(annotation.fna, params.db_rMLST)
       rmlst_out           = rMLST_call(typing_rMLST.blast_tabs, params.bigsdb_rMLST)
       one_contig          = make_one_contig(annotation.fna)
@@ -283,13 +309,13 @@ workflow {
                                                           .join(busco_out.busco_lineage, remainder: true)      
                                                           .join(checkm_out.checkm_completeness, remainder: true)
                                                           .join(checkm_out.checkm_contamination, remainder: true)
-                                                          .join(checkm_out.checkm_heterogeneity, remainder: true)                                               
-                                                          .join(gtdb_out.species, remainder: true)
-                                                          .join(gtdb_out.ani_ref, remainder: true)
-                                                          .join(gtdb_out.ani_ani, remainder: true)
-                                                          .join(gtdb_out.ani_af, remainder: true)
-                                                          .join(gtdb_out.placement_ref, remainder: true)
-                                                          .join(gtdb_out.gtdb_notes, remainder: true)
+                                                          .join(checkm_out.checkm_heterogeneity, remainder: true)    
+                                                          .join(this.binding.variables['gtdb_out.species']?: empty_channel_per_sample, remainder: true)                                           
+                                                          .join(this.binding.variables['gtdb_out.ani_ref']?: empty_channel_per_sample, remainder: true)
+                                                          .join(this.binding.variables['gtdb_out.ani_ani']?: empty_channel_per_sample, remainder: true)
+                                                          .join(this.binding.variables['gtdb_out.ani_af']?: empty_channel_per_sample, remainder: true)
+                                                          .join(this.binding.variables['gtdb_out.placement_ref']?: empty_channel_per_sample, remainder: true)
+                                                          .join(this.binding.variables['gtdb_out.gtdb_notes']?: empty_channel_per_sample, remainder: true)
                                                           .join(qc_size_warning, remainder: true)
       // summary_channel.view() // To see what gets passed to the summary processes
 
@@ -304,10 +330,10 @@ workflow {
                                  unicycler_out.version.first(),
                                  annotation.version.first(),
                                  checkm_out.version.first(),
-                                 busco_lineages,
+                                 busco_lineages, // Only 1 item so .first() not necessary
                                  assembly_stats.version.first(),
-                                 mqc_assembly_out.version,
-                                 gtdb_out.version.first(),
+                                 mqc_assembly_out.version, // Only 1 item so .first() not necessary
+                                 this.binding.variables['gtdb_out.version']?: empty_version_channel,
                                  bwa_index_remapping.version.first(),
                                  typing_rMLST.version.first(),
                                  metaphlan_out.version.first(),
@@ -362,6 +388,7 @@ workflow.onComplete {
         def msg = """\
             IMMENSE ${params.run_id} execution summary
             ---------------------------
+            Pipeline Directory : ${workflow.projectDir}
             Completed at: ${workflow.complete}
             Duration    : ${workflow.duration}
             Success     : ${workflow.success}

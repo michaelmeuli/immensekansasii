@@ -32,6 +32,7 @@ process gtdbtk_classify_wf {
 
   gtdbtk classify_wf --genome_dir . --out_dir ${sample_id} --prefix ${sample_id} --cpus ${task.cpus} --skip_ani_screen
 
+  # Collecting Versions
   echo \$(basename ${gtdb_database}) > db_version_gtdb.txt
   echo ${task.container} > gtdb_singularity.txt
   gtdbtk -v | cut -d\\  -f1-3 >> gtdb_vers.txt
@@ -44,6 +45,5 @@ process gtdbtk_classify_wf {
   AF=`cat ${sample_id}/*.summary.tsv | tail -1 | cut -f2,3,6-8,20 | awk 'BEGIN{FS=OFS="__"} { if (NF > 1) \$1=\$8; else \$1=\$1; print \$1}' | cut -f4`
   PLACEMENT_REF=`cat ${sample_id}/*.summary.tsv | tail -1 | cut -f2,3,6-8,20 | awk 'BEGIN{FS=OFS="__"} { if (NF > 1) \$1=\$8; else \$1=\$1; print \$1}' | cut -f5`
   GTDB_NOTES=`cat ${sample_id}/*.summary.tsv | tail -1 | cut -f2,3,6-8,20 | awk 'BEGIN{FS=OFS="__"} { if (NF > 1) \$1=\$8; else \$1=\$1; print \$1}' | cut -f6`
-
   """
 }

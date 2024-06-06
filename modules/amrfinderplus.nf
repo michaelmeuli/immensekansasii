@@ -32,6 +32,6 @@ process amrfinderplus {
   amrfinder --database_version --database ${params.amrfinderplus_db} | grep "Database version" > db_version.txt
   echo ${task.container} > amrfinder_singularity.txt
 
-  cat amrfinder_version.txt db_version.txt amrfinder_singularity.txt  | tr "\\n" "\\t" > amrfinder_version_all.txt
+  cat amrfinder_version.txt amrfinder_singularity.txt db_version.txt  | tr "\\n" "\\t" > amrfinder_version_all.txt
   """
 }
