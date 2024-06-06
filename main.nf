@@ -270,8 +270,8 @@ workflow {
       empty_version_channel = channel.fromPath( "${workflow.projectDir}/bin/empty_version_channel.txt")
 
       // Collecting all channels into a variable so we can check which channels exist.
-      // If a channel does not exist, does process was not executed and summary files 
-      // should say "skipped" by passing 'empty_channel_per_sample'
+      // If a channel does not exist, that process was not executed and summary files 
+      // should say "skipped" by using 'empty_channel_per_sample'
       def all_channels = getVariables()
       
       // the `remainder: true` ensures that if some result doesn't exist, it will 
