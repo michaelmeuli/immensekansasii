@@ -216,31 +216,7 @@ workflow {
                                           annotation.annot_all.collect(), 
                                           busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect()
                                           )
-      
-      // Create 
-      // trimm_out.passed_reads_number.map {
-      //   sample_id, value -> return [sample_id, "skipped"]
-      // }.set { empty_channel_per_sample }
-
-      empty_channel_per_sample = trimm_out.passed_reads_number.map {
-                                                                sample_id, value -> return [sample_id, "skipped"]
-                                                                }
-
-      empty_version_channel = channel.fromPath( "${workflow.projectDir}/bin/empty_version_channel.txt")
-      
-      // gtdb_out = [
-      //   "species":empty_channel_per_sample, 
-      //   "ani_ref":empty_channel_per_sample,
-      //   "ani_ani":empty_channel_per_sample,
-      //   "ani_af":empty_channel_per_sample,
-      //   "placement_ref":empty_channel_per_sample,
-      //   "gtdb_notes":empty_channel_per_sample,
-      //   "version":channel.fromPath( "${workflow.projectDir}/bin/empty_version_channel.txt")
-      // ]
-
-      // gtdb_out            = gtdbtk_classify_wf(annotation.fna, params.gtdb_db)
-      
-
+      gtdb_out            = gtdbtk_classify_wf(annotation.fna, params.gtdb_db)
       typing_rMLST        = rMLST(annotation.fna, params.db_rMLST)
       rmlst_out           = rMLST_call(typing_rMLST.blast_tabs, params.bigsdb_rMLST)
       one_contig          = make_one_contig(annotation.fna)
@@ -287,6 +263,25 @@ workflow {
       summarized_resistances = generate_resistance_table(abricate_out.sample_id, abricate_out.resistance)
       merge_run_resistances(summarized_resistances.output_file.collect(sort: true))
 
+      // Preparing empty channels for summary results and versions in case a process was not run
+      empty_channel_per_sample = trimm_out.passed_reads_number.map {
+                                                                sample_id, value -> return [sample_id, "skipped"]
+                                                                }
+      empty_version_channel = channel.fromPath( "${workflow.projectDir}/bin/empty_version_channel.txt")
+      
+      // println gtdb_out.species
+      // println gtdb_out
+      
+      // println nextflow.script.WorkflowBinding.test_out ?: "testfds"
+      // println nextflow.script.WorkflowBinding.variables["gtdb_out"]
+      // println binding
+      //println getVariables()
+    
+      // println all_channels.gtdb_out?: "GTDB_OUT does not exist"
+      // println all_channels.gtdb_out.species?: "GTDB.species does not exist"
+      // println all_channels.test_out?: "its not there"
+
+      def all_channels = getVariables()
       // the `remainder: true` ensures that if some result doesn't exist, it will be replaced by `NA` in the output summary file. Therefore each value must represent 1 column in the summary output.
       summary_channel = trimm_out.passed_reads_percentage.join(trimm_out.passed_reads_number, remainder: true)
                                                           .join(coverage.read_depth, remainder: true)
@@ -309,13 +304,13 @@ workflow {
                                                           .join(busco_out.busco_lineage, remainder: true)      
                                                           .join(checkm_out.checkm_completeness, remainder: true)
                                                           .join(checkm_out.checkm_contamination, remainder: true)
-                                                          .join(checkm_out.checkm_heterogeneity, remainder: true)    
-                                                          .join(this.binding.variables['gtdb_out.species']?: empty_channel_per_sample, remainder: true)                                           
-                                                          .join(this.binding.variables['gtdb_out.ani_ref']?: empty_channel_per_sample, remainder: true)
-                                                          .join(this.binding.variables['gtdb_out.ani_ani']?: empty_channel_per_sample, remainder: true)
-                                                          .join(this.binding.variables['gtdb_out.ani_af']?: empty_channel_per_sample, remainder: true)
-                                                          .join(this.binding.variables['gtdb_out.placement_ref']?: empty_channel_per_sample, remainder: true)
-                                                          .join(this.binding.variables['gtdb_out.gtdb_notes']?: empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.checkm_out.checkm_heterogeneity?: empty_channel_per_sample, remainder: true)    
+                                                          .join(all_channels.gtdb_out.species?: empty_channel_per_sample, remainder: true)                                           
+                                                          .join(all_channels.gtdb_out.ani_ref?: empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.gtdb_out.ani_ani?: empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.gtdb_out.ani_af?: empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.gtdb_out.placement_ref?: empty_channel_per_sample, remainder: true)
+                                                          .join(all_channels.gtdb_out.gtdb_notes?: empty_channel_per_sample, remainder: true)
                                                           .join(qc_size_warning, remainder: true)
       // summary_channel.view() // To see what gets passed to the summary processes
 
@@ -333,7 +328,7 @@ workflow {
                                  busco_lineages, // Only 1 item so .first() not necessary
                                  assembly_stats.version.first(),
                                  mqc_assembly_out.version, // Only 1 item so .first() not necessary
-                                 this.binding.variables['gtdb_out.version']?: empty_version_channel,
+                                 all_channels.gtdb_out.version?: empty_version_channel,
                                  bwa_index_remapping.version.first(),
                                  typing_rMLST.version.first(),
                                  metaphlan_out.version.first(),
