@@ -100,6 +100,7 @@ bash /path/to/IMMENSE/run_IMMENSE.sh -j test_run -t fq_PE -r test_run -i /path/t
 >- `-t` mode type for pipeline (fq_PE, fq_SE, fasta, raw_SE, raw_PE)
 >- `-r` run name for output directory and filenames
 >- `-i` path to input data
+>- `-x "<OPTIONAL ARGUMENTS>"` additional arguments in quotes that are passed to be pipeline, see below
 >- *Output will be saved in your current working directory*
 
 ### Locally on Linux  (ie. IMM server)
@@ -129,6 +130,8 @@ nextflow run /path/to/IMMENSE/main.nf -profile imm --run_id test_run --input_typ
 >- --email `<your@email.address>`
 >- --output_dir_sample `<Where sample specific results should be saved>`
 >- --output_dir_run `<Where run summary files should be saved>`
+>- --skip_gtdb `skips gtdb process`
+>- --skip_checkm `skips checkM process`
 
 
 The **additional options** as described for the usage on S3IT can be added in the same manner to the command and all parameters defined in the params.config file can be overwritten on the command line with `--<parames-name> <params-value>`.

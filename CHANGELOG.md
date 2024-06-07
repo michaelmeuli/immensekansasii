@@ -11,12 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cgMLST module for doing core genome Multilocus Sequence Typing 
 - Quality Checking module to assess quality of outcomes per sample
 - Added AMRfinderplus for Antimicrobial resistance genes identification
-
+- Added --skip_gtdb and --skip_checkm flags
 
 ### `Changed`
 - Replaced `\t` with `\\t` for version file creation to ensure better output format
 - Replaced Prokka with Bakta for annotation
-
+- summary_quality.csv file no longer created (only .tsv file)
 
 ## [1.1.1] - 2024-05-13
 

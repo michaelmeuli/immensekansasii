@@ -7,6 +7,8 @@ nextflow.enable.dsl=2
  */
 
 def currentUser = System.getenv('USER')
+params.skip_gtdb = false
+params.skip_checkm = false
 
 // this prints the input parameters
 log.info """
@@ -216,7 +218,8 @@ workflow {
                                           annotation.annot_all.collect(), 
                                           busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect()
                                           )
-      gtdb_out            = gtdbtk_classify_wf(annotation.fna, params.gtdb_db)
+                                                 
+      gtdb_out            = gtdbtk_classify_wf(params.skip_gtdb? Channel.empty() : annotation.fna, params.gtdb_db)
       typing_rMLST        = rMLST(annotation.fna, params.db_rMLST)
       rmlst_out           = rMLST_call(typing_rMLST.blast_tabs, params.bigsdb_rMLST)
       one_contig          = make_one_contig(annotation.fna)
@@ -236,7 +239,7 @@ workflow {
                         .filter { item -> item[2] == null}          
                         .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple
       
-      checkm_out          = checkm(samples_to_run_checkM_ch)      
+      checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      
       
       // Different metaphlan4 & alignment depending on single-end or paired-end reads
       if (params.SE == "NO") {  
