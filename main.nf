@@ -219,7 +219,7 @@ workflow {
                                           busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect()
                                           )
                                                  
-      gtdb_out            = gtdbtk_classify_wf(params.skip_gtdb? Channel.empty() : annotation.fna, params.gtdb_db)
+      gtdb_out            = gtdbtk_classify_wf(params.skip_gtdb? Channel.empty() : annotation.fna, params.gtdb_db) // if --skip_gtdb flag is set, the input channel will be empty
       typing_rMLST        = rMLST(annotation.fna, params.db_rMLST)
       rmlst_out           = rMLST_call(typing_rMLST.blast_tabs, params.bigsdb_rMLST)
       one_contig          = make_one_contig(annotation.fna)
@@ -239,7 +239,7 @@ workflow {
                         .filter { item -> item[2] == null}          
                         .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple
       
-      checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      
+      checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      // if --skip_checkm flag is set, the input channel will be empty
       
       // Different metaphlan4 & alignment depending on single-end or paired-end reads
       if (params.SE == "NO") {  
