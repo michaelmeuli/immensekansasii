@@ -54,6 +54,7 @@ The steps that are included are:
 	* [Creating a new config profile for my infrastructure](#Adjusting-the-Config-files)
 	* [Launching the pipeline](#Quickstart)
 		
+<a name="Introduction"></a>
 
 # Introduction
 
@@ -67,6 +68,7 @@ While the pipeline is running the status can be monitored in **.nextflow.log** o
 
 >**NOTE:** To run IMMENSE on a SLURM cluster, the `run_IMMENSE.sh` will submit a SLURM job which will start the nextflow pipeline. If you run IMMENSE locally on a computer, you will directly launch the nextflow pipeline with `nextflow run main.nf ...`
 
+<a name="Quickstart"></a>
 
 ## Quickstart
 
@@ -80,14 +82,14 @@ To download a specific version (ie. version v1.1.1 validated within UZH), downlo
 git clone -b v1.1.1 https://gitlab.uzh.ch/appliedmicrobiologyresearch/amr_research/immense.git immense_v1.1.1
 ```
 
-Alternatively, to download the latest version, download the master branch:
+Alternatively, to download the latest development version, download the master branch:
 ```{bash}
 git clone https://gitlab.uzh.ch/appliedmicrobiologyresearch/amr_research/immense.git immense
 ```
 
 ### SLURM Cluster (ie. S3IT)
 
-For SLURM-systems the launching of the pipeline is handled by `run_IMMENSE.sh`. 
+For SLURM-systems the launching of the pipeline is handled by the bash script `run_IMMENSE.sh`. 
 
 ```
 # By default the output is always written in the current directory
@@ -100,7 +102,7 @@ bash /path/to/IMMENSE/run_IMMENSE.sh -j test_run -t fq_PE -r test_run -i /path/t
 >- `-t` mode type for pipeline (fq_PE, fq_SE, fasta, raw_SE, raw_PE)
 >- `-r` run name for output directory and filenames
 >- `-i` path to input data
->- `-x "<OPTIONAL ARGUMENTS>"` additional arguments in quotes that are passed to be pipeline, see below
+>- `-x "<OPTIONAL ARGUMENTS>"` additional arguments in quotes that are passed to be pipeline, see optional argument options below
 >- *Output will be saved in your current working directory*
 
 ### Locally on Linux  (ie. IMM server)
@@ -334,6 +336,8 @@ Often the `.command.log` or the `.command.out` file can give further information
 
 The hidden `.nextflow.log` file in the main working directory also has a lot of helpful information for debugging.
 
+<a name="Requirements"></a>
+
 # Requirements
 
 >Follow these instructions to run IMMense on other infrastructure
@@ -346,9 +350,9 @@ Clone IMMENSE repository.
 git clone https://gitlab.uzh.ch/appliedmicrobiologyresearch/amr_research/immense.git
 ```
 
-Install [miniconda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) or Mamba. Then the `run_IMMENSE.sh` script (used for SLURM clusters with `module load` functionality) automatically checks if you have all dependencies installed and if not installs them based on `environment.yml`. 
+Install [miniconda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html). Then, for SLURM clusters with `module load` functionality, the `run_IMMENSE.sh` script automatically checks if you have all dependencies installed and if not installs them based on `environment.yml`. 
 
-Alternatively, manually use the `environment.yml` file to install the dependencies:
+Alternatively, if you're on a server without SLURM, manually use the `environment.yml` file to install the dependencies after installing [miniconda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html):
 
 ```
 cd path/to/IMMENSE_repo
