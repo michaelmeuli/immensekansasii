@@ -110,7 +110,7 @@ include { checkm }                                           from "./modules/che
 include { quast }                                            from "./modules/quast"
 include { gtdbtk_classify_wf; extract_gtdb_output }          from "./modules/gtdbtk"
 include { rMLST; rMLST_call }                                from "./modules/rMLST"
-include { metaphlan4; metaphlan4SE }                         from "./modules/metaphlan"
+include { metaphlan4; metaphlan4SE; classify_metaphlan4_results } from "./modules/metaphlan"
 include { make_one_contig; parse_sam_for_insertsize; 
           coverage_pilon_corrected }                         from "./modules/python_functions"
 include { bwaIndex as indexRemapping }                       from "./modules/bwa_index"
@@ -219,8 +219,8 @@ workflow {
                                           busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect()
                                           )
       
-      if (!params.skip_gtdb) {  
       // If GTDB is run, it's run on 25 samples at one time and then afterwards the results are pulled apart again
+      if (!params.skip_gtdb) {  
       // Remove sample_id from tuple so that the fasta files can be put into batches
       batched_samples_temp = unicycler_out.assembly.map{sample_id, fasta -> return fasta}
       // Assign a batch number so that log files can be tracked per batch
@@ -264,14 +264,14 @@ workflow {
         remapping_polished = pilon_remappingSE(bam_remapping.bam.join(one_contig))
       }
 
-      // Only run checkM it it's a bacterium. Use metaphlan4 results to check.
-      // checkM only works for bacteria and algae
+      metaphlan4_classified = classify_metaphlan4_results(metaphlan_out.profile)
+      // Only run checkM it it's a bacterium (checkM only works for prokaryotes)
       samples_to_run_checkM_ch = unicycler_out.assembly
-                        .join(metaphlan_out.bacteria, remainder: true)
-                        // Assuming the metaphlan output file is in the third position (index 2) of the tuple
+                        .join(metaphlan4_classified.bacteria, remainder: true)
+                        // The metaphlan output file is in the third position (index 2) of the tuple
                         // If the 3rd position is not null, then the sample contained bacteria and checkM should run
                         .filter { item -> item[2] != null}          
-                        .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple
+                        .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple (sample_id, assembly)
       
       (params.skip_checkm? checkm_out= checkm(samples_to_run_checkM_ch) : null )
       //checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      // if --skip_checkm flag is set, the input channel will be empty

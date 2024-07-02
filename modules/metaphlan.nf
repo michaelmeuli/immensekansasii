@@ -22,7 +22,6 @@ process metaphlan4 {
     output:
     tuple val (sample_id), path ("${sample_id}_profiled_metagenome.txt"), emit: profile
     tuple val (sample_id), path ("${sample_id}.error.txt"), emit: error
-    tuple val (sample_id), path ("01_taxa_classification/bacteria/${sample_id}_profiled_metagenome.txt"), emit: bacteria, optional: true
     path "metaphlan_version.txt", emit: version
     tuple val (sample_id), env(TAXA), emit: taxa
     tuple val (sample_id), env(PURITY), emit: purity
@@ -35,22 +34,7 @@ process metaphlan4 {
               --bowtie2out ${sample_id}.bowtie2.bz2 \
               -o ${sample_id}_profiled_metagenome.txt \
               > ${sample_id}.error.txt
-
-    ################################################################
-    # Create output channel for everything classified as bacteria
-    mkdir -p 01_taxa_classification/bacteria
-    file=${sample_id}_profiled_metagenome.txt
     
-    mkdir bacteria
-    if grep -q "k__Bacteria" "\$file"; then
-        # Move the file to the bacteria subfolder    
-        cp "\$file" "bacteria/"
-        echo "File contains 'k__Bacteria' and has been copied."
-    else
-        echo "File does not contain 'k__Bacteria'."
-    fi
-    ################################################################
-
     metaphlan --version > metaphlan_vers.txt
     echo ${params.metaphlan_db_name} > metaphlan_db_version.txt
     echo ${task.container} > metaphlan_singularity.txt
@@ -82,7 +66,6 @@ process metaphlan4SE {
 
     script:
     """
-    
     metaphlan ${fastq} --input_type fastq --nproc ${task.cpus} \
               --index ${params.metaphlan_db_name} \
               --bowtie2db ${metaphlan_database} \
@@ -98,5 +81,34 @@ process metaphlan4SE {
     TAXA=`grep "s__" ${sample_id}_profiled_metagenome.txt  | grep -v "t__" | awk '{split(\$0,a,"|"); print a[7],"\\t",\$3}'| awk -F __ '{print \$2}' | cut -f1 | head -n 1`
     PURITY=`grep "s__" ${sample_id}_profiled_metagenome.txt  | grep -v "t__" | awk '{split(\$0,a,"|"); print a[7],"\\t",\$3}'| awk -F __ '{print \$2}' | cut -f3 | head -n 1`
     
+    """
+}
+
+
+process classify_metaphlan4_results {
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/Metaphlan4", mode: 'copy')
+    tag { sample_id }
+    
+    input:
+    tuple val (sample_id), path(profiled_metagenome)
+
+    output:
+    tuple val (sample_id), path ("01_taxa_classification/bacteria/${sample_id}_profiled_metagenome.txt"), emit: bacteria, optional: true
+
+    script:
+    """
+    file=${profiled_metagenome}
+
+    ################################################################
+    # Create output channel for everything classified as bacteria
+    mkdir -p 01_taxa_classification/bacteria
+    if grep -q "k__Bacteria" "\$file"; then
+        # Move the file to the bacteria subfolder    
+        cp "\$file" "01_taxa_classification/bacteria/"
+        echo "File contains 'k__Bacteria' and has been copied."
+    else
+        echo "File does not contain 'k__Bacteria'."
+    fi
+    ################################################################
     """
 }

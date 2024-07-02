@@ -19,7 +19,6 @@ process busco {
     //tuple val (sample_id), path ("${sample_id}/short_summary.specific*"), emit: summary_specific_folder // for plotting BUSCO results per sample
     //tuple val (sample_id), path ("results/short_summary.generic.*.txt"), optional: true
     path "${sample_id}_busco_version.txt", emit: version
-    tuple val (sample_id), path ("${sample_id}/short_summary.generic.eukaryota*.txt"), emit: eukaryota, optional: true // This tells whether sample is eukaryote (ie. Fungi). If yes, checkM is not run.
     tuple val (sample_id), env(COMPLETE_BUSCO), emit: complete_busco
     tuple val (sample_id), env(BUSCO_GROUPS), emit: busco_groups
     tuple val (sample_id), env(BUSCO_LINEAGE), emit: busco_lineage
