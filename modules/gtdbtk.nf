@@ -80,7 +80,6 @@ process extract_gtdb_output {
 
   """
   
-  SAMPLE_ID=${sample_id}
   # Extracting key information for summary quality.csv
   SPECIES=`cat ${gtdb_summary} | tail -1 | cut -f2,3,6-8,20 | awk 'BEGIN{FS=OFS="__"} { if (NF > 1) \$1=\$8; else \$1=\$1; print \$1}' | cut -f1`
   ANI_REF=`cat ${gtdb_summary} | tail -1 | cut -f2,3,6-8,20 | awk 'BEGIN{FS=OFS="__"} { if (NF > 1) \$1=\$8; else \$1=\$1; print \$1}' | cut -f2`

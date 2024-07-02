@@ -221,26 +221,20 @@ workflow {
       
       if (!params.skip_gtdb) {  
       // If GTDB is run, it's run on 25 samples at one time and then afterwards the results are pulled apart again
-      
-      def gtdb_batch_number = 0
+      // Remove sample_id from tuple so that the fasta files can be put into batches
       batched_samples_temp = unicycler_out.assembly.map{sample_id, fasta -> return fasta}
-      // batched_samples_temp = annotation.fna.map{sample_id, fasta -> return fasta}
-      
-      batched_samples_temp.view()
-      
+      // Assign a batch number so that log files can be tracked per batch
+      def gtdb_batch_number = 0
       batched_samples = batched_samples_temp.collate(25, remainder = true).map { assemblies -> gtdb_batch_number += 1 
                                                                           return [gtdb_batch_number, assemblies]}
-      // batched_samples = batched_samples_temp.map { sample_id, fasta -> gtdb_batch_number += 1 
-      //                                                                     return [gtdb_batch_number, fasta]}
       
-      batched_samples.view()                                                                    
-      
+      // batched_samples.view()                                                                    
       // Run GTDB on batched assemblies
       gtdb_out_batched            = gtdbtk_classify_wf(batched_samples, params.gtdb_db)
+      // Make tuple with sample_id derived from filenames
       gtdb_out_batched_argumented = gtdb_out_batched.summary_files.flatten().map {it -> return [it.getSimpleName(), it ] }
-      
-      gtdb_out_batched_argumented.view()
-      // extract GTDB results for each individual assembly
+      // gtdb_out_batched_argumented.view()
+      // Extract GTDB results for each individual assembly
       gtdb_out = extract_gtdb_output( gtdb_out_batched_argumented )
       }
       
