@@ -94,7 +94,8 @@ process classify_metaphlan4_results {
 
     output:
     tuple val (sample_id), path ("01_taxa_classification/bacteria/${sample_id}_profiled_metagenome.txt"), emit: bacteria, optional: true
-
+    path ("01_taxa_classification")
+    
     script:
     """
     file=${profiled_metagenome}

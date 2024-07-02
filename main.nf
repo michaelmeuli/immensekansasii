@@ -212,7 +212,7 @@ workflow {
       busco_out           = busco(unicycler_out.assembly, params.busco_files)
       busco_lineages      = get_busco_lineages(busco_out.version.collect())
       busco_plot(busco_out.summary_specific)
-      assembly_stats      = quast(annotation.fna)
+      assembly_stats      = quast(unicycler_out.assembly)
       mqc_assembly_out    = multiqc_assembly(trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect(), 
                                           assembly_stats.stats.collect(), 
                                           annotation.annot_all.collect(), 
@@ -267,14 +267,12 @@ workflow {
       metaphlan4_classified = classify_metaphlan4_results(metaphlan_out.profile)
       // Only run checkM it it's a bacterium (checkM only works for prokaryotes)
       samples_to_run_checkM_ch = unicycler_out.assembly
-                        .join(metaphlan4_classified.bacteria, remainder: true)
-                        // The metaphlan output file is in the third position (index 2) of the tuple
-                        // If the 3rd position is not null, then the sample contained bacteria and checkM should run
-                        .filter { item -> item[2] != null}          
+                        .join(metaphlan4_classified.bacteria, remainder: false)
+                        // Only samples where assembly & bacterial classification is true will remain in channel
                         .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple (sample_id, assembly)
       
-      (params.skip_checkm? checkm_out= checkm(samples_to_run_checkM_ch) : null )
-      //checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      // if --skip_checkm flag is set, the input channel will be empty
+      // (params.skip_checkm? checkm_out= checkm(samples_to_run_checkM_ch) : null )
+      checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      // if --skip_checkm flag is set, the input channel will be empty
 
       coverage     = coverage_pilon_corrected(remapping_polished.vcf)
       typ16S       = typing_16S(one_contig, params.db_16s)

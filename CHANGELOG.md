@@ -18,7 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replaced `\t` with `\\t` for version file creation to ensure better output format
 - Replaced Prokka with Bakta for annotation
 - summary_quality.csv file no longer created (only .tsv file)
-- GTDBtk and rMLST now run based on unicycler assembly directly instead of bakta .fna (greater parallelization)
+- GTDBtk, rMLST, checkM, QUAST, BUSCO now run based on unicycler assembly directly instead of bakta .fna (greater parallelization)
+- checkM is run on bacterial genomes as predicted by Metaphlan4 results (instead of BUSCO results)
 
 
 ## [1.1.1] - 2024-05-13
