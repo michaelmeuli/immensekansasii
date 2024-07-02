@@ -230,17 +230,6 @@ workflow {
       distance            = pymlst_distance(pymlst_out.summary_specific.join(rmlst_out.rmlst))
       pymlst_subgraph(pymlst_out.summary_specific.join(rmlst_out.rmlst).join(distance.pymlst_distance))
       
-      // Only run checkM it it's a prokaryote. Use BUSCO results to check.
-      // checkM only works for bacteria and algae
-      samples_to_run_checkM_ch = unicycler_out.assembly
-                        .join(busco_out.eukaryota, remainder: true)
-                        // Assuming the busco_out.eukaryota data is in the third position (index 2) of the tuple
-                        // Check if the busco data is null (then it's not eukayota and checkM should run)
-                        .filter { item -> item[2] == null}          
-                        .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple
-      
-      checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      // if --skip_checkm flag is set, the input channel will be empty
-      
       // Different metaphlan4 & alignment depending on single-end or paired-end reads
       if (params.SE == "NO") {  
         metaphlan_out      = metaphlan4(trimm_out_checked.passed.concat(trimm_out_checked.failed), params.metaphlan_db)
@@ -256,6 +245,18 @@ workflow {
         bam_remapping      = samtoolsRemapping(remapping.sam)
         remapping_polished = pilon_remappingSE(bam_remapping.bam.join(one_contig))
       }
+
+      // Only run checkM it it's a bacterium. Use metaphlan4 results to check.
+      // checkM only works for bacteria and algae
+      samples_to_run_checkM_ch = unicycler_out.assembly
+                        .join(metaphlan_out.bacteria, remainder: true)
+                        // Assuming the metaphlan output file is in the third position (index 2) of the tuple
+                        // If the 3rd position is not null, then the sample contained bacteria and checkM should run
+                        .filter { item -> item[2] != null}          
+                        .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple
+      
+      (params.skip_checkm? checkm_out= checkm(samples_to_run_checkM_ch) : null )
+      //checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      // if --skip_checkm flag is set, the input channel will be empty
 
       coverage     = coverage_pilon_corrected(remapping_polished.vcf)
       typ16S       = typing_16S(one_contig, params.db_16s)

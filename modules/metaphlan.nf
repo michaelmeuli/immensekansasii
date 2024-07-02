@@ -22,19 +22,34 @@ process metaphlan4 {
     output:
     tuple val (sample_id), path ("${sample_id}_profiled_metagenome.txt"), emit: profile
     tuple val (sample_id), path ("${sample_id}.error.txt"), emit: error
+    tuple val (sample_id), path ("01_taxa_classification/bacteria/${sample_id}_profiled_metagenome.txt"), emit: bacteria, optional: true
     path "metaphlan_version.txt", emit: version
     tuple val (sample_id), env(TAXA), emit: taxa
     tuple val (sample_id), env(PURITY), emit: purity
 
     script:
     """
-
     metaphlan ${fastq_r1},${fastq_r2} --input_type fastq --nproc ${task.cpus} \
               --index ${params.metaphlan_db_name} \
               --bowtie2db ${metaphlan_database} \
               --bowtie2out ${sample_id}.bowtie2.bz2 \
               -o ${sample_id}_profiled_metagenome.txt \
               > ${sample_id}.error.txt
+
+    ################################################################
+    # Create output channel for everything classified as bacteria
+    mkdir -p 01_taxa_classification/bacteria
+    file=${sample_id}_profiled_metagenome.txt
+    
+    mkdir bacteria
+    if grep -q "k__Bacteria" "\$file"; then
+        # Move the file to the bacteria subfolder    
+        cp "\$file" "bacteria/"
+        echo "File contains 'k__Bacteria' and has been copied."
+    else
+        echo "File does not contain 'k__Bacteria'."
+    fi
+    ################################################################
 
     metaphlan --version > metaphlan_vers.txt
     echo ${params.metaphlan_db_name} > metaphlan_db_version.txt
