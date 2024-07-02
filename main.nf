@@ -108,7 +108,7 @@ include { prokka }                                           from "./modules/pro
 include { busco; get_busco_lineages; busco_plot }            from "./modules/busco"
 include { checkm }                                           from "./modules/checkm"
 include { quast }                                            from "./modules/quast"
-include { gtdbtk_classify_wf }                               from "./modules/gtdbtk"
+include { gtdbtk_classify_wf; extract_gtdb_output }          from "./modules/gtdbtk"
 include { rMLST; rMLST_call }                                from "./modules/rMLST"
 include { metaphlan4; metaphlan4SE }                         from "./modules/metaphlan"
 include { make_one_contig; parse_sam_for_insertsize; 
@@ -124,7 +124,7 @@ include { write_software_versions }                          from "./modules/wri
 include { generate_resistance_table; merge_run_resistances }  from "./modules/resistance_table"
 include { pymlst_add_strain; pymlst_distance; pymlst_subgraph} from "./modules/pymlst"
 include { amrfinderplus  }                                    from  "./modules/amrfinderplus"
-include {bakta         }                                      from "./modules/bakta"
+include { bakta         }                                      from "./modules/bakta"
 
 
 /*
@@ -218,9 +218,27 @@ workflow {
                                           annotation.annot_all.collect(), 
                                           busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect()
                                           )
-                                                 
-      gtdb_out            = gtdbtk_classify_wf(params.skip_gtdb? Channel.empty() : annotation.fna, params.gtdb_db) // if --skip_gtdb flag is set, the input channel will be empty
-      typing_rMLST        = rMLST(annotation.fna, params.db_rMLST)
+      
+      if (!params.skip_gtdb) {  
+      // If GTDB is run, it's run on 25 samples at one time and then afterwards the results are pulled apart again
+      // Remove sample_id from tuple so that the fasta files can be put into batches
+      batched_samples_temp = unicycler_out.assembly.map{sample_id, fasta -> return fasta}
+      // Assign a batch number so that log files can be tracked per batch
+      def gtdb_batch_number = 0
+      batched_samples = batched_samples_temp.collate(25, remainder = true).map { assemblies -> gtdb_batch_number += 1 
+                                                                          return [gtdb_batch_number, assemblies]}
+      
+      // batched_samples.view()                                                                    
+      // Run GTDB on batched assemblies
+      gtdb_out_batched            = gtdbtk_classify_wf(batched_samples, params.gtdb_db)
+      // Make tuple with sample_id derived from filenames
+      gtdb_out_batched_argumented = gtdb_out_batched.summary_files.flatten().map {it -> return [it.getSimpleName(), it ] }
+      // gtdb_out_batched_argumented.view()
+      // Extract GTDB results for each individual assembly
+      gtdb_out = extract_gtdb_output( gtdb_out_batched_argumented )
+      }
+      
+      typing_rMLST        = rMLST(unicycler_out.assembly, params.db_rMLST)
       rmlst_out           = rMLST_call(typing_rMLST.blast_tabs, params.bigsdb_rMLST)
       one_contig          = make_one_contig(annotation.fna)
       bwa_index_remapping = indexRemapping(one_contig)
@@ -326,7 +344,7 @@ workflow {
                                   all_channels.busco_lineages? busco_lineages : empty_version_channel, // first() not needed - only runs once
                                   all_channels.assembly_stats? assembly_stats.version.first() : empty_version_channel,
                                   all_channels.mqc_assembly_out? mqc_assembly_out.version : empty_version_channel, // first() not needed - only runs once
-                                  all_channels.gtdb_out? gtdb_out.version.first() : empty_version_channel,
+                                  all_channels.gtdb_out_batched? gtdb_out_batched.version.first() : empty_version_channel,
                                   all_channels.bwa_index_remapping? bwa_index_remapping.version.first() : empty_version_channel,
                                   all_channels.typing_rMLST? typing_rMLST.version.first() : empty_version_channel,
                                   all_channels.metaphlan_out? metaphlan_out.version.first() : empty_version_channel,

@@ -15,7 +15,7 @@ process unicycler {
     tuple val (sample_id), path (fastq_r1), path (fastq_r2)
 
     output:
-    tuple val (sample_id), path ("${sample_id}_assembly.fasta"), emit: assembly
+    tuple val (sample_id), path ("${sample_id}.fasta"), emit: assembly
     tuple val (sample_id), path ("${sample_id}_unicyler.log"), emit: log
     path "unicycler_version.txt", emit: version
 
@@ -25,12 +25,13 @@ process unicycler {
     -1 ${fastq_r1} -2 ${fastq_r2} \
     -o ./
 
-    mv assembly.fasta ${sample_id}_assembly.fasta
+    mv assembly.fasta ${sample_id}.fasta
     mv unicycler.log ${sample_id}_unicyler.log
 
     unicycler --version > unicycler_vers.txt
     echo ${task.container} > unicycler_singularity.txt
     cat unicycler_vers.txt unicycler_singularity.txt | tr "\\n" "\\t" > unicycler_version.txt
+
     """
 }
 
@@ -44,7 +45,7 @@ process unicyclerSE {
     tuple val (sample_id), path (fastq)
 
     output:
-    tuple val (sample_id), path ("${sample_id}_assembly.fasta"), emit: assembly
+    tuple val (sample_id), path ("${sample_id}.fasta"), emit: assembly
     tuple val (sample_id), path ("${sample_id}_unicyler.log"), emit: log
     path "unicycler_version.txt", emit: version
 
@@ -52,7 +53,7 @@ process unicyclerSE {
     """
     unicycler -t ${task.cpus} -s ${fastq} -o ./
 
-    mv assembly.fasta ${sample_id}_assembly.fasta
+    mv assembly.fasta ${sample_id}.fasta
     mv unicycler.log ${sample_id}_unicyler.log
 
     unicycler --version > unicycler_vers.txt

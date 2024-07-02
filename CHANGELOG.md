@@ -12,11 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Quality Checking module to assess quality of outcomes per sample
 - Added AMRfinderplus for Antimicrobial resistance genes identification
 - Added --skip_gtdb and --skip_checkm flags
+- GTDBtk now processes 25 assemblies at a time (more efficient)
 
 ### `Changed`
 - Replaced `\t` with `\\t` for version file creation to ensure better output format
 - Replaced Prokka with Bakta for annotation
 - summary_quality.csv file no longer created (only .tsv file)
+- GTDBtk and rMLST now run based on unicycler assembly directly instead of bakta .fna (greater parallelization)
+
 
 ## [1.1.1] - 2024-05-13
 
