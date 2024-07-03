@@ -17,13 +17,17 @@ process bakta {
 
     script:
     """
+    # Rename the assembly because it it's just called <sample_id>.fasta then bakta got stuck (bug?)
+    FILENAME=${fasta}
+    mv \${FILENAME} "\${FILENAME%.fasta}_assembly.fasta"
+
     bakta \\
         --db ${params.bakta_db} \\
         --threads ${task.cpus} \\
         --prefix ${sample_id} \\
         --output 2_annotation \\
         --strain ${sample_id} \\
-        ${fasta}
+        \${FILENAME%.fasta}_assembly.fasta
     
     bakta --version > bakta_version.txt 2>&1
     
