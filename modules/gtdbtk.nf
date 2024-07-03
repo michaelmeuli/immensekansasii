@@ -31,6 +31,11 @@ process gtdbtk_classify_wf {
   mv gtdbtk_output/gtdbtk.log gtdbtk_output/batch${batch_number}_gtdbtk.log
   mv gtdbtk_output/gtdbtk.warnings.log gtdbtk_output/batch${batch_number}_gtdbtk.warnings.log
 
+  # Sometimes GTDBtk generates two output files, 1 for bacteria, 1 for archea, these should be merged into one:
+  cat gtdbtk_output/*bac*.summary.tsv > gtdbtk_output/bac_and_arch_gtdb_summary.tsv
+  tail -n +2 gtdbtk_output/*ar*.summary.tsv >> gtdbtk_output/bac_and_arch_gtdb_summary.tsv
+
+
   # Split the summary output file into 1 file per sample:
   mkdir results_per_sample
   while read -r line
@@ -46,7 +51,7 @@ process gtdbtk_classify_wf {
         # Create the file and write the headers and content
         echo -e "\${headers}\n\${content}" > "results_per_sample/\${filename}.tsv"
     fi
-  done < gtdbtk_output/*.summary.tsv
+  done < gtdbtk_output/bac_and_arch_gtdb_summary.tsv
 
   # Get versions information:
   echo \$(basename ${gtdb_database}) > db_version_gtdb.txt
