@@ -121,11 +121,13 @@ def load_rules(filename):
 
 def evaluate_parameter(value, rules):
     """Evaluate a single parameter value against rules."""
+    if value == "skipped":
+        return "Undefined"
     for result, range_list in rules.items():
         for min_val, max_val in range_list:
             if min_val == 0.0 and value <= max_val:
                 return result
-            elif max_val == float('inf') and value >= min_val:
+            elif max_val == float('inf') and float(value) >= min_val:
                 return result
             elif min_val < value <= max_val:
                 return result

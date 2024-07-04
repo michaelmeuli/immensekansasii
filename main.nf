@@ -9,6 +9,7 @@ nextflow.enable.dsl=2
 def currentUser = System.getenv('USER')
 params.skip_gtdb = false
 params.skip_checkm = false
+params.skip_busco = false
 
 // this prints the input parameters
 log.info """
@@ -79,8 +80,9 @@ else if (params.input_type == "fastq") {
 
 else if (params.input_type == "fasta") {
   Channel
-      .fromFilePairs( "${params.input}/*.{fasta,fna}", size: -1 )
-      .ifEmpty { error "Cannot find any fasta matching: ${params.input}/*.{fasta,fna}" }
+      .fromFilePairs( "${params.input}/**${params.single_sample}*.{fasta,fna}", size: 1 )
+      .ifEmpty { error "Cannot find any fasta matching: ${params.input}/**${params.single_sample}*.{fasta,fna}" }
+      .map {sample_id, fasta -> return [sample_id, fasta[0]]}
       .set { genome }
 }
 
@@ -151,6 +153,7 @@ workflow {
     // wait for all files to be converted and then put reads in demultiplex subfolder
     linked_reads                = link_reads(bcl2fastq_out.finished.collect())
     multiqc_bcl_out             = multiqc_bcl(bcl2fastq_out.reports) 
+    // End of BCL-specific pipeline
   }
   
   // Running fastQC on fastq reads before trimming and generating multiQC report
@@ -206,18 +209,25 @@ workflow {
       } else if (params.SE == "YES") {
         unicycler_out = unicyclerSE(trimm_out_checked.passed)
       }
+  // End of pipeline to get to assemblies
+  } 
+  if (params.input_type == "fasta") {
+    // Define an empty unicycler_out object
+    unicycler_out = [:]
+    // Add the genome fasta files in the "assembly" channel within unicycler_out
+    unicycler_out.assembly = genome
+  }
 
       // These processes are the same for single-end and paired-end datasets:
       annotation          = bakta(unicycler_out.assembly)
-      busco_out           = busco(unicycler_out.assembly, params.busco_files)
-      busco_lineages      = get_busco_lineages(busco_out.version.collect())
-      busco_plot(busco_out.summary_specific)
+      busco_out           = busco(params.skip_busco? Channel.empty() : unicycler_out.assembly, params.busco_files)
+      busco_lineages      = get_busco_lineages(params.skip_busco? Channel.empty() :busco_out.version.collect())
+      busco_plot(params.skip_busco? Channel.empty() : busco_out.summary_specific)
       assembly_stats      = quast(unicycler_out.assembly)
-      mqc_assembly_out    = multiqc_assembly(trimm_out.trim_log.flatten().filter{it =~/quality_read_trimm_info/}.collect(), 
-                                          assembly_stats.stats.collect(), 
-                                          annotation.annot_all.collect(), 
-                                          busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect()
-                                          )
+      mqc_assembly_out    = multiqc_assembly( assembly_stats.stats.collect(), 
+                                              annotation.annot_all.collect(), 
+                                              params.skip_busco? Channel.empty() : busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect()
+                                              )
       
       // If GTDB is run, it's run on 25 samples at one time and then afterwards the results are pulled apart again
       if (!params.skip_gtdb) {  
@@ -248,6 +258,8 @@ workflow {
       distance            = pymlst_distance(pymlst_out.summary_specific.join(rmlst_out.rmlst))
       pymlst_subgraph(pymlst_out.summary_specific.join(rmlst_out.rmlst).join(distance.pymlst_distance))
       
+      if (params.input_type != "fasta") {
+      // These processes cannot run if the input was finished assemblies
       // Different metaphlan4 & alignment depending on single-end or paired-end reads
       if (params.SE == "NO") {  
         metaphlan_out      = metaphlan4(trimm_out_checked.passed.concat(trimm_out_checked.failed), params.metaphlan_db)
@@ -273,8 +285,10 @@ workflow {
       
       // (params.skip_checkm? checkm_out= checkm(samples_to_run_checkM_ch) : null )
       checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      // if --skip_checkm flag is set, the input channel will be empty
-
       coverage     = coverage_pilon_corrected(remapping_polished.vcf)
+      // End of processes that require input reads
+      }
+
       typ16S       = typing_16S(one_contig, params.db_16s)
       abricate_out = abricate(annotation.fna)
       amrfinderplus_out = amrfinderplus(annotation.fna, params.amrfinderplus_db)
@@ -284,7 +298,7 @@ workflow {
       merge_run_resistances(summarized_resistances.output_file.collect(sort: true))
 
       // Preparing empty channels for summary results and versions in case a process was not run
-      empty_channel_per_sample = trimm_out.passed_reads_number.map {
+      empty_channel_per_sample = unicycler_out.assembly.map {
                                                                 sample_id, value -> return [sample_id, "skipped"]
                                                                 }
       empty_version_channel = channel.fromPath( "${workflow.projectDir}/bin/empty_version_channel.txt")
@@ -297,35 +311,37 @@ workflow {
       // the `remainder: true` ensures that if some result doesn't exist, it will 
       // be replaced by `NA` in the output summary file. Therefore each value must 
       // represent 1 column in the summary output.
-      summary_channel = trimm_out.passed_reads_percentage.join(trimm_out.passed_reads_number, remainder: true)
-                                                          .join(all_channels.coverage? coverage.read_depth : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.coverage? coverage.alt_bases : empty_channel_per_sample, remainder: true)  
-                                                          .join(all_channels.insertsize? insertsize.insert_size : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.assembly_stats? assembly_stats.number_contigs : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.assembly_stats? assembly_stats.total_length : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.assembly_stats? assembly_stats.n50 : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.assembly_stats? assembly_stats.gc_percent : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.typ16S? typ16S.taxa : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.typ16S? typ16S.aln_length : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.typ16S? typ16S.aln_identity : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.metaphlan_out? metaphlan_out.taxa : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.metaphlan_out? metaphlan_out.purity : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.rmlst_out? rmlst_out.taxa : empty_channel_per_sample, remainder: true)    
-                                                          .join(all_channels.rmlst_out? rmlst_out.best_rST : empty_channel_per_sample, remainder: true)    
-                                                          .join(all_channels.rmlst_out? rmlst_out.alleles_missing : empty_channel_per_sample, remainder: true)    
-                                                          .join(all_channels.busco_out? busco_out.complete_busco : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.busco_out? busco_out.busco_groups : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.busco_out? busco_out.busco_lineage : empty_channel_per_sample, remainder: true)           
-                                                          .join(all_channels.checkm_out? checkm_out.checkm_completeness : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.checkm_out? checkm_out.checkm_contamination: empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.checkm_out? checkm_out.checkm_heterogeneity : empty_channel_per_sample, remainder: true)    
-                                                          .join(all_channels.gtdb_out? gtdb_out.species : empty_channel_per_sample, remainder: true)                                           
-                                                          .join(all_channels.gtdb_out? gtdb_out.ani_ref : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.gtdb_out? gtdb_out.ani_ani : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.gtdb_out? gtdb_out.ani_af : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.gtdb_out? gtdb_out.placement_ref : empty_channel_per_sample, remainder: true)
-                                                          .join(all_channels.gtdb_out? gtdb_out.gtdb_notes : empty_channel_per_sample, remainder: true)
-                                                          .join(qc_size_warning, remainder: true)
+      summary_channel = empty_channel_per_sample.map { sample_id, value -> return [sample_id]}
+                                                .join(all_channels.trimm_out? trimm_out.passed_reads_percentage : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.trimm_out? trimm_out.passed_reads_number : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.coverage? coverage.read_depth : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.coverage? coverage.alt_bases : empty_channel_per_sample, remainder: true)  
+                                                .join(all_channels.insertsize? insertsize.insert_size : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.assembly_stats? assembly_stats.number_contigs : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.assembly_stats? assembly_stats.total_length : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.assembly_stats? assembly_stats.n50 : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.assembly_stats? assembly_stats.gc_percent : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.typ16S? typ16S.taxa : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.typ16S? typ16S.aln_length : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.typ16S? typ16S.aln_identity : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.metaphlan_out? metaphlan_out.taxa : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.metaphlan_out? metaphlan_out.purity : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.rmlst_out? rmlst_out.taxa : empty_channel_per_sample, remainder: true)    
+                                                .join(all_channels.rmlst_out? rmlst_out.best_rST : empty_channel_per_sample, remainder: true)    
+                                                .join(all_channels.rmlst_out? rmlst_out.alleles_missing : empty_channel_per_sample, remainder: true)    
+                                                .join(all_channels.busco_out? busco_out.complete_busco : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.busco_out? busco_out.busco_groups : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.busco_out? busco_out.busco_lineage : empty_channel_per_sample, remainder: true)           
+                                                .join(all_channels.checkm_out? checkm_out.checkm_completeness : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.checkm_out? checkm_out.checkm_contamination: empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.checkm_out? checkm_out.checkm_heterogeneity : empty_channel_per_sample, remainder: true)    
+                                                .join(all_channels.gtdb_out? gtdb_out.species : empty_channel_per_sample, remainder: true)                                           
+                                                .join(all_channels.gtdb_out? gtdb_out.ani_ref : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.gtdb_out? gtdb_out.ani_ani : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.gtdb_out? gtdb_out.ani_af : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.gtdb_out? gtdb_out.placement_ref : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.gtdb_out? gtdb_out.gtdb_notes : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.qc_size_warning? qc_size_warning : empty_channel_per_sample, remainder: true)
       // summary_channel.view() // To see what gets passed to the summary processes
 
       single_summary  = summary_sample(summary_channel)
@@ -334,9 +350,10 @@ workflow {
       links_for_transfer(one_contig)
 
       // collecting the versions of the various software
-      software_version_channel = trimm_out.version.first().concat(
+      software_version_channel = Channel.empty().concat(
+                                  all_channels.trimm_out? trimm_out.version.first() : empty_version_channel,
                                   all_channels.fastqc_raw_reads_out? fastqc_raw_reads_out.version.first() : empty_version_channel,
-                                  all_channels.unicycler_out? unicycler_out.version.first() : empty_version_channel,
+                                  all_channels.unicycler_out.version? unicycler_out.version.first() : empty_version_channel,
                                   all_channels.annotation? annotation.version.first() : empty_version_channel,
                                   all_channels.checkm_out? checkm_out.version.first() : empty_version_channel,
                                   all_channels.busco_lineages? busco_lineages : empty_version_channel, // first() not needed - only runs once
@@ -349,32 +366,28 @@ workflow {
                                   all_channels.typ16S? typ16S.version.first() : empty_version_channel,
                                   all_channels.abricate_out? abricate_out.version.first() : empty_version_channel,
                                   all_channels.amrfinderplus_out? amrfinderplus_out.version.first() : empty_version_channel,
-                                  all_channels.pymlst_out? pymlst_out.version.first() : empty_version_channel
+                                  all_channels.pymlst_out? pymlst_out.version.first() : empty_version_channel,
+                                  all_channels.bcl2fastq_out? bcl2fastq_out.version.first() : empty_version_channel,
                                  ).collect()
 
-    if (params.input_type == "bcl") { // if `bcl` input, then bcl2fastq was also used
-      software_version_channel = software_version_channel.concat(
-                                    bcl2fastq_out.version).collect()
-      }
-
       write_software_versions(software_version_channel)
-  }
+  
 
-  if (params.input_type == "fasta") {
-      annotation     = bakta(genome)
-      gtdb_out       = gtdbtk_classify_wf(annotation.fna)
-      typing_rMLST   = rMLST(annotation.fna, db_rMLST)
-      rmlst_out      = rMLST_call(typing_rMLST.blast_tabs, bigsdb_rMLST)
-      one_contig     = make_one_contig(annotation.fna)
-      typ16S         = typing_16S(one_contig)
-      abricate_out   = abricate(annotation.fna)
-      links_for_transfer(one_contig)
-      write_software_versions(annotation.version.first().concat(
-                              gtdb_out.version.first(),
-                              typing_rMLST.version.first(),
-                              typ16S.version.first(),
-                              abricate_out.version.first()).collect())
-  }
+  // if (params.input_type == "fasta") {
+  //     annotation     = bakta(genome)
+  //     gtdb_out       = gtdbtk_classify_wf(annotation.fna)
+  //     typing_rMLST   = rMLST(annotation.fna, db_rMLST)
+  //     rmlst_out      = rMLST_call(typing_rMLST.blast_tabs, bigsdb_rMLST)
+  //     one_contig     = make_one_contig(annotation.fna)
+  //     typ16S         = typing_16S(one_contig)
+  //     abricate_out   = abricate(annotation.fna)
+  //     links_for_transfer(one_contig)
+  //     write_software_versions(annotation.version.first().concat(
+  //                             gtdb_out.version.first(),
+  //                             typing_rMLST.version.first(),
+  //                             typ16S.version.first(),
+  //                             abricate_out.version.first()).collect())
+  // }
 }
 
 

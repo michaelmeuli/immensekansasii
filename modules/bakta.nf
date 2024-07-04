@@ -17,7 +17,7 @@ process bakta {
 
     script:
     """
-    # Rename the assembly because it it's just called <sample_id>.fasta then bakta got stuck (bug?)
+    # Rename the assembly because if it's just called <sample_id>.fasta then bakta got stuck (bug?)
     FILENAME=${fasta}
     mv \${FILENAME} "\${FILENAME%.fasta}_assembly.fasta"
 

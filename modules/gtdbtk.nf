@@ -23,6 +23,11 @@ process gtdbtk_classify_wf {
   
   # For troubleshooting, print all the input filenames
   echo ${assemblies.name}
+
+  # Change extension of .fna files to .fasta (GTDB expects fasta extension)
+  for file in *.fna; do
+    mv -- "\$file" "\${file%.fna}.fasta"
+  done
   
   # Process all input files through gtdbtk at the same time:
   gtdbtk classify_wf --genome_dir . --out_dir gtdbtk_output --prefix gtdbtk_output --cpus ${task.cpus} --skip_ani_screen --extension fasta
@@ -32,9 +37,13 @@ process gtdbtk_classify_wf {
   mv gtdbtk_output/gtdbtk.warnings.log gtdbtk_output/batch${batch_number}_gtdbtk.warnings.log
 
   # Sometimes GTDBtk generates two output files, 1 for bacteria, 1 for archea, these should be merged into one:
-  cat gtdbtk_output/*bac*.summary.tsv > gtdbtk_output/bac_and_arch_gtdb_summary.tsv
-  tail -n +2 gtdbtk_output/*ar*.summary.tsv >> gtdbtk_output/bac_and_arch_gtdb_summary.tsv
-
+  summary_files=(gtdbtk_output/*.summary.tsv)
+  # Get the header from the first file
+  head -n 1 "\${summary_files[0]}" > gtdbtk_output/bac_and_arch_gtdb_summary.tsv
+  # Append the content of all the files
+  for file in "\${summary_files[@]}"; do
+    tail -n +2 "\$file" >> gtdbtk_output/bac_and_arch_gtdb_summary.tsv
+  done
 
   # Split the summary output file into 1 file per sample:
   mkdir results_per_sample

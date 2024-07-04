@@ -93,7 +93,6 @@ process multiqc_assembly {
     
 
     input:
-    path (trim_logs)
     path (quast_stats)
     path (prokka_output)
     path (busco_summaries)
@@ -105,7 +104,7 @@ process multiqc_assembly {
 
     script:
     """
-    multiqc -m quast -m prokka -m busco ${trim_logs} ${prokka_output} ${quast_stats} ${busco_summaries} -n ${params.run_id}_multiqc_assembly
+    multiqc -m quast -m prokka -m busco ${prokka_output} ${quast_stats} ${busco_summaries} -n ${params.run_id}_multiqc_assembly
 
     multiqc --version > multiqc_vers.txt
     echo ${task.container} > multiqc_singularity.txt
