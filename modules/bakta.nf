@@ -11,15 +11,17 @@ process bakta {
     tuple val (sample_id), path (fasta)
 
     output:
-    tuple val(sample_id), path ("*/${sample_id}.fna"), emit: fna
+    tuple val(sample_id), path ("2_annotation/${sample_id}.fna"), emit: fna
     path ("2_annotation/*"), emit: annot_all
     path "bakta_version_all.txt", emit: version
+    path ("*_assembly.fasta"), emit: original_assembly
 
     script:
     """
-    # Rename the assembly because if it's just called <sample_id>.fasta then bakta got stuck (bug?)
-    FILENAME=${fasta}
-    mv \${FILENAME} "\${FILENAME%.fasta}_assembly.fasta"
+    # Troubleshooting:
+    ls -lh
+    
+    echo "Running bakta on: ${fasta}"
 
     bakta \\
         --db ${params.bakta_db} \\
@@ -27,7 +29,7 @@ process bakta {
         --prefix ${sample_id} \\
         --output 2_annotation \\
         --strain ${sample_id} \\
-        \${FILENAME%.fasta}_assembly.fasta
+        ${fasta}
     
     bakta --version > bakta_version.txt 2>&1
     

@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GTDBtk, rMLST, checkM, QUAST, BUSCO now run based on unicycler assembly directly instead of bakta .fna (greater parallelization)
 - checkM is run on bacterial genomes as predicted by Metaphlan4 results (instead of BUSCO results)
 - Fasta input now runs through the same pipeline as fastq input (except for assembly and raw read QC)
+- GTDB-tk now uses ANI-screening if genomes are well-defined instead of tree-placing all genomes freshly (more efficient)
 
 ## [1.1.1] - 2024-05-13
 

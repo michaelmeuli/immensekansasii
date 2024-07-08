@@ -371,23 +371,7 @@ workflow {
                                  ).collect()
 
       write_software_versions(software_version_channel)
-  
 
-  // if (params.input_type == "fasta") {
-  //     annotation     = bakta(genome)
-  //     gtdb_out       = gtdbtk_classify_wf(annotation.fna)
-  //     typing_rMLST   = rMLST(annotation.fna, db_rMLST)
-  //     rmlst_out      = rMLST_call(typing_rMLST.blast_tabs, bigsdb_rMLST)
-  //     one_contig     = make_one_contig(annotation.fna)
-  //     typ16S         = typing_16S(one_contig)
-  //     abricate_out   = abricate(annotation.fna)
-  //     links_for_transfer(one_contig)
-  //     write_software_versions(annotation.version.first().concat(
-  //                             gtdb_out.version.first(),
-  //                             typing_rMLST.version.first(),
-  //                             typ16S.version.first(),
-  //                             abricate_out.version.first()).collect())
-  // }
 }
 
 

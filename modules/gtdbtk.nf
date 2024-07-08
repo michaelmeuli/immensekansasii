@@ -24,13 +24,21 @@ process gtdbtk_classify_wf {
   # For troubleshooting, print all the input filenames
   echo ${assemblies.name}
 
-  # Change extension of .fna files to .fasta (GTDB expects fasta extension)
-  for file in *.fna; do
-    mv -- "\$file" "\${file%.fna}.fasta"
-  done
+  # Change extension of .fna files to .fasta (GTDB expects fasta extension and in "fasta" mode the user might submit .fna files)
+  # Check if there are any .fna files in the current directory
+  if ls *.fna 1> /dev/null 2>&1; then
+    # Loop through each .fna file
+    for file in *.fna; do
+      # Rename the file to .fasta
+      mv -- "\$file" "\${file%.fna}.fasta"
+      echo "Renamed \$file to \${file%.fna}.fasta"
+    done
+  else
+    echo "No .fna files found."
+  fi
   
   # Process all input files through gtdbtk at the same time:
-  gtdbtk classify_wf --genome_dir . --out_dir gtdbtk_output --prefix gtdbtk_output --cpus ${task.cpus} --skip_ani_screen --extension fasta
+  gtdbtk classify_wf --genome_dir . --out_dir gtdbtk_output --prefix gtdbtk_output --cpus ${task.cpus} --mash_db ${params.gtdb_db}/mash_db --extension fasta
   
   # Make logfiles of each batch unique (prevent overwriting)
   mv gtdbtk_output/gtdbtk.log gtdbtk_output/batch${batch_number}_gtdbtk.log
