@@ -8,7 +8,7 @@ params.OUTPUT = ""
 
 process pilon_remapping {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("assembly/results/${sample_id}/3_quality/remapping/pilon", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping/pilon", mode: 'copy')
     tag { sample_id }
     
 

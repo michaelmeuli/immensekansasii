@@ -5,9 +5,7 @@
 //params.CONTAINER = "quay.io/biocontainers/trimmomatic:0.39--hdfd78af_2"
 
 process trimmomaticPE {
-    // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("${params.output_dir_sample}/${sample_id}/0_trimming", mode: 'copy', pattern: "*.quality_read_trimm_info")
-    publishDir("${params.output_dir_sample}/${sample_id}/0_trimming", mode: 'copy', pattern: "trimmomatic_version.txt")
+    publishDir("${params.output_dir_sample}/${sample_id}/0_trimming", mode: 'copy')
     tag { sample_id }
     
 
@@ -51,11 +49,8 @@ process trimmomaticPE {
 
 
 process trimmomaticSE {
-    // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("${params.output_dir_sample}/${sample_id}/0_trimming", mode: 'copy', pattern: "*.quality_read_trimm_info")
-    publishDir("${params.output_dir_sample}/${sample_id}/0_trimming", mode: 'copy', pattern: "trimmomatic_version.txt")
+    publishDir("${params.output_dir_sample}/${sample_id}/0_trimming", mode: 'copy')
     tag { sample_id }
-    // containerOptions "-B ${params.illuminaclip}"
 
     input:
     tuple val (sample_id), path (fastq)

@@ -30,9 +30,17 @@ ADDITIONAL_ARGS="$@"
 
 # A hack to try to prevent nextflow from getting stuck on UZH's S3IT (bug: https://github.com/nextflow-io/nextflow/issues/2695 )
 WORK_DIR="$1/work"
+echo "Monitoring ${WORK_DIR} for open files"
 nohup lsof +D ${WORK_DIR} -r 600 &> /dev/null &
 LSOF_PID=$!
 trap "kill $LSOF_PID" EXIT
+
+WORK_DIR="/sctmp/progal"
+echo "And monitoring ${WORK_DIR} for open files"
+nohup lsof +D ${WORK_DIR} -r 600 &> /dev/null &
+LSOF_PID=$!
+trap "kill $LSOF_PID" EXIT
+
 
 # The profile has to be updated if running on a different infrastructure
 #nextflow run $MAIN_DIR/main.nf \

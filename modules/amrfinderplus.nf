@@ -11,7 +11,6 @@ process amrfinderplus {
   
   input:
   tuple val (sample_id), path (fasta)
-  path amrfinderplus_database
 
   output:
   path("${sample_id}.tsv")          , emit: report

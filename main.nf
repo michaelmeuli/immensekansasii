@@ -220,7 +220,7 @@ workflow {
 
       // These processes are the same for single-end and paired-end datasets:
       annotation          = bakta(unicycler_out.assembly)
-      busco_out           = busco(params.skip_busco? Channel.empty() : unicycler_out.assembly, params.busco_files)
+      busco_out           = busco(params.skip_busco? Channel.empty() : unicycler_out.assembly)
       busco_lineages      = get_busco_lineages(params.skip_busco? Channel.empty() :busco_out.version.collect())
       busco_plot(params.skip_busco? Channel.empty() : busco_out.summary_specific)
       assembly_stats      = quast(unicycler_out.assembly)
@@ -240,7 +240,7 @@ workflow {
       
       // batched_samples.view()                                                                    
       // Run GTDB on batched assemblies
-      gtdb_out_batched            = gtdbtk_classify_wf(batched_samples, params.gtdb_db)
+      gtdb_out_batched            = gtdbtk_classify_wf(batched_samples)
       // Make tuple with sample_id derived from filenames
       gtdb_out_batched_argumented = gtdb_out_batched.summary_files.flatten().map {it -> return [it.getSimpleName(), it ] }
       // gtdb_out_batched_argumented.view()
@@ -248,8 +248,8 @@ workflow {
       gtdb_out = extract_gtdb_output( gtdb_out_batched_argumented )
       }
       
-      typing_rMLST        = rMLST(unicycler_out.assembly, params.db_rMLST)
-      rmlst_out           = rMLST_call(typing_rMLST.blast_tabs, params.bigsdb_rMLST)
+      typing_rMLST        = rMLST(unicycler_out.assembly)
+      rmlst_out           = rMLST_call(typing_rMLST.blast_tabs)
       one_contig          = make_one_contig(annotation.fna)
       bwa_index_remapping = indexRemapping(one_contig)
 
@@ -262,14 +262,14 @@ workflow {
       // These processes cannot run if the input was finished assemblies
       // Different metaphlan4 & alignment depending on single-end or paired-end reads
       if (params.SE == "NO") {  
-        metaphlan_out      = metaphlan4(trimm_out_checked.passed.concat(trimm_out_checked.failed), params.metaphlan_db)
+        metaphlan_out      = metaphlan4(trimm_out_checked.passed.concat(trimm_out_checked.failed))
         remapping          = bwaAlign(trimm_out_checked.passed.join(bwa_index_remapping.index))
         insertsize         = parse_sam_for_insertsize(remapping.sam)
         bam_remapping      = samtoolsRemapping(remapping.sam)
         remapping_polished = pilon_remapping(bam_remapping.bam.join(one_contig))
 
       } else if (params.SE == "YES") {
-        metaphlan_out      = metaphlan4SE(trimm_out_checked.passed.concat(trimm_out_checked.failed), params.metaphlan_db)
+        metaphlan_out      = metaphlan4SE(trimm_out_checked.passed.concat(trimm_out_checked.failed))
         remapping          = bwaAlignSE(trimm_out_checked.passed.join(bwa_index_remapping.index))
         insertsize         = parse_sam_for_insertsize(remapping.sam)
         bam_remapping      = samtoolsRemapping(remapping.sam)
@@ -289,9 +289,9 @@ workflow {
       // End of processes that require input reads
       }
 
-      typ16S       = typing_16S(one_contig, params.db_16s)
+      typ16S       = typing_16S(one_contig)
       abricate_out = abricate(annotation.fna)
-      amrfinderplus_out = amrfinderplus(annotation.fna, params.amrfinderplus_db)
+      amrfinderplus_out = amrfinderplus(annotation.fna)
 
       // Summarize Abricate output and create summary for run
       summarized_resistances = generate_resistance_table(abricate_out.sample_id, abricate_out.resistance)

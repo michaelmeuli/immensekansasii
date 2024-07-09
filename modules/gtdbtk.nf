@@ -7,11 +7,10 @@
 // then results are separated per assembly afterwards
 process gtdbtk_classify_wf {
   tag { "Batch: ${batch_number}" }
-  
+  containerOptions "-B ${params.gtdb_db}"
+
   input:
-  //tuple val (sample_id), path (fasta)
   tuple val(batch_number), path(assemblies)
-  path gtdb_database
 
   output:
   path("results_per_sample/*.tsv"), emit: summary_files
@@ -19,7 +18,7 @@ process gtdbtk_classify_wf {
 
   script:
   """
-  export GTDBTK_DATA_PATH=${gtdb_database}
+  export GTDBTK_DATA_PATH=${params.gtdb_db}
   
   # For troubleshooting, print all the input filenames
   echo ${assemblies.name}
@@ -71,7 +70,7 @@ process gtdbtk_classify_wf {
   done < gtdbtk_output/bac_and_arch_gtdb_summary.tsv
 
   # Get versions information:
-  echo \$(basename ${gtdb_database}) > db_version_gtdb.txt
+  echo \$(basename ${params.gtdb_db}) > db_version_gtdb.txt
   echo ${task.container} > gtdb_singularity.txt
   gtdbtk -v | cut -d\\  -f1-3 | head -n 1 > gtdb_vers.txt
   cat gtdb_vers.txt gtdb_singularity.txt db_version_gtdb.txt | tr "\\n" "\\t" > gtdb_version.txt

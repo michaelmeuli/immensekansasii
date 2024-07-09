@@ -7,11 +7,10 @@
 process busco {
     publishDir("${params.output_dir_sample}/${sample_id}/3_quality/BUSCO", mode: 'copy')
     tag { sample_id }
-    // containerOptions "-B ${params.busco_files}"
+    containerOptions "-B ${params.busco_files}"
 
     input:
     tuple val (sample_id), path (fasta)
-    path busco_lineages_path
 
     output:
     tuple val (sample_id), path ("${sample_id}/*"), emit: busco_all
@@ -25,7 +24,7 @@ process busco {
 
     script:
     """
-    busco -f -m genome -i ${fasta} -o ${sample_id} --auto-lineage --offline --download_path ${busco_lineages_path}
+    busco -f -m genome -i ${fasta} -o ${sample_id} --auto-lineage --offline --download_path ${params.busco_files}
     busco --version > busco_vers.txt
     echo ${task.container} > busco_singularity.txt
     grep "Running BUSCO using lineage dataset" ${sample_id}/logs/busco.log | cut -f2 | cut -d" "  -f6-10 | sed 's/ (prokaryota,//g' | tr ")" " " > busco_lineages_version.txt

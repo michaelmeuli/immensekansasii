@@ -7,14 +7,12 @@
 //params.OUTPUT = "typing16s_output"
 
 process typing_16S {
-    // publishDir(params.OUTPUT, mode: 'copy')
     publishDir("${params.output_dir_sample}/${sample_id}/3_quality/16S", mode: 'copy')
     tag { sample_id }
-    // containerOptions "-B ${params.db_16s}"
+    containerOptions "-B ${params.db_16s}"
 
     input:
     tuple val (sample_id), path (one_contig)
-    path database_16s
 
     output:
     tuple val (sample_id), path ("${sample_id}_16S_blast.tab"), emit: blast_tab
@@ -27,14 +25,14 @@ process typing_16S {
     """
     #!/bin/bash
 
-    DB=`find -L ${database_16s} -name "*.nhr" | sed 's/.nhr//'`
+    DB=`find -L ${params.db_16s} -name "*.nhr" | sed 's/.nhr//'`
     blastn -db \$DB  -num_threads ${task.cpus} -max_target_seqs 1 -max_hsps 1 \
            -query ${one_contig} -out ${sample_id}_16S_blast.tab \
            -outfmt "6 qseqid sseqid stitle qlen slen length pident nident mismatch gaps evalue bitscore"
     echo -e NA'\t'NA'\t'NA'\t'NA'\t'NA'\t'NA'\t'NA >> ${sample_id}_16S_blast.tab
 
     echo "16S \$(blastn -version | head -1)" > blastn_16S_vers.txt
-    if [[ ${database_16s} == *16S_* ]]; then basename ${database_16s} > db_version_16S.txt; else echo "database as of 20171115" > db_version_16S.txt; fi
+    if [[ ${params.db_16s} == *16S_* ]]; then basename ${params.db_16s} > db_version_16S.txt; else echo "database as of 20171115" > db_version_16S.txt; fi
     echo ${task.container} > blastn_16S_singularity.txt
     cat blastn_16S_vers.txt blastn_16S_singularity.txt db_version_16S.txt | tr "\\n" "\\t" > blastn_16S_version.txt
 
