@@ -14,7 +14,6 @@ process bakta {
     tuple val(sample_id), path ("2_annotation/${sample_id}.fna"), emit: fna
     path ("2_annotation/*"), emit: annot_all
     path "bakta_version_all.txt", emit: version
-    path ("*_assembly.fasta"), emit: original_assembly
 
     script:
     """
