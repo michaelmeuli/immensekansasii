@@ -5,6 +5,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [1.2.0] - 2024-07-10
+
 ### `Added`
 - BWA version is now included in version output
 - CheckM module to assess assembly quality of bacterial genomes (only runs for prokaryotes)
@@ -22,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - checkM is run on bacterial genomes as predicted by Metaphlan4 results (instead of BUSCO results)
 - Fasta input now runs through the same pipeline as fastq input (except for assembly and raw read QC)
 - GTDB-tk now uses ANI-screening if genomes are well-defined instead of tree-placing all genomes freshly (more efficient)
+- Fixed bug that caused frequent hangup on Slurm/S3IT
 
 ## [1.1.1] - 2024-05-13
 
