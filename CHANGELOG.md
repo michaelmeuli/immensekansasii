@@ -5,6 +5,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### `Added`
+
+
+### `Changed`
+- Bump nextflow version to 21.04.3
+- Bump openjdk version to 21 to enable virtual java threads
+- run_IMMENSE.sh script now checks specific version for each package in environment.yml (before only package existence was checked)
+
 
 ## [1.2.0] - 2024-07-10
 

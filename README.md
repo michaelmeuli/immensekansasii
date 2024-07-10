@@ -240,7 +240,7 @@ Example to run one **single sample**:
 bash path/to/pipeline/run_IMMENSE.sh -j IMMENSE_singleSample -t fq_PE -r run_singleSample -i /scicore/home/egliadr/GROUP/runQC/IMMENSETestHSS/reads/pseaer -x "--single_sample 401915-22"
 ``` 
 
-For **several individual samples** add ```"--single_sample {sample_id_1,sample_id_2,...,sample_id_X}"``` at the end of the sbatch command (i.e. **"additional_options"**).
+For **several individual samples** add a prefix that defines all of them```"--single_sample sample_id_1"``` to match sample_id_1, sample_id_11, etc. at the end of the bash command (i.e. **"additional_options"**).
 
 Example to run **three samples**:
 ``` 

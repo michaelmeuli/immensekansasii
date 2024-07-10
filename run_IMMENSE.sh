@@ -102,7 +102,8 @@ env_file="$MAIN_DIR/environment.yml"
 extract=false # Helper variable for checking packages
 # Create an empty array to hold package names
 PACKAGES=()
-
+VERSIONS=()
+regex='^[[:space:]]*-[[:space:]]*([^=]+)=([^[:space:]]+)$'
 # Read the environment.yml line by line
 while IFS= read -r line; do
     if [[ $line == "dependencies:" ]]; then
@@ -110,9 +111,10 @@ while IFS= read -r line; do
         continue
     fi
 
-    # Extract package names if within the dependencies block
-    if $extract && [[ $line =~ ^[[:space:]]*-[[:space:]]*([^=]+)= ]]; then
+    # Extract package names & versions if within the dependencies block
+    if $extract && [[ $line =~ $regex ]]; then
         PACKAGES+=("${BASH_REMATCH[1]}")
+        VERSIONS+=("${BASH_REMATCH[2]}")
     elif $extract && [[ $line =~ ^[[:space:]]*- ]]; then
         break # Stop if another block starts
     fi
@@ -126,14 +128,20 @@ if conda info --envs | grep -qw $ENV_NAME; then
     source activate $ENV_NAME
 
     # Loop through packages and install if missing
-    for pkg in "${PACKAGES[@]}"; do
-        if ! conda list -n $ENV_NAME | grep -qw $pkg; then
-            echo "Package '$pkg' is missing. Installing..."
+    for i in "${!PACKAGES[@]}"; do
+        pkg=${PACKAGES[$i]}
+        version=${VERSIONS[$i]}
+        if ! conda list -n $ENV_NAME | grep -qw "${pkg}\s\+${version}"; then
+            echo "Package '$pkg'='$version' is missing. Installing..."
             #conda install -n $ENV_NAME $pkg -y
             # If the package is missing, just install all required packages from the environment file.
             conda env update -n $ENV_NAME --file $MAIN_DIR/environment.yml
+            echo "###################################################################"
+            echo "Since packages were installed, the pipeline might not have started"
+            echo "Please restart the pipeline if nothing was submitted to SLURM"
+            echo "###################################################################"
         else
-            echo "Package '$pkg' was found."
+            echo "Package '$pkg'='$version' was found."
         fi
     done
 else

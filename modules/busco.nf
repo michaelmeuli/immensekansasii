@@ -15,8 +15,6 @@ process busco {
     output:
     tuple val (sample_id), path ("${sample_id}/*"), emit: busco_all
     tuple val (sample_id), path ("${sample_id}/short_summary.specific*.txt"), emit: summary_specific // for assembly multiQC (sending specific)
-    //tuple val (sample_id), path ("${sample_id}/short_summary.specific*"), emit: summary_specific_folder // for plotting BUSCO results per sample
-    //tuple val (sample_id), path ("results/short_summary.generic.*.txt"), optional: true
     path "${sample_id}_busco_version.txt", emit: version
     tuple val (sample_id), env(COMPLETE_BUSCO), emit: complete_busco
     tuple val (sample_id), env(BUSCO_GROUPS), emit: busco_groups
@@ -31,7 +29,6 @@ process busco {
     cat busco_vers.txt busco_singularity.txt busco_lineages_version.txt | tr "\\n" "\\t" > ${sample_id}_busco_version.txt
 
     # Extract key information:
-    # grep "C:" ${sample_id}/short_summary.specific.*.txt | sed 's/,D/;D/g' | tr "," "\\t" | cut -f2,5 > ${sample_id}_busco_classification.txt
     COMPLETE_BUSCO=`grep "C:" ${sample_id}/short_summary.specific.*.txt | sed 's/,D/;D/g' | tr "," "\\t" | cut -f2`
     BUSCO_GROUPS=`grep "C:" ${sample_id}/short_summary.specific.*.txt | sed 's/,D/;D/g' | tr "," "\\t" | cut -f5`
     BUSCO_LINEAGE=`grep "lineage dataset is:" ${sample_id}/short_summary.specific.*.txt | awk '{print \$6}'`
