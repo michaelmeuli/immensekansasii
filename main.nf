@@ -38,6 +38,11 @@ Email                      : ${params.email}
 * check the input type and create relevant channels
 */
 
+if (params.single_sample.contains('{')) {
+  println "--single_sample: ${params.single_sample}"
+  error "ERROR: The `--single_sample` argument must not contain curly brackets, this breaks the fromFilePairs() grouping. You can only define a single sample or a prefix of multiple samples."
+}
+
 if (params.input_type == "bcl") {
 
   Channel
@@ -56,9 +61,9 @@ else if (params.input_type == "fastq") {
 
   if (params.SE == "NO") {
       Channel
-        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,R2,1,2}*.fastq*" )
-        .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}*_{R1,R2,1,2}*.fastq.gz" }
-        //.view { "Identified files: $it" }
+        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,R2,1,2}.fastq.gz")
+        .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}*_{R1,R2,1,2}.fastq.gz" }
+        // .view { "Identified files: $it" }
         .branch{
           sarscov2: it =~ /sarscov-2/
           undet: it =~ /Undetermined/
@@ -67,7 +72,7 @@ else if (params.input_type == "fastq") {
   
   else if (params.SE == "YES") {
         Channel
-        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,1}.fastq*", size: 1)
+        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,1}.fastq.gz")
         .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}*_{R1,1}.fastq.gz" }
         //.view { "Identified files: $it" }
         .branch{
@@ -75,7 +80,7 @@ else if (params.input_type == "fastq") {
           undet: it =~ /Undetermined/
           other: true}.set{ reads_for_trimming }
   }
-  
+  // reads_for_trimming.other.view()
   }
 
 else if (params.input_type == "fasta") {
