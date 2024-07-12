@@ -14,7 +14,7 @@ process amrfinderplus {
 
   output:
   path("${sample_id}.tsv")          , emit: report
-  path("${sample_id}-mutations.tsv"), emit: mutation_report, optional: true
+  // path("${sample_id}-mutations.tsv"), emit: mutation_report, optional: true
   path "amrfinder_version_all.txt", emit: version
 
   script:

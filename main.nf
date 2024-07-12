@@ -80,7 +80,6 @@ else if (params.input_type == "fastq") {
           undet: it =~ /Undetermined/
           other: true}.set{ reads_for_trimming }
   }
-  // reads_for_trimming.other.view()
   }
 
 else if (params.input_type == "fasta") {
@@ -164,7 +163,12 @@ workflow {
   // Running fastQC on fastq reads before trimming and generating multiQC report
   fastqc_raw_reads_out   = fastqc_raw_reads(reads_for_trimming.other) // extract only the reads without sample_id
   multiqc_raw_fastqc_out = multiqc_raw_fastqc(fastqc_raw_reads_out.output.collect())
-  
+
+  // TODO: Deterministic GTDBtk batches (to allow resume to work)
+  // Assign sample_ids to batches for processes that do batch processing (ie. GTDBtk)
+  // This way, the batches are deterministic based on input files which is important for --resume to work
+
+
   // Trimming reads with trimmomatic
   if (params.SE == "NO") {  
       trimm_out = trimmomaticPE(reads_for_trimming.other)
@@ -240,7 +244,7 @@ workflow {
       batched_samples_temp = unicycler_out.assembly.map{sample_id, fasta -> return fasta}
       // Assign a batch number so that log files can be tracked per batch
       def gtdb_batch_number = 0
-      batched_samples = batched_samples_temp.collate(25, remainder = true).map { assemblies -> gtdb_batch_number += 1 
+      batched_samples = batched_samples_temp.toSortedList().collate(25, remainder = true).map { assemblies -> gtdb_batch_number += 1 
                                                                           return [gtdb_batch_number, assemblies]}
       
       // batched_samples.view()                                                                    
@@ -288,7 +292,6 @@ workflow {
                         // Only samples where assembly & bacterial classification is true will remain in channel
                         .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple (sample_id, assembly)
       
-      // (params.skip_checkm? checkm_out= checkm(samples_to_run_checkM_ch) : null )
       checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      // if --skip_checkm flag is set, the input channel will be empty
       coverage     = coverage_pilon_corrected(remapping_polished.vcf)
       // End of processes that require input reads

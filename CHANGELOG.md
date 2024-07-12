@@ -6,12 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### `Added`
-
+- run_IMMENSE.sh script now checks specific version for each package in environment.yml (before only package existence was checked)
 
 ### `Changed`
 - Bump nextflow version to 21.04.3
 - Bump openjdk version to 21 to enable virtual java threads
-- run_IMMENSE.sh script now checks specific version for each package in environment.yml (before only package existence was checked)
+- Bump unicycler from 0.4.8 to 0.5.0 (newer spades assembler, no more read correction and no polishing)
+- GTDBtk output extraction now happens locally instead of submitting jobs to SLURM cluster (more efficient)
 
 
 ## [1.2.0] - 2024-07-10
