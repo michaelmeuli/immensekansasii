@@ -38,7 +38,7 @@ Email                      : ${params.email}
 * check the input type and create relevant channels
 */
 
-if (params.single_sample.contains('{')) {
+if (params.single_sample.toString().contains('{')) {
   println "--single_sample: ${params.single_sample}"
   error "ERROR: The `--single_sample` argument must not contain curly brackets, this breaks the fromFilePairs() grouping. You can only define a single sample or a prefix of multiple samples."
 }
@@ -240,14 +240,19 @@ workflow {
       
       // If GTDB is run, it's run on 25 samples at one time and then afterwards the results are pulled apart again
       if (!params.skip_gtdb) {  
-      // Remove sample_id from tuple so that the fasta files can be put into batches
-      batched_samples_temp = unicycler_out.assembly.map{sample_id, fasta -> return fasta}
-      // Assign a batch number so that log files can be tracked per batch
-      def gtdb_batch_number = 0
-      batched_samples = batched_samples_temp.toSortedList().collate(25, remainder = true).map { assemblies -> gtdb_batch_number += 1 
-                                                                          return [gtdb_batch_number, assemblies]}
+      // Remove sample_id from tuple so that the fasta files can be put into batches, sort the fasta files by basename (without path)
+      collected_assemblies = unicycler_out.assembly
+                                        .map{ sample_id, fasta -> return fasta }
+                                        .toSortedList{ a,b -> file(a).getBaseName() <=> file(b).getBaseName() }
+                                        .flatten()
       
-      // batched_samples.view()                                                                    
+      // Assign a batch number so that log files can be tracked per batch      
+      def gtdb_batch_number = 0
+      batched_samples = collected_assemblies
+                                        .collate(25, remainder = true)
+                                        .map { assemblies -> gtdb_batch_number += 1 
+                                            return [gtdb_batch_number, assemblies]}
+                                                                          
       // Run GTDB on batched assemblies
       gtdb_out_batched            = gtdbtk_classify_wf(batched_samples)
       // Make tuple with sample_id derived from filenames
