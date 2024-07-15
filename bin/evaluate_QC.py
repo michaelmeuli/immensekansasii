@@ -3,6 +3,10 @@
 import csv
 import pandas as pd
 import argparse
+import os
+
+# To run:
+# evaluate_QC.py --qcfile xxxxx_quality.tsv --rulesfile path/to/aquamis-style/rules.csv
 
 synonyms = {
     'GC_percent':'GC (%)',
@@ -24,8 +28,8 @@ def parse_busco_data(busco_str):
     """
     try:
         # Extract percentages following 'S:' for single-copy and 'D:' for duplicated
-        single_str = busco_str.split('S:')[1].split('%')[0]
-        duplicated_str = busco_str.split('D:')[1].split('%')[0]
+        single_str = str(busco_str).split('S:')[1].split('%')[0]
+        duplicated_str = str(busco_str).split('D:')[1].split('%')[0]
 
         # Convert to decimal
         single_copy = float(single_str) / 100.0
@@ -33,7 +37,7 @@ def parse_busco_data(busco_str):
 
         return single_copy, duplicated
     except Exception as e:
-        print(f"Error parsing BUSCO data: {e}")
+        print(f"Error parsing BUSCO data: {e} - Skipped")
         return 0.0, 0.0  # Default return on failure
 
 def add_busco_columns(df):
@@ -148,8 +152,8 @@ def evaluate_row(row, all_rules):
         elif canonical_param in "initial_species":
             status = row['MetaPhlAn4_species']
         else:
-            status = "NA"
-
+            continue # If parameter is not defined, then don't output it.
+            # status = "NA"
         row_results[canonical_param] = status
     
     return row_results
@@ -206,7 +210,7 @@ def main():
     args = parser.parse_args()
 
     results = evaluate_strain(args.qcfile, args.rulesfile)
-    results.to_csv(args.qcfile+".scores", sep=",", index=False, quoting=csv.QUOTE_NONE)
+    results.to_csv(os.path.basename(args.qcfile).split(".tsv")[0]+"_scores.csv", sep=",", index=False, quoting=csv.QUOTE_NONE, na_rep='NA')
 
 if __name__ == "__main__":
     main()
