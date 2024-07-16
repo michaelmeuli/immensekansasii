@@ -210,7 +210,7 @@ def main():
     args = parser.parse_args()
 
     results = evaluate_strain(args.qcfile, args.rulesfile)
-    results.to_csv(os.path.basename(args.qcfile).split(".tsv")[0]+"_scores.csv", sep=",", index=False, quoting=csv.QUOTE_NONE, na_rep='NA')
+    results.to_csv(os.path.basename(args.qcfile).split(".tsv")[0]+"_QC.csv", sep=",", index=False, quoting=csv.QUOTE_NONE, na_rep='NA')
 
 if __name__ == "__main__":
     main()

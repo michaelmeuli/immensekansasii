@@ -82,7 +82,7 @@ process merge_summaries {
     path (sample_quality)
 
     output:
-    path ("${params.run_id}_quality.*"), emit: quality
+    path ("${params.run_id}_quality*"), emit: quality
 
     script:
     """
