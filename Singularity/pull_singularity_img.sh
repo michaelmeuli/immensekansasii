@@ -14,7 +14,7 @@ singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-blast-2.14.1--
 singularity build --sandbox ${INSTALL_PATH}/ezlabgva-busco_v5.3.2_cv1.img docker://ezlabgva/busco:v5.3.2_cv1
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-bwa-0.7.17--h5bf99c6_8.img docker://quay.io/biocontainers/bwa:0.7.17--h5bf99c6_8
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-fastqc-0.12.1--hdfd78af_0.img docker://quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0
-singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-multiqc-1.11--pyhdfd78af_0.img docker://quay.io/biocontainers/multiqc:1.11--pyhdfd78af_0
+singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-multiqc-1.23--pyhdfd78af_0.img docker://quay.io/biocontainers/multiqc:1.23--pyhdfd78af_0
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-pilon-1.24--hdfd78af_0.img docker://quay.io/biocontainers/pilon:1.24--hdfd78af_0
 #singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-prokka-1.14.6--pl5262hdfd78af_1.img docker://quay.io/biocontainers/prokka:1.14.6--pl5262hdfd78af_1
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-quast-5.0.2--py37pl5262h190e900_4.img docker://quay.io/biocontainers/quast:5.0.2--py37pl5262h190e900_4

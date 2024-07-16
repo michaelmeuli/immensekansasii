@@ -96,6 +96,7 @@ process multiqc_assembly {
     path (quast_stats)
     path (prokka_output)
     path (busco_summaries)
+    path (metaphlan_profile)
 
     output:
     path "${params.run_id}_multiqc_assembly.html", emit: multiqc_report
@@ -104,7 +105,18 @@ process multiqc_assembly {
 
     script:
     """
-    multiqc -m quast -m prokka -m busco ${prokka_output} ${quast_stats} ${busco_summaries} -n ${params.run_id}_multiqc_assembly
+    # Put all metaphlan results into a subdirectory and remove the _profiled_metagenome part of name so that multiqc recognizes the sample names
+    mkdir metaphlan
+    for metaphlan_file in *_profiled_metagenome.txt; do
+        # Check if the file is a symlink
+        # Extract the new filename by removing "_profiled_metagenome" part
+        new_name=\$(echo "\$metaphlan_file" | sed 's/_profiled_metagenome//')
+        
+        # Move the symlink to the subdirectory with the new name
+        mv "\$metaphlan_file" "metaphlan/\$new_name"
+    done
+    
+    multiqc . -n ${params.run_id}_multiqc_assembly
 
     multiqc --version > multiqc_vers.txt
     echo ${task.container} > multiqc_singularity.txt

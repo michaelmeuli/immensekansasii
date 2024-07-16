@@ -233,10 +233,6 @@ workflow {
       busco_lineages      = get_busco_lineages(params.skip_busco? Channel.empty() :busco_out.version.collect())
       busco_plot(params.skip_busco? Channel.empty() : busco_out.summary_specific)
       assembly_stats      = quast(unicycler_out.assembly)
-      mqc_assembly_out    = multiqc_assembly( assembly_stats.stats.collect(), 
-                                              annotation.annot_all.collect(), 
-                                              params.skip_busco? Channel.empty() : busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect()
-                                              )
       
       // If GTDB is run, it's run on 25 samples at one time and then afterwards the results are pulled apart again
       if (!params.skip_gtdb) {  
@@ -301,7 +297,11 @@ workflow {
       coverage     = coverage_pilon_corrected(remapping_polished.vcf)
       // End of processes that require input reads
       }
-
+      mqc_assembly_out    = multiqc_assembly( assembly_stats.stats.collect(), 
+                                              annotation.annot_all.collect(), 
+                                              params.skip_busco? Channel.empty() : busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect(),
+                                              (params.input_type == "fasta")? Channel.empty() : metaphlan_out.profile.map {item -> return [item[1]]}.collect()
+                                              )
       typ16S       = typing_16S(one_contig)
       abricate_out = abricate(annotation.fna)
       amrfinderplus_out = amrfinderplus(annotation.fna)
@@ -419,7 +419,7 @@ workflow.onComplete {
 
         quality_tab = file("${params.output_dir_run}/${params.run_id}_quality.tsv")
         //dashb = file("${params.run_id}_transfer_result/QC_dashboard.html")
-        mulQC_ass = file("${params.output_dir_run}/${params.run_id}_multiqc_assembly.html")
+        // mulQC_ass = file("${params.output_dir_run}/${params.run_id}_multiqc_assembly.html")
         //mulQC_reads = file("${params.run_id}_transfer_result/${params.run_id}_multiqc_trimmed.html")
         
 
@@ -430,7 +430,7 @@ workflow.onComplete {
                 
                 if (quality_tab.exists()) { attach "${params.output_dir_run}/${params.run_id}_quality.tsv" }
                 //if (dashb.exists()) { attach "${params.run_id}_transfer_result/QC_dashboard.html" }
-                if (mulQC_ass.exists()) { attach "${params.output_dir_run}/${params.run_id}_multiqc_assembly.html", fileName: "multiqc_report_assembly.html" }
+                // if (mulQC_ass.exists()) { attach "${params.output_dir_run}/${params.run_id}_multiqc_assembly.html", fileName: "multiqc_report_assembly.html" }
                 //if (mulQC_reads.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_multiqc_trimmed.html", fileName: "multiqc_report_reads.html" }
 
                 body msg

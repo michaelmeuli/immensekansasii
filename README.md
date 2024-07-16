@@ -17,7 +17,7 @@ The steps that are included are:
 	* Trimmomatic (0.39)
 * Pre-Assembly QC
 	* FastQC (0.12.1)
-	* MultiQC (1.11)
+	* MultiQC (1.23)
 * Assembly
 	* Unicycler (0.5.0)
 * Post-Assembly QC
