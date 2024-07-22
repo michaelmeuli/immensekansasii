@@ -260,7 +260,7 @@ workflow {
       
       typing_rMLST        = rMLST(unicycler_out.assembly)
       rmlst_out           = rMLST_call(typing_rMLST.blast_tabs)
-      one_contig          = make_one_contig(annotation.fna)
+      one_contig          = make_one_contig(unicycler_out.assembly)
       bwa_index_remapping = indexRemapping(one_contig)
 
       // Run pyMLST based on rMLST species identification
@@ -303,8 +303,8 @@ workflow {
                                               (params.input_type == "fasta")? Channel.empty() : metaphlan_out.profile.map {item -> return [item[1]]}.collect()
                                               )
       typ16S       = typing_16S(one_contig)
-      abricate_out = abricate(annotation.fna)
-      amrfinderplus_out = amrfinderplus(annotation.fna)
+      abricate_out = abricate(unicycler_out.assembly)
+      amrfinderplus_out = amrfinderplus(unicycler_out.assembly)
 
       // Summarize Abricate output and create summary for run
       summarized_resistances = generate_resistance_table(abricate_out.sample_id, abricate_out.resistance)
