@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Abricate Resistance Summary file is now sorted by sample name
 - BUSCO temporary files are removed in work directory to save space
 - Some Bakta output files are gzipped to save space
+- Some checkM output files are deleted to save space
 
 ## [1.2.0] - 2024-07-10
 
