@@ -10,8 +10,7 @@ process generate_resistance_table {
     
 
     input:
-    val (sample_id)
-    path (resistance_file)
+    tuple val(sample_id), path(resistance_file)
 
     output:
     path ("${sample_id}_resistances_summary.tsv"), emit: output_file
@@ -32,7 +31,7 @@ process merge_run_resistances {
     tag { "${params.run_id}" }
     
     input:
-    path (resistance_file)
+    path(resistance_file)
 
     output:
     path ("${params.run_id}_abricate_resistances.tsv"), emit: run_resistances

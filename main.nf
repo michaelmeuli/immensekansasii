@@ -109,7 +109,7 @@ include { multiqc_bcl; multiqc_raw_fastqc;
           multiqc_trimmed_fastqc; multiqc_assembly }         from "./modules/multiqc"
 include { trimmomaticPE; trimmomaticSE }                     from "./modules/trimmomatic"
 include { unicycler; unicyclerSE }                           from "./modules/unicycler"
-include { pilon_remapping; pilon_remappingSE }               from "./modules/pilon"
+// include { pilon_remapping; pilon_remappingSE }               from "./modules/pilon"
 include { prokka }                                           from "./modules/prokka"
 include { busco; get_busco_lineages; busco_plot }            from "./modules/busco"
 include { checkm }                                           from "./modules/checkm"
@@ -117,12 +117,13 @@ include { quast }                                            from "./modules/qua
 include { gtdbtk_classify_wf; extract_gtdb_output }          from "./modules/gtdbtk"
 include { rMLST; rMLST_call }                                from "./modules/rMLST"
 include { metaphlan4; metaphlan4SE; classify_metaphlan4_results } from "./modules/metaphlan"
-include { make_one_contig; parse_sam_for_insertsize; 
-          coverage_pilon_corrected }                         from "./modules/python_functions"
-include { bwaIndex as indexRemapping }                       from "./modules/bwa_index"
-include { bwaAlign; 
-          bwaAlignSE }                                       from "./modules/bwa-mem"
-include { samtools as samtoolsRemapping}                     from "./modules/samtools"
+// include { make_one_contig; parse_sam_for_insertsize; 
+//           coverage_pilon_corrected }                         from "./modules/python_functions"
+include { make_one_contig }                                  from "./modules/python_functions"
+// include { bwaIndex as indexRemapping }                       from "./modules/bwa_index"
+// include { bwaAlign; 
+//           bwaAlignSE }                                       from "./modules/bwa-mem"
+// include { samtools as samtoolsRemapping}                     from "./modules/samtools"
 include { typing_16S }                                       from "./modules/typing_16S.nf"
 include { abricate }                                         from "./modules/abricate"
 include { summary_sample; merge_summaries }                  from "./modules/summary"
@@ -131,6 +132,7 @@ include { generate_resistance_table; merge_run_resistances }  from "./modules/re
 include { pymlst_add_strain; pymlst_distance; pymlst_subgraph} from "./modules/pymlst"
 include { amrfinderplus  }                                    from  "./modules/amrfinderplus"
 include { bakta         }                                      from "./modules/bakta"
+include { bwaAlign_insertsize_coverage; bwaAlign_insertsize_coverageSE } from "./modules/align-and-extract"
 
 
 /*
@@ -261,7 +263,7 @@ workflow {
       typing_rMLST        = rMLST(unicycler_out.assembly)
       rmlst_out           = rMLST_call(typing_rMLST.blast_tabs)
       one_contig          = make_one_contig(unicycler_out.assembly)
-      bwa_index_remapping = indexRemapping(one_contig)
+      // bwa_index_remapping = indexRemapping(one_contig) //TODO: Replace by bwaAlign_insertsize_coverage
 
       // Run pyMLST based on rMLST species identification
       pymlst_out          = pymlst_add_strain(rmlst_out.rmlst.join(unicycler_out.assembly))
@@ -273,17 +275,20 @@ workflow {
       // Different metaphlan4 & alignment depending on single-end or paired-end reads
       if (params.SE == "NO") {  
         metaphlan_out      = metaphlan4(trimm_out_checked.passed.concat(trimm_out_checked.failed))
-        remapping          = bwaAlign(trimm_out_checked.passed.join(bwa_index_remapping.index))
-        insertsize         = parse_sam_for_insertsize(remapping.sam)
-        bam_remapping      = samtoolsRemapping(remapping.sam)
-        remapping_polished = pilon_remapping(bam_remapping.bam.join(one_contig))
+        // remapping          = bwaAlign(trimm_out_checked.passed.join(bwa_index_remapping.index)) //TODO: Replace by bwaAlign_insertsize_coverage
+        // insertsize         = parse_sam_for_insertsize(remapping.sam) //TODO: Replace by bwaAlign_insertsize_coverage
+        // bam_remapping      = samtoolsRemapping(remapping.sam) //TODO: Replace by bwaAlign_insertsize_coverage
+        // remapping_polished = pilon_remapping(bam_remapping.bam.join(one_contig)) //TODO: Replace by bwaAlign_insertsize_coverage
+        
+        mapping_processes = bwaAlign_insertsize_coverage(one_contig.join(trimm_out_checked.passed))
 
       } else if (params.SE == "YES") {
         metaphlan_out      = metaphlan4SE(trimm_out_checked.passed.concat(trimm_out_checked.failed))
-        remapping          = bwaAlignSE(trimm_out_checked.passed.join(bwa_index_remapping.index))
-        insertsize         = parse_sam_for_insertsize(remapping.sam)
-        bam_remapping      = samtoolsRemapping(remapping.sam)
-        remapping_polished = pilon_remappingSE(bam_remapping.bam.join(one_contig))
+        // remapping          = bwaAlignSE(trimm_out_checked.passed.join(bwa_index_remapping.index)) //TODO: Replace by bwaAlign_insertsize_coverage_SE
+        // insertsize         = parse_sam_for_insertsize(remapping.sam) //TODO: Replace by bwaAlign_insertsize_coverage_SE
+        // bam_remapping      = samtoolsRemapping(remapping.sam) //TODO: Replace by bwaAlign_insertsize_coverage_SE
+        // remapping_polished = pilon_remappingSE(bam_remapping.bam.join(one_contig)) //TODO: Replace by bwaAlign_insertsize_coverage_SE
+        mapping_processes = bwaAlign_insertsize_coverageSE(one_contig.join(trimm_out_checked.passed))
       }
 
       metaphlan4_classified = classify_metaphlan4_results(metaphlan_out.profile)
@@ -294,7 +299,7 @@ workflow {
                         .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple (sample_id, assembly)
       
       checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      // if --skip_checkm flag is set, the input channel will be empty
-      coverage     = coverage_pilon_corrected(remapping_polished.vcf)
+      // coverage     = coverage_pilon_corrected(remapping_polished.vcf) //TODO: Replace by bwaAlign_insertsize_coverage or bwaAlign_insertsize_coverage_SE
       // End of processes that require input reads
       }
       mqc_assembly_out    = multiqc_assembly( assembly_stats.stats.collect(), 
@@ -307,7 +312,7 @@ workflow {
       amrfinderplus_out = amrfinderplus(unicycler_out.assembly)
 
       // Summarize Abricate output and create summary for run
-      summarized_resistances = generate_resistance_table(abricate_out.sample_id, abricate_out.resistance)
+      summarized_resistances = generate_resistance_table(abricate_out.resistance)
       merge_run_resistances(summarized_resistances.output_file.collect(sort: true))
 
       // Preparing empty channels for summary results and versions in case a process was not run
@@ -327,9 +332,9 @@ workflow {
       summary_channel = empty_channel_per_sample.map { sample_id, value -> return [sample_id]}
                                                 .join(all_channels.trimm_out? trimm_out.passed_reads_percentage : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.trimm_out? trimm_out.passed_reads_number : empty_channel_per_sample, remainder: true)
-                                                .join(all_channels.coverage? coverage.read_depth : empty_channel_per_sample, remainder: true)
-                                                .join(all_channels.coverage? coverage.alt_bases : empty_channel_per_sample, remainder: true)  
-                                                .join(all_channels.insertsize? insertsize.insert_size : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.mapping_processes? mapping_processes.read_depth : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.mapping_processes? mapping_processes.alt_bases : empty_channel_per_sample, remainder: true)  
+                                                .join(all_channels.mapping_processes? mapping_processes.insert_size : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.assembly_stats? assembly_stats.number_contigs : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.assembly_stats? assembly_stats.total_length : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.assembly_stats? assembly_stats.n50 : empty_channel_per_sample, remainder: true)
@@ -373,7 +378,9 @@ workflow {
                                   all_channels.assembly_stats? assembly_stats.version.first() : empty_version_channel,
                                   all_channels.mqc_assembly_out? mqc_assembly_out.version : empty_version_channel, // first() not needed - only runs once
                                   all_channels.gtdb_out_batched? gtdb_out_batched.version.first() : empty_version_channel,
-                                  all_channels.bwa_index_remapping? bwa_index_remapping.version.first() : empty_version_channel,
+                                  all_channels.mapping_processes? mapping_processes.version_bwa_index.first() : empty_version_channel,
+                                  all_channels.mapping_processes? mapping_processes.version_samtools.first() : empty_version_channel,
+                                  all_channels.mapping_processes? mapping_processes.version_pilon.first() : empty_version_channel,
                                   all_channels.typing_rMLST? typing_rMLST.version.first() : empty_version_channel,
                                   all_channels.metaphlan_out? metaphlan_out.version.first() : empty_version_channel,
                                   all_channels.typ16S? typ16S.version.first() : empty_version_channel,

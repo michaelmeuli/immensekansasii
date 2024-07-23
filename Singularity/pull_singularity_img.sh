@@ -22,10 +22,11 @@ singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-samtools-1.19.
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-trimmomatic-0.39--hdfd78af_2.img docker://quay.io/biocontainers/trimmomatic:0.39--hdfd78af_2
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-unicycler-0.5.0--py39heaaa4ec_5.img docker://quay.io/biocontainers/unicycler:0.5.0--py39heaaa4ec_5
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-gtdbtk-2.3.2--pyhdfd78af_0.img docker://quay.io/biocontainers/gtdbtk:2.3.2--pyhdfd78af_0
-singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-metaphlan-4.1.0--pyhca03a8a_0.img docker://quay.io/biocontainers/metaphlan:4.1.0--pyhca03a8a_0
+singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-metaphlan-4.1.0--pyhca03a8a_0.img docker://jquay.io/biocontainers/metaphlan:4.1.0--pyhca03a8a_0
 singularity build --sandbox ${INSTALL_PATH}/r-base-4.3.3.img docker://r-base:4.3.3
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-checkm-genome-1.2.2--pyhdfd78af_1.img docker://quay.io/biocontainers/checkm-genome:1.2.2--pyhdfd78af_1
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-pymlst-2.1.6--pyhdfd78af_0.img docker://quay.io/biocontainers/pymlst:2.1.6--pyhdfd78af_0
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-ncbi-amrfinderplus-3.12.8--h283d18e_0.img docker://quay.io/biocontainers/ncbi-amrfinderplus:3.12.8--h283d18e_0
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-bakta-1.9.3--pyhdfd78af_0.img docker://quay.io/biocontainers/bakta:1.9.3--pyhdfd78af_0
+singularity build --sandbox ${INSTALL_PATH}/dockerhub-pbieber-bwa-pilon-samtools-python-2.0.0.img docker://pbieber/bwa-pilon-samtools-python:2.0.0
 

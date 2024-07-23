@@ -37,8 +37,7 @@ process parse_sam_for_insertsize {
 
     script:
     """
-    parse_sam_for_insertsize_updated_P3.py ${sam} \
-    > ${sample_id}.insertions.tab
+    parse_sam_for_insertsize_updated_P3.py ${sam} > ${sample_id}.insertions.tab
 
     # Extracting key information
     INSERTSIZE=`grep -v Insert_size ${sample_id}.insertions.tab | sort -n  | awk ' { a[i++]=\$1; } END { print a[int(i/2)]; }'`
@@ -61,8 +60,7 @@ process coverage_pilon_corrected {
 
     script:
     """
-    make_coverage_pilon_corrected_updated_P3.py ${vcf} \
-    > ${sample_id}_coverage.tab
+    make_coverage_pilon_corrected_updated_P3.py ${vcf} > ${sample_id}_coverage.tab
 
     # Exracting the key information
     READ_DEPTH=`awk '/read_depth/{print \$3}' ${sample_id}_coverage.tab | sort -n  | awk ' { a[i++]=\$1; } END { print a[int(i/2)]; }'`

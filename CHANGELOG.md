@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump unicycler from 0.4.8 to 0.5.0 (newer spades assembler, no more read correction and no polishing)
 - GTDBtk output extraction now happens locally instead of submitting jobs to SLURM cluster (more efficient)
 - Bump multiQC from 1.11 to 1.23 and include bakta & metaphlan4 results in assembly report
+- Combined bwa-mapping, indexing, alignment, etc. all in one process to prevent large intermediate files in the work directory
 
 ## [1.2.0] - 2024-07-10
 

@@ -20,8 +20,7 @@ process samtools {
     script:
     """
     samtools sort -@ ${task.cpus} -T ${sample_id} -o ${sample_id}_alingnment.bam ${sam}
-    # samtools rmdup was retired and should be replaced
-    # samtools rmdup ${sample_id}_alingnment.bam ${sample_id}_alingnment.removed_duplicates.bam
+    
     # Sort by name
     samtools sort -n -@ ${task.cpus} -o ${sample_id}_alingnment_sorted.bam ${sample_id}_alingnment.bam
     # Fix paired reads
@@ -32,6 +31,9 @@ process samtools {
     samtools markdup -r -@ ${task.cpus} ${sample_id}_alingnment_fixed_coord.bam ${sample_id}_alingnment.removed_duplicates.bam
     # Index the bam file for pilon
     samtools index -@ ${task.cpus} ${sample_id}_alingnment.removed_duplicates.bam
+
+    # Delete all intermediate files that we don't need further
+    rm ${sample_id}_alingnment_fixed_coord.bam ${sample_id}_alingnment_fixed.bam ${sample_id}_alingnment_sorted.bam ${sample_id}_alingnment.bam
 
     samtools --version | head -1 > samtools_vers.txt
     echo ${task.container} > samtools_singularity.txt

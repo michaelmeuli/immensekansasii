@@ -1,0 +1,25 @@
+# This dockerfile contains bwa, pilon, samtools and python to be used in the 
+# IMMense pipeline to combine multiple steps in one process to prevent large data 
+# transfers. The dockerfile was uploaded to for public availability: 
+# https://hub.docker.com/repository/docker/pbieber/bwa-pilon-samtools-python/general
+
+# Use the Miniconda base image
+FROM continuumio/miniconda3:24.5.0-0
+
+# Set environment variables
+ENV PATH /opt/conda/bin:$PATH
+
+# Install dependencies from bioconda
+RUN conda config --add channels defaults && \
+    conda config --add channels bioconda && \
+    conda config --add channels conda-forge && \
+    conda install -y bwa samtools pilon && \
+    conda clean --all -y
+
+# Define default command
+CMD ["bash"]
+
+RUN apt-get update && \
+	apt-get upgrade -y && \
+	apt-get install -y git && \
+	apt-get clean
