@@ -278,6 +278,7 @@ workflow {
 
       metaphlan4_classified = classify_metaphlan4_results(metaphlan_out.profile)
       // Only run checkM it it's a bacterium (checkM only works for prokaryotes)
+      // Since we need the metaphlan4 classification, this can't run on fasta input
       samples_to_run_checkM_ch = unicycler_out.assembly
                         .join(metaphlan4_classified.bacteria, remainder: false)
                         // Only samples where assembly & bacterial classification is true will remain in channel
