@@ -9,13 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - run_IMMENSE.sh script now checks specific version for each package in environment.yml (before only package existence was checked)
 
 ### `Changed`
-- Bump nextflow version to 21.04.3
+- Bump nextflow version to 24.04.3
 - Bump openjdk version to 21 to enable virtual java threads
 - Bump unicycler from 0.4.8 to 0.5.0 (newer spades assembler, no more read correction and no polishing)
 - GTDBtk output extraction now happens locally instead of submitting jobs to SLURM cluster (more efficient)
 - Bump multiQC from 1.11 to 1.23 and include bakta & metaphlan4 results in assembly report
 - Combined bwa-mapping, indexing, alignment, etc. all in one process to prevent large intermediate files in the work directory
-- Abricate Resistance Summary file is now sorted
+- Abricate Resistance Summary file is now sorted by sample name
 
 ## [1.2.0] - 2024-07-10
 
