@@ -42,7 +42,7 @@ process merge_run_resistances {
     
     # Filename for the summary file
 
-    run_resistance_fn=${params.run_id}_abricate_resistances.tsv
+    run_resistance_fn=${params.run_id}.tsv
 
     # Get the header from the first file
     head -n 1 \$(ls -1 ${resistance_file} | head -n 1) > \${run_resistance_fn}
@@ -51,6 +51,10 @@ process merge_run_resistances {
     for file in ${resistance_file}; do
         tail -n +2 \$file >> \${run_resistance_fn}
     done
+
+    # Sort the resistance file and rename to _abricate_resistances.tsv to the file
+    (head -n 1 \${run_resistance_fn} && tail -n +2 \${run_resistance_fn} | sort) > \${run_resistance_fn%.*}_abricate_resistances.tsv
+
 
     """
 }
