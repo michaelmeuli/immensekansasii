@@ -166,11 +166,6 @@ workflow {
   fastqc_raw_reads_out   = fastqc_raw_reads(reads_for_trimming.other) // extract only the reads without sample_id
   multiqc_raw_fastqc_out = multiqc_raw_fastqc(fastqc_raw_reads_out.output.collect())
 
-  // TODO: Deterministic GTDBtk batches (to allow resume to work)
-  // Assign sample_ids to batches for processes that do batch processing (ie. GTDBtk)
-  // This way, the batches are deterministic based on input files which is important for --resume to work
-
-
   // Trimming reads with trimmomatic
   if (params.SE == "NO") {  
       trimm_out = trimmomaticPE(reads_for_trimming.other)
@@ -263,7 +258,6 @@ workflow {
       typing_rMLST        = rMLST(unicycler_out.assembly)
       rmlst_out           = rMLST_call(typing_rMLST.blast_tabs)
       one_contig          = make_one_contig(unicycler_out.assembly)
-      // bwa_index_remapping = indexRemapping(one_contig) //TODO: Replace by bwaAlign_insertsize_coverage
 
       // Run pyMLST based on rMLST species identification
       pymlst_out          = pymlst_add_strain(rmlst_out.rmlst.join(unicycler_out.assembly))
@@ -275,19 +269,10 @@ workflow {
       // Different metaphlan4 & alignment depending on single-end or paired-end reads
       if (params.SE == "NO") {  
         metaphlan_out      = metaphlan4(trimm_out_checked.passed.concat(trimm_out_checked.failed))
-        // remapping          = bwaAlign(trimm_out_checked.passed.join(bwa_index_remapping.index)) //TODO: Replace by bwaAlign_insertsize_coverage
-        // insertsize         = parse_sam_for_insertsize(remapping.sam) //TODO: Replace by bwaAlign_insertsize_coverage
-        // bam_remapping      = samtoolsRemapping(remapping.sam) //TODO: Replace by bwaAlign_insertsize_coverage
-        // remapping_polished = pilon_remapping(bam_remapping.bam.join(one_contig)) //TODO: Replace by bwaAlign_insertsize_coverage
-        
         mapping_processes = bwaAlign_insertsize_coverage(one_contig.join(trimm_out_checked.passed))
 
       } else if (params.SE == "YES") {
         metaphlan_out      = metaphlan4SE(trimm_out_checked.passed.concat(trimm_out_checked.failed))
-        // remapping          = bwaAlignSE(trimm_out_checked.passed.join(bwa_index_remapping.index)) //TODO: Replace by bwaAlign_insertsize_coverage_SE
-        // insertsize         = parse_sam_for_insertsize(remapping.sam) //TODO: Replace by bwaAlign_insertsize_coverage_SE
-        // bam_remapping      = samtoolsRemapping(remapping.sam) //TODO: Replace by bwaAlign_insertsize_coverage_SE
-        // remapping_polished = pilon_remappingSE(bam_remapping.bam.join(one_contig)) //TODO: Replace by bwaAlign_insertsize_coverage_SE
         mapping_processes = bwaAlign_insertsize_coverageSE(one_contig.join(trimm_out_checked.passed))
       }
 
@@ -299,7 +284,6 @@ workflow {
                         .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple (sample_id, assembly)
       
       checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      // if --skip_checkm flag is set, the input channel will be empty
-      // coverage     = coverage_pilon_corrected(remapping_polished.vcf) //TODO: Replace by bwaAlign_insertsize_coverage or bwaAlign_insertsize_coverage_SE
       // End of processes that require input reads
       }
       mqc_assembly_out    = multiqc_assembly( assembly_stats.stats.collect(), 

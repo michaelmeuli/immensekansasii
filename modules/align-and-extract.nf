@@ -8,7 +8,6 @@
 
 process bwaAlign_insertsize_coverage{
     publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", pattern: "${sample_id}.insertions.tab",mode: 'copy')
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping/pilon", pattern: "${sample_id}.vcf", mode: 'copy')
     publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", pattern: "${sample_id}_coverage.tab", mode: 'copy')
     tag { sample_id }
 
@@ -41,7 +40,7 @@ process bwaAlign_insertsize_coverage{
     echo "Aligning the raw reads to the assembly with bwa mem"
     bwa mem -t ${task.cpus} ${fasta} ${fastq_r1} ${fastq_r2} > ${sample_id}_alignment.sam
 
-    echo "bwa \$(bwa 2>&1 | grep Version | cut -f2 -d " ")" > bwa_mem_vers.txt
+    echo "bwa mem \$(bwa 2>&1 | grep Version | cut -f2 -d " ")" > bwa_mem_vers.txt
     echo ${task.container} > bwa_mem_singularity.txt
     cat bwa_mem_vers.txt bwa_mem_singularity.txt | tr "\\n" "\\t" > bwa_mem_version.txt
 
@@ -100,6 +99,7 @@ process bwaAlign_insertsize_coverage{
     # 6) The Pilon output is used to estimate read_depth and alternative bases (coverage_pilon_corrected process)
     echo "Get read-depth and alternative bases from VCF file"
     make_coverage_pilon_corrected_updated_P3.py ${sample_id}.vcf > ${sample_id}_coverage.tab
+    rm ${sample_id}.vcf
 
     # Exracting the key information
     READ_DEPTH=`awk '/read_depth/{print \$3}' ${sample_id}_coverage.tab | sort -n  | awk ' { a[i++]=\$1; } END { print a[int(i/2)]; }'`
@@ -112,7 +112,6 @@ process bwaAlign_insertsize_coverage{
 
 process bwaAlign_insertsize_coverageSE{
     publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", pattern: "${sample_id}.insertions.tab",mode: 'copy')
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping/pilon", pattern: "${sample_id}.vcf", mode: 'copy')
     publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", pattern: "${sample_id}_coverage.tab", mode: 'copy')
     tag { sample_id }
 
@@ -204,7 +203,8 @@ process bwaAlign_insertsize_coverageSE{
     # 6) The Pilon output is used to estimate read_depth and alternative bases (coverage_pilon_corrected process)
     echo "Get read-depth and alternative bases from VCF file"
     make_coverage_pilon_corrected_updated_P3.py ${sample_id}.vcf > ${sample_id}_coverage.tab
-
+    rm ${sample_id}.vcf
+    
     # Exracting the key information
     READ_DEPTH=`awk '/read_depth/{print \$3}' ${sample_id}_coverage.tab | sort -n  | awk ' { a[i++]=\$1; } END { print a[int(i/2)]; }'`
     ALT_BASES=`grep -c alternative_base ${sample_id}_coverage.tab`
