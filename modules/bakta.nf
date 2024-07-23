@@ -37,5 +37,7 @@ process bakta {
     echo "Database DOI: \${DB_VERSION} Date: \${DB_DATE}" > database_version.txt
     echo ${task.container} > bakta_singularity.txt
     cat bakta_version.txt database_version.txt bakta_singularity.txt | tr "\\n" "\\t" > bakta_version_all.txt
+
+    gzip *.embl *.gbff *.json *.svg
     """
 }
