@@ -12,13 +12,9 @@ singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-abricate-1.0.1
 singularity build --sandbox ${INSTALL_PATH}/jlboat-BioinfoContainers_bcl2fastq.img shub://jlboat/BioinfoContainers:bcl2fastq
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-blast-2.14.1--pl5321h6f7f691_0.img docker://quay.io/biocontainers/blast:2.14.1--pl5321h6f7f691_0
 singularity build --sandbox ${INSTALL_PATH}/ezlabgva-busco_v5.3.2_cv1.img docker://ezlabgva/busco:v5.3.2_cv1
-singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-bwa-0.7.17--h5bf99c6_8.img docker://quay.io/biocontainers/bwa:0.7.17--h5bf99c6_8
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-fastqc-0.12.1--hdfd78af_0.img docker://quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-multiqc-1.23--pyhdfd78af_0.img docker://quay.io/biocontainers/multiqc:1.23--pyhdfd78af_0
-singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-pilon-1.24--hdfd78af_0.img docker://quay.io/biocontainers/pilon:1.24--hdfd78af_0
-#singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-prokka-1.14.6--pl5262hdfd78af_1.img docker://quay.io/biocontainers/prokka:1.14.6--pl5262hdfd78af_1
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-quast-5.0.2--py37pl5262h190e900_4.img docker://quay.io/biocontainers/quast:5.0.2--py37pl5262h190e900_4
-singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-samtools-1.19.2--h50ea8bc_1.img docker://quay.io/biocontainers/samtools:1.19.2--h50ea8bc_1
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-trimmomatic-0.39--hdfd78af_2.img docker://quay.io/biocontainers/trimmomatic:0.39--hdfd78af_2
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-unicycler-0.5.0--py39heaaa4ec_5.img docker://quay.io/biocontainers/unicycler:0.5.0--py39heaaa4ec_5
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-gtdbtk-2.3.2--pyhdfd78af_0.img docker://quay.io/biocontainers/gtdbtk:2.3.2--pyhdfd78af_0
