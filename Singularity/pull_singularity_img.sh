@@ -9,7 +9,7 @@ echo "Installing Singularity Containers at:            ${INSTALL_PATH}"
 echo ""
 
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-abricate-1.0.1--ha8f3691_2.img docker://quay.io/biocontainers/abricate:1.0.1--ha8f3691_2
-singularity build --sandbox ${INSTALL_PATH}/jlboat-BioinfoContainers_bcl2fastq.img shub://jlboat/BioinfoContainers:bcl2fastq
+singularity build --sandbox ${INSTALL_PATH}/nfcore-bcl2fastq-2.20.0.422.img docker://nfcore/bcl2fastq:2.20.0.422
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-blast-2.14.1--pl5321h6f7f691_0.img docker://quay.io/biocontainers/blast:2.14.1--pl5321h6f7f691_0
 singularity build --sandbox ${INSTALL_PATH}/ezlabgva-busco_v5.3.2_cv1.img docker://ezlabgva/busco:v5.3.2_cv1
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-fastqc-0.12.1--hdfd78af_0.img docker://quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0
@@ -24,5 +24,5 @@ singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-checkm-genome-
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-pymlst-2.1.6--pyhdfd78af_0.img docker://quay.io/biocontainers/pymlst:2.1.6--pyhdfd78af_0
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-ncbi-amrfinderplus-3.12.8--h283d18e_0.img docker://quay.io/biocontainers/ncbi-amrfinderplus:3.12.8--h283d18e_0
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-bakta-1.9.3--pyhdfd78af_0.img docker://quay.io/biocontainers/bakta:1.9.3--pyhdfd78af_0
-singularity build --sandbox ${INSTALL_PATH}/dockerhub-pbieber-bwa-pilon-samtools-python-2.0.0.img docker://pbieber/bwa-pilon-samtools-python:2.0.0
+singularity build --sandbox ${INSTALL_PATH}/pbieber-bwa-pilon-samtools-python-2.0.0.img docker://pbieber/bwa-pilon-samtools-python:2.0.0
 
