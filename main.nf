@@ -406,7 +406,6 @@ workflow.onComplete {
         quality_tab = file("${params.output_dir_run}/${params.run_id}_quality.tsv")
         //dashb = file("${params.run_id}_transfer_result/QC_dashboard.html")
         // mulQC_ass = file("${params.output_dir_run}/${params.run_id}_multiqc_assembly.html")
-        //mulQC_reads = file("${params.run_id}_transfer_result/${params.run_id}_multiqc_trimmed.html")
         
 
         try {
@@ -417,7 +416,6 @@ workflow.onComplete {
                 if (quality_tab.exists()) { attach "${params.output_dir_run}/${params.run_id}_quality.tsv" }
                 //if (dashb.exists()) { attach "${params.run_id}_transfer_result/QC_dashboard.html" }
                 // if (mulQC_ass.exists()) { attach "${params.output_dir_run}/${params.run_id}_multiqc_assembly.html", fileName: "multiqc_report_assembly.html" }
-                //if (mulQC_reads.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_multiqc_trimmed.html", fileName: "multiqc_report_reads.html" }
 
                 body msg
         }

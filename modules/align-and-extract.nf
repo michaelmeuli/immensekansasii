@@ -1,5 +1,5 @@
 /*
-*  bwa-mem module
+*  Align-Insertsize-Coverage module
 */
 
 //params.CONTAINER = "quay.io/biocontainers/bwa:0.7.17--h5bf99c6_8"

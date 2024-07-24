@@ -5,7 +5,6 @@
 params.OUTPUT = ""
 
 process make_one_contig {
-    // publishDir(params.OUTPUT, mode: 'copy')
     publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", mode: 'copy')
     tag { fasta }
 
@@ -19,52 +18,5 @@ process make_one_contig {
     """
     make_one_contig_updated_P3.py ${fasta} ${sample_id} \
     > ${sample_id}_concatenated_contigs.fna
-    """
-}
-
-
-process parse_sam_for_insertsize {
-    // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", mode: 'copy')
-    tag { sam }
-
-    input:
-    tuple val (sample_id), path (sam)
-
-    output:
-    tuple val (sample_id), path ("${sample_id}.insertions.tab"), emit: insertions_tab
-    tuple val (sample_id), env(INSERTSIZE), emit: insert_size
-
-    script:
-    """
-    parse_sam_for_insertsize_updated_P3.py ${sam} > ${sample_id}.insertions.tab
-
-    # Extracting key information
-    INSERTSIZE=`grep -v Insert_size ${sample_id}.insertions.tab | sort -n  | awk ' { a[i++]=\$1; } END { print a[int(i/2)]; }'`
-    """
-}
-
-
-process coverage_pilon_corrected {
-    // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", mode: 'copy')
-    tag { vcf }
-
-    input:
-    tuple val (sample_id), path (vcf)
-
-    output:
-    tuple val (sample_id), path ("${sample_id}_coverage.tab"), emit: coverage_tab
-    tuple val (sample_id), env(READ_DEPTH), emit: read_depth
-    tuple val (sample_id), env(ALT_BASES), emit: alt_bases
-
-    script:
-    """
-    make_coverage_pilon_corrected_updated_P3.py ${vcf} > ${sample_id}_coverage.tab
-
-    # Exracting the key information
-    READ_DEPTH=`awk '/read_depth/{print \$3}' ${sample_id}_coverage.tab | sort -n  | awk ' { a[i++]=\$1; } END { print a[int(i/2)]; }'`
-    ALT_BASES=`grep -c alternative_base ${sample_id}_coverage.tab`
-
     """
 }
