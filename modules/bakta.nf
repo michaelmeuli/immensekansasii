@@ -38,6 +38,6 @@ process bakta {
     echo ${task.container} > bakta_singularity.txt
     cat bakta_version.txt database_version.txt bakta_singularity.txt | tr "\\n" "\\t" > bakta_version_all.txt
 
-    gzip *.embl *.gbff *.json *.svg
+    gzip 2_annotation/*.embl 2_annotation/*.gbff 2_annotation/*.json 2_annotation/*.svg
     """
 }

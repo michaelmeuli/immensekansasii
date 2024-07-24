@@ -109,7 +109,6 @@ include { multiqc_bcl; multiqc_raw_fastqc;
           multiqc_trimmed_fastqc; multiqc_assembly }         from "./modules/multiqc"
 include { trimmomaticPE; trimmomaticSE }                     from "./modules/trimmomatic"
 include { unicycler; unicyclerSE }                           from "./modules/unicycler"
-// include { pilon_remapping; pilon_remappingSE }               from "./modules/pilon"
 include { prokka }                                           from "./modules/prokka"
 include { busco; get_busco_lineages; busco_plot }            from "./modules/busco"
 include { checkm }                                           from "./modules/checkm"
@@ -117,13 +116,7 @@ include { quast }                                            from "./modules/qua
 include { gtdbtk_classify_wf; extract_gtdb_output }          from "./modules/gtdbtk"
 include { rMLST; rMLST_call }                                from "./modules/rMLST"
 include { metaphlan4; metaphlan4SE; classify_metaphlan4_results } from "./modules/metaphlan"
-// include { make_one_contig; parse_sam_for_insertsize; 
-//           coverage_pilon_corrected }                         from "./modules/python_functions"
 include { make_one_contig }                                  from "./modules/python_functions"
-// include { bwaIndex as indexRemapping }                       from "./modules/bwa_index"
-// include { bwaAlign; 
-//           bwaAlignSE }                                       from "./modules/bwa-mem"
-// include { samtools as samtoolsRemapping}                     from "./modules/samtools"
 include { typing_16S }                                       from "./modules/typing_16S.nf"
 include { abricate }                                         from "./modules/abricate"
 include { summary_sample; merge_summaries }                  from "./modules/summary"
@@ -318,6 +311,8 @@ workflow {
                                                 .join(all_channels.trimm_out? trimm_out.passed_reads_percentage : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.trimm_out? trimm_out.passed_reads_number : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.mapping_processes? mapping_processes.read_depth : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.mapping_processes? mapping_processes.depth_mean : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.mapping_processes? mapping_processes.depth_sd : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.mapping_processes? mapping_processes.alt_bases : empty_channel_per_sample, remainder: true)  
                                                 .join(all_channels.mapping_processes? mapping_processes.insert_size : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.assembly_stats? assembly_stats.number_contigs : empty_channel_per_sample, remainder: true)
@@ -333,7 +328,6 @@ workflow {
                                                 .join(all_channels.rmlst_out? rmlst_out.best_rST : empty_channel_per_sample, remainder: true)    
                                                 .join(all_channels.rmlst_out? rmlst_out.alleles_missing : empty_channel_per_sample, remainder: true)    
                                                 .join(all_channels.busco_out? busco_out.complete_busco : empty_channel_per_sample, remainder: true)
-                                                .join(all_channels.busco_out? busco_out.busco_groups : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.busco_out? busco_out.busco_lineage : empty_channel_per_sample, remainder: true)           
                                                 .join(all_channels.checkm_out? checkm_out.checkm_completeness : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.checkm_out? checkm_out.checkm_contamination: empty_channel_per_sample, remainder: true)
