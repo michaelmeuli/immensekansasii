@@ -6,9 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### `Added`
-- run_IMMENSE.sh script now checks specific version for each package in environment.yml (before only package existence was checked)
+- run_IMMENSE.sh script now checks specific version for each package in `environment.yml` (before only package existence was checked)
 - wgMLST (pyMLST) is now based on Metaphlan4 taxa results instead of rMLST
-- --skip_busco and --skip_wgMLST flags were added to make pipeline faster if these are not wanted
+- `--skip_busco` and `--skip_wgMLST` flags were added to make pipeline faster if these are not needed
 
 ### `Changed`
 - Bump nextflow version to 24.04.3
