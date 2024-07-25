@@ -11,7 +11,7 @@ process pymlst_add_strain {
     containerOptions "-B ${params.pymlst_cgmlst_db}"
 
     input:
-    tuple val (sample_id), path (rmlst), path (fasta)
+    tuple val (sample_id), val (taxa), path (fasta)
 
     output:
     tuple val (sample_id), path ("*"), emit: pymlst_all
@@ -20,9 +20,12 @@ process pymlst_add_strain {
     path "no_cgMLST_found.txt", optional: true
     
     script:
+    def delay = 10 * task.attempt
     """
-    species=\$(cat ${rmlst} | cut -f 1 | sed 's/_/ /g')
-    
+    species=\$(echo ${taxa} | cut -f 1 | sed 's/_/ /g')
+    echo "Attempt #: ${task.attempt}"
+    sleep ${delay}
+
     # Check if the database directory exists, otherwise try creating it:
     if [ -d "${params.pymlst_cgmlst_db}" ]; then
         echo "pyMLST database directory exists"
@@ -43,8 +46,8 @@ process pymlst_add_strain {
     # a cgMLST profile and this analysis is skipped.
     # If it exists, remove the specific strain and add it again.
     if [ -f "${params.pymlst_cgmlst_db}/\$species" ]; then
-        wgMLST remove --strains "${params.pymlst_cgmlst_db}/\$species" \$(basename ${fasta})
-        wgMLST add "${params.pymlst_cgmlst_db}/\$species" ${fasta} -s \$(basename ${fasta}) -i ${params.pymlst_identity} -c ${params.pymlst_coverage} > pymlst_output.tsv
+                wgMLST remove --strains "${params.pymlst_cgmlst_db}/\$species" \$(basename ${fasta})
+                wgMLST add "${params.pymlst_cgmlst_db}/\$species" ${fasta} -s \$(basename ${fasta}) -i ${params.pymlst_identity} -c ${params.pymlst_coverage} > pymlst_output.tsv
     else
         echo "cgMLST Profile doesn't exist for \$species"
         echo "No cgMLST Profile found for Species: \$species" > no_cgMLST_found.txt
@@ -64,15 +67,19 @@ process pymlst_distance {
     containerOptions "-B ${params.pymlst_cgmlst_db}"
 
     input:
-    tuple val (sample_id), file (pymlst_output), path (rmlst)
+    tuple val (sample_id), file (pymlst_output), val (taxa)
 
     output:
     tuple val (sample_id), path ("*_pymlst_distance.tsv"), emit: pymlst_distance
 
 
     script:
+    def delay = 10 * task.attempt
     """
-    species=\$(cat ${rmlst} | cut -f 1 | sed 's/_/ /g')
+    echo "Attempt #: ${task.attempt}"
+    sleep ${delay}
+
+    species=\$(echo ${taxa} | cut -f 1 | sed 's/_/ /g')
     wgMLST distance "${params.pymlst_cgmlst_db}/\$species" > "\${species}_pymlst_distance.tsv"
     """
 }
@@ -85,7 +92,7 @@ process pymlst_subgraph {
     input:
     // tuple val (sample_id), path (rmlst)
     // tuple val (sample_id), path (distance)
-    tuple val (sample_id), file (pymlst_output), path (rmlst), path (distance)
+    tuple val (sample_id), file (pymlst_output), val (taxa), path (distance)
 
     output:
     tuple val (sample_id), path ("*_pymlst_subgraph.tsv"), emit: pymlst_subgraph
@@ -93,7 +100,8 @@ process pymlst_subgraph {
 
     script:
     """
-    species=\$(cat ${rmlst} | cut -f 1 | sed 's/_/ /g')
+    echo "Attempt #: ${task.attempt}"
+    species=\$(echo ${taxa} | cut -f 1 | sed 's/_/ /g')
     wgMLST subgraph ${distance} -t ${params.pymlst_nb_alleles} -e group -o "\${species}_pymlst_subgraph.tsv"
     """
 }

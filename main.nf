@@ -10,6 +10,7 @@ def currentUser = System.getenv('USER')
 params.skip_gtdb = false
 params.skip_checkm = false
 params.skip_busco = false
+params.skip_wgmlst = false
 
 // this prints the input parameters
 log.info """
@@ -210,6 +211,7 @@ workflow {
       }
   // End of pipeline to get to assemblies
   } 
+  // If input files are fasta format, then pass those into unicycler_out.assembly channel
   if (params.input_type == "fasta") {
     // Define an empty unicycler_out object
     unicycler_out = [:]
@@ -219,9 +221,13 @@ workflow {
 
       // These processes are the same for single-end and paired-end datasets:
       annotation          = bakta(unicycler_out.assembly)
-      busco_out           = busco(params.skip_busco? Channel.empty() : unicycler_out.assembly)
-      busco_lineages      = get_busco_lineages(params.skip_busco? Channel.empty() :busco_out.version.collect())
-      busco_plot(params.skip_busco? Channel.empty() : busco_out.summary_specific)
+      // Don't run BUSCO if skip_busco flag was passed
+      if (!params.skip_busco) {  
+        busco_out           = busco(unicycler_out.assembly)
+        busco_lineages      = get_busco_lineages(busco_out.version.collect())
+        busco_plot(busco_out.summary_specific)
+      }
+
       assembly_stats      = quast(unicycler_out.assembly)
       
       // If GTDB is run, it's run on 25 samples at one time and then afterwards the results are pulled apart again
@@ -252,11 +258,6 @@ workflow {
       rmlst_out           = rMLST_call(typing_rMLST.blast_tabs)
       one_contig          = make_one_contig(unicycler_out.assembly)
 
-      // Run pyMLST based on rMLST species identification
-      pymlst_out          = pymlst_add_strain(rmlst_out.rmlst.join(unicycler_out.assembly))
-      distance            = pymlst_distance(pymlst_out.summary_specific.join(rmlst_out.rmlst))
-      pymlst_subgraph(pymlst_out.summary_specific.join(rmlst_out.rmlst).join(distance.pymlst_distance))
-      
       if (params.input_type != "fasta") {
       // These processes cannot run if the input was finished assemblies
       // Different metaphlan4 & alignment depending on single-end or paired-end reads
@@ -278,6 +279,15 @@ workflow {
                         .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple (sample_id, assembly)
       
       checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      // if --skip_checkm flag is set, the input channel will be empty
+      
+
+      // Run pyMLST based on rMLST species identification
+      if (!params.skip_wgmlst) {  
+      pymlst_out          = pymlst_add_strain(metaphlan_out.taxa.join(unicycler_out.assembly))
+      distance            = pymlst_distance(pymlst_out.summary_specific.join(metaphlan_out.taxa))
+      pymlst_subgraph(pymlst_out.summary_specific.join(metaphlan_out.taxa).join(distance.pymlst_distance))
+      }
+      
       // End of processes that require input reads
       }
       mqc_assembly_out    = multiqc_assembly( assembly_stats.stats.collect(), 

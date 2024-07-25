@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Added`
 - run_IMMENSE.sh script now checks specific version for each package in environment.yml (before only package existence was checked)
+- wgMLST (pyMLST) is now based on Metaphlan4 taxa results instead of rMLST
+- --skip_busco and --skip_wgMLST flags were added to make pipeline faster if these are not wanted
 
 ### `Changed`
 - Bump nextflow version to 24.04.3
@@ -20,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Some Bakta output files are gzipped to save space
 - Some checkM output files are deleted to save space
 - bcl2fastq container is now pulled from nfcore dockerhub because the previous container became unavailable
+- wgMLST (pyMLST) processes now runs only 2 process at 1 time to prevent database overload and reduce errors
 
 ## [1.2.0] - 2024-07-10
 

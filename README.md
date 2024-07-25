@@ -138,6 +138,8 @@ nextflow run /path/to/IMMENSE/main.nf -profile imm --run_id test_run --input_typ
 >- --output_dir_run `<Where run summary files should be saved>`
 >- --skip_gtdb `skips gtdb process`
 >- --skip_checkm `skips checkM process`
+>- --skip_busco `skips BUSCO process`
+>- --skip_wgmlst `skips wgMLST (pyMLST) process`
 
 
 The **additional options** as described for the usage on S3IT can be added in the same manner to the command and all parameters defined in the params.config file can be overwritten on the command line with `--<parames-name> <params-value>`.
