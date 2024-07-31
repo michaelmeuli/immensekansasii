@@ -8,7 +8,6 @@ process trimmomaticPE {
     publishDir("${params.output_dir_sample}/${sample_id}/0_trimming", mode: 'copy')
     tag { sample_id }
     
-
     input:
     tuple val (sample_id), path (fastq)
 

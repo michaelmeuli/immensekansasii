@@ -138,6 +138,8 @@ nextflow run /path/to/IMMENSE/main.nf -profile imm --run_id test_run --input_typ
 >- --output_dir_run `<Where run summary files should be saved>`
 >- --skip_gtdb `skips gtdb process`
 >- --skip_checkm `skips checkM process`
+>- --skip_busco `skips BUSCO process`
+>- --skip_wgmlst `skips wgMLST (pyMLST) process`
 
 
 The **additional options** as described for the usage on S3IT can be added in the same manner to the command and all parameters defined in the params.config file can be overwritten on the command line with `--<parames-name> <params-value>`.
@@ -466,14 +468,13 @@ tar -xzvf 16S_ribosomal_RNA.tar.gz
 
 #### Download rMLST Database:
 
-For this you need an account at [https://pubmlst.org/data](https://pubmlst.org/data):
+For this you need an account at [https://pubmlst.org/bigsdb](https://pubmlst.org/bigsdb):
 1. Make an account
-2. Request access to the entire dataset under <MY ACCOUNT>: Ribosomal MLST genomes (pubmlst_rmlst_isolates) and Ribosomal MLST typing (pubmlst_rmlst_seqdef)
+2. Request access to the entire dataset under *MY ACCOUNT*: `Ribosomal MLST genomes (pubmlst_rmlst_isolates)` and `Ribosomal MLST typing (pubmlst_rmlst_seqdef)`
 3. Go to *SPECIES ID* in the menu and then the *Typing* link. [Link to Tab](https://pubmlst.org/bigsdb?db=pubmlst_rmlst_seqdef)
 4. On the right under *DOWNLOADS* section, right click on *Ribosomal MLST profiles* and save-link-as. This file refers to the `bigsdb_rMLST` path in the config file.
 > Downloading with command line is not possible because it needs authentication
 5. Download all Sequences by clicking *Allele Sequence* then expand the *Typing* tree selector and click *Ribosomal MLST*. On the bottom you will see the option to download each Sequence file from `BACT000001 (rpsA)` to `BACT000065 (rpmJ)`. Download each of them and save all fasta files together with the *Ribosomal MLST profiles* file (Step 4) in the same directory and move to wherever you want to store this database. This path should be added as `db_rMLST` variable in your config profile under `conf/profiles/`. And the path to the specific `Ribosomal MLST profiles` text file is added as `bigsdb_rMLST` variable.
-6. Create blastn databases from each fasta file
 
 ```{bash}
 # Making tar archive to compress files and send to server where IMMense will run
@@ -499,17 +500,22 @@ MLST/BACT000017.fas
 
 ```
 
-Create blastn database using the prokka singularity image (because this image contains blastn)
+6. Create blastn databases from each fasta file
+
+Create blastn database using the blast singularity image (or use your local blast installation if you have it)
 
 ```{bash}
 conda activate env_immense
 
-singularity shell --bind $(pwd):/mnt path/to/singularity/containers/quay.io-biocontainers-prokka-1.14.6--pl5262hdfd78af_1.img
+cd path/to/extracted/rMLST/files
 
-cd mnt/database_directory
+# Mount the current directory to `/mnt` inside the singularity container
+singularity shell --bind $(pwd):/mnt path/to/singularity/containers/quay.io-biocontainers-blast-2.14.1--pl5321h6f7f691_0.img
 
-bash directory/to/immense/pipeline/bin/
-make_MLST_blast_database.sh .
+cd /mnt/database_directory
+
+# Create the blastn database for each rMLST `.fas` file by using the provided script
+bash directory/to/immense/pipeline/bin/make_MLST_blast_database.sh .
 
 # Exit the singularity container
 exit
@@ -528,13 +534,13 @@ This is your ribosomal MLST database. Make sure you link to this directory and t
 
 #### cgMLST
 
-You only need to create the directory that you specify in your *config profile* for the `pymlst_cgmlst_db` path. The Species-specific cgMLST profiles are downloaded during the analysis as needed (based on rMLST results).
+You need to create the directory that you specify in your *config profile* for the `pymlst_cgmlst_db` path. The Species-specific cgMLST profiles are then downloaded during the analysis as needed (based on rMLST results).
 
 If you need to run the pipeline in offline environments, you can download the profiles beforehand as follows:
 To download cgMLST profiles, we use pyMLST to get the newest profiles from [https://www.cgmlst.org](https://www.cgmlst.org/ncs)
 
 ```{bash}
-#NOTE: Replace </path/to/immense_dependencies> to your path in the code below
+#NOTE: Replace </path/to/immense_dependencies> to the path where all your dependencies are stored.
 
 # Start the pyMLST singularity container that you downloaded before and bind necessary paths:
 singularity shell --bind </path/to/immense_dependencies>:</path/to/immense_dependencies> </path/to/immense_dependencies>/singularity/quay.io-biocontainers-pymlst-2.1.6--pyhdfd78af_0.img
@@ -542,6 +548,8 @@ singularity shell --bind </path/to/immense_dependencies>:</path/to/immense_depen
 # Use `wgMLST import` to download each species
 # For example:
 wgMLST import "/path/to/immense_dependencies/pyMLST/cgMLST/Acinetobacter baumannii" Acinetobacter baumannii
+
+# You can see all available schemas here: https://www.cgmlst.org/ncs
 ```
 
 > Repeat for all species that you need, check cgmlst.org for which species a 

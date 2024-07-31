@@ -5,7 +5,7 @@
 //params.CONTAINER = "ezlabgva-busco_v5.3.2_cv1"
 
 process busco {
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/BUSCO", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/BUSCO", pattern: "${sample_id}/short_summary*.txt", mode: 'copy')
     tag { sample_id }
     containerOptions "-B ${params.busco_files}"
 
@@ -13,7 +13,6 @@ process busco {
     tuple val (sample_id), path (fasta)
 
     output:
-    tuple val (sample_id), path ("${sample_id}/*"), emit: busco_all
     tuple val (sample_id), path ("${sample_id}/short_summary.specific*.txt"), emit: summary_specific // for assembly multiQC (sending specific)
     path "${sample_id}_busco_version.txt", emit: version
     tuple val (sample_id), env(COMPLETE_BUSCO), emit: complete_busco
@@ -33,6 +32,8 @@ process busco {
     BUSCO_GROUPS=`grep "C:" ${sample_id}/short_summary.specific.*.txt | sed 's/,D/;D/g' | tr "," "\\t" | cut -f5`
     BUSCO_LINEAGE=`grep "lineage dataset is:" ${sample_id}/short_summary.specific.*.txt | awk '{print \$6}'`
 
+    # Remove all contained directories
+    find ${sample_id}/* -maxdepth 0 -type d -exec rm -rf {} +
     """
 }
 

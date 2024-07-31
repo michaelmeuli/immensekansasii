@@ -94,7 +94,7 @@ process multiqc_assembly {
 
     input:
     path (quast_stats)
-    path (prokka_output)
+    path (bakta_output)
     path (busco_summaries)
     path (metaphlan_profile)
 

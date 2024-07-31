@@ -10,6 +10,7 @@ def currentUser = System.getenv('USER')
 params.skip_gtdb = false
 params.skip_checkm = false
 params.skip_busco = false
+params.skip_wgmlst = false
 
 // this prints the input parameters
 log.info """
@@ -109,7 +110,6 @@ include { multiqc_bcl; multiqc_raw_fastqc;
           multiqc_trimmed_fastqc; multiqc_assembly }         from "./modules/multiqc"
 include { trimmomaticPE; trimmomaticSE }                     from "./modules/trimmomatic"
 include { unicycler; unicyclerSE }                           from "./modules/unicycler"
-include { pilon_remapping; pilon_remappingSE }               from "./modules/pilon"
 include { prokka }                                           from "./modules/prokka"
 include { busco; get_busco_lineages; busco_plot }            from "./modules/busco"
 include { checkm }                                           from "./modules/checkm"
@@ -117,12 +117,7 @@ include { quast }                                            from "./modules/qua
 include { gtdbtk_classify_wf; extract_gtdb_output }          from "./modules/gtdbtk"
 include { rMLST; rMLST_call }                                from "./modules/rMLST"
 include { metaphlan4; metaphlan4SE; classify_metaphlan4_results } from "./modules/metaphlan"
-include { make_one_contig; parse_sam_for_insertsize; 
-          coverage_pilon_corrected }                         from "./modules/python_functions"
-include { bwaIndex as indexRemapping }                       from "./modules/bwa_index"
-include { bwaAlign; 
-          bwaAlignSE }                                       from "./modules/bwa-mem"
-include { samtools as samtoolsRemapping}                     from "./modules/samtools"
+include { make_one_contig }                                  from "./modules/python_functions"
 include { typing_16S }                                       from "./modules/typing_16S.nf"
 include { abricate }                                         from "./modules/abricate"
 include { summary_sample; merge_summaries }                  from "./modules/summary"
@@ -131,6 +126,7 @@ include { generate_resistance_table; merge_run_resistances }  from "./modules/re
 include { pymlst_add_strain; pymlst_distance; pymlst_subgraph} from "./modules/pymlst"
 include { amrfinderplus  }                                    from  "./modules/amrfinderplus"
 include { bakta         }                                      from "./modules/bakta"
+include { bwaAlign_insertsize_coverage; bwaAlign_insertsize_coverageSE } from "./modules/align-and-extract"
 
 
 /*
@@ -163,11 +159,6 @@ workflow {
   // Running fastQC on fastq reads before trimming and generating multiQC report
   fastqc_raw_reads_out   = fastqc_raw_reads(reads_for_trimming.other) // extract only the reads without sample_id
   multiqc_raw_fastqc_out = multiqc_raw_fastqc(fastqc_raw_reads_out.output.collect())
-
-  // TODO: Deterministic GTDBtk batches (to allow resume to work)
-  // Assign sample_ids to batches for processes that do batch processing (ie. GTDBtk)
-  // This way, the batches are deterministic based on input files which is important for --resume to work
-
 
   // Trimming reads with trimmomatic
   if (params.SE == "NO") {  
@@ -220,6 +211,7 @@ workflow {
       }
   // End of pipeline to get to assemblies
   } 
+  // If input files are fasta format, then pass those into unicycler_out.assembly channel
   if (params.input_type == "fasta") {
     // Define an empty unicycler_out object
     unicycler_out = [:]
@@ -229,9 +221,13 @@ workflow {
 
       // These processes are the same for single-end and paired-end datasets:
       annotation          = bakta(unicycler_out.assembly)
-      busco_out           = busco(params.skip_busco? Channel.empty() : unicycler_out.assembly)
-      busco_lineages      = get_busco_lineages(params.skip_busco? Channel.empty() :busco_out.version.collect())
-      busco_plot(params.skip_busco? Channel.empty() : busco_out.summary_specific)
+      // Don't run BUSCO if skip_busco flag was passed
+      if (!params.skip_busco) {  
+        busco_out           = busco(unicycler_out.assembly)
+        busco_lineages      = get_busco_lineages(busco_out.version.collect())
+        busco_plot(busco_out.summary_specific)
+      }
+
       assembly_stats      = quast(unicycler_out.assembly)
       
       // If GTDB is run, it's run on 25 samples at one time and then afterwards the results are pulled apart again
@@ -260,41 +256,38 @@ workflow {
       
       typing_rMLST        = rMLST(unicycler_out.assembly)
       rmlst_out           = rMLST_call(typing_rMLST.blast_tabs)
-      one_contig          = make_one_contig(annotation.fna)
-      bwa_index_remapping = indexRemapping(one_contig)
+      one_contig          = make_one_contig(unicycler_out.assembly)
 
-      // Run pyMLST based on rMLST species identification
-      pymlst_out          = pymlst_add_strain(rmlst_out.rmlst.join(unicycler_out.assembly))
-      distance            = pymlst_distance(pymlst_out.summary_specific.join(rmlst_out.rmlst))
-      pymlst_subgraph(pymlst_out.summary_specific.join(rmlst_out.rmlst).join(distance.pymlst_distance))
-      
       if (params.input_type != "fasta") {
       // These processes cannot run if the input was finished assemblies
       // Different metaphlan4 & alignment depending on single-end or paired-end reads
       if (params.SE == "NO") {  
         metaphlan_out      = metaphlan4(trimm_out_checked.passed.concat(trimm_out_checked.failed))
-        remapping          = bwaAlign(trimm_out_checked.passed.join(bwa_index_remapping.index))
-        insertsize         = parse_sam_for_insertsize(remapping.sam)
-        bam_remapping      = samtoolsRemapping(remapping.sam)
-        remapping_polished = pilon_remapping(bam_remapping.bam.join(one_contig))
+        mapping_processes = bwaAlign_insertsize_coverage(one_contig.join(trimm_out_checked.passed))
 
       } else if (params.SE == "YES") {
         metaphlan_out      = metaphlan4SE(trimm_out_checked.passed.concat(trimm_out_checked.failed))
-        remapping          = bwaAlignSE(trimm_out_checked.passed.join(bwa_index_remapping.index))
-        insertsize         = parse_sam_for_insertsize(remapping.sam)
-        bam_remapping      = samtoolsRemapping(remapping.sam)
-        remapping_polished = pilon_remappingSE(bam_remapping.bam.join(one_contig))
+        mapping_processes = bwaAlign_insertsize_coverageSE(one_contig.join(trimm_out_checked.passed))
       }
 
       metaphlan4_classified = classify_metaphlan4_results(metaphlan_out.profile)
       // Only run checkM it it's a bacterium (checkM only works for prokaryotes)
+      // Since we need the metaphlan4 classification, this can't run on fasta input
       samples_to_run_checkM_ch = unicycler_out.assembly
                         .join(metaphlan4_classified.bacteria, remainder: false)
                         // Only samples where assembly & bacterial classification is true will remain in channel
                         .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple (sample_id, assembly)
       
       checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      // if --skip_checkm flag is set, the input channel will be empty
-      coverage     = coverage_pilon_corrected(remapping_polished.vcf)
+      
+
+      // Run pyMLST based on rMLST species identification
+      if (!params.skip_wgmlst) {  
+      pymlst_out          = pymlst_add_strain(metaphlan_out.taxa.join(unicycler_out.assembly))
+      distance            = pymlst_distance(pymlst_out.summary_specific.join(metaphlan_out.taxa))
+      pymlst_subgraph(pymlst_out.summary_specific.join(metaphlan_out.taxa).join(distance.pymlst_distance))
+      }
+      
       // End of processes that require input reads
       }
       mqc_assembly_out    = multiqc_assembly( assembly_stats.stats.collect(), 
@@ -303,11 +296,11 @@ workflow {
                                               (params.input_type == "fasta")? Channel.empty() : metaphlan_out.profile.map {item -> return [item[1]]}.collect()
                                               )
       typ16S       = typing_16S(one_contig)
-      abricate_out = abricate(annotation.fna)
-      amrfinderplus_out = amrfinderplus(annotation.fna)
+      abricate_out = abricate(unicycler_out.assembly)
+      amrfinderplus_out = amrfinderplus(unicycler_out.assembly)
 
       // Summarize Abricate output and create summary for run
-      summarized_resistances = generate_resistance_table(abricate_out.sample_id, abricate_out.resistance)
+      summarized_resistances = generate_resistance_table(abricate_out.resistance)
       merge_run_resistances(summarized_resistances.output_file.collect(sort: true))
 
       // Preparing empty channels for summary results and versions in case a process was not run
@@ -327,9 +320,11 @@ workflow {
       summary_channel = empty_channel_per_sample.map { sample_id, value -> return [sample_id]}
                                                 .join(all_channels.trimm_out? trimm_out.passed_reads_percentage : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.trimm_out? trimm_out.passed_reads_number : empty_channel_per_sample, remainder: true)
-                                                .join(all_channels.coverage? coverage.read_depth : empty_channel_per_sample, remainder: true)
-                                                .join(all_channels.coverage? coverage.alt_bases : empty_channel_per_sample, remainder: true)  
-                                                .join(all_channels.insertsize? insertsize.insert_size : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.mapping_processes? mapping_processes.read_depth : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.mapping_processes? mapping_processes.depth_mean : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.mapping_processes? mapping_processes.depth_sd : empty_channel_per_sample, remainder: true)
+                                                .join(all_channels.mapping_processes? mapping_processes.alt_bases : empty_channel_per_sample, remainder: true)  
+                                                .join(all_channels.mapping_processes? mapping_processes.insert_size : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.assembly_stats? assembly_stats.number_contigs : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.assembly_stats? assembly_stats.total_length : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.assembly_stats? assembly_stats.n50 : empty_channel_per_sample, remainder: true)
@@ -343,7 +338,6 @@ workflow {
                                                 .join(all_channels.rmlst_out? rmlst_out.best_rST : empty_channel_per_sample, remainder: true)    
                                                 .join(all_channels.rmlst_out? rmlst_out.alleles_missing : empty_channel_per_sample, remainder: true)    
                                                 .join(all_channels.busco_out? busco_out.complete_busco : empty_channel_per_sample, remainder: true)
-                                                .join(all_channels.busco_out? busco_out.busco_groups : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.busco_out? busco_out.busco_lineage : empty_channel_per_sample, remainder: true)           
                                                 .join(all_channels.checkm_out? checkm_out.checkm_completeness : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.checkm_out? checkm_out.checkm_contamination: empty_channel_per_sample, remainder: true)
@@ -373,7 +367,9 @@ workflow {
                                   all_channels.assembly_stats? assembly_stats.version.first() : empty_version_channel,
                                   all_channels.mqc_assembly_out? mqc_assembly_out.version : empty_version_channel, // first() not needed - only runs once
                                   all_channels.gtdb_out_batched? gtdb_out_batched.version.first() : empty_version_channel,
-                                  all_channels.bwa_index_remapping? bwa_index_remapping.version.first() : empty_version_channel,
+                                  all_channels.mapping_processes? mapping_processes.version_bwa_index.first() : empty_version_channel,
+                                  all_channels.mapping_processes? mapping_processes.version_samtools.first() : empty_version_channel,
+                                  all_channels.mapping_processes? mapping_processes.version_pilon.first() : empty_version_channel,
                                   all_channels.typing_rMLST? typing_rMLST.version.first() : empty_version_channel,
                                   all_channels.metaphlan_out? metaphlan_out.version.first() : empty_version_channel,
                                   all_channels.typ16S? typ16S.version.first() : empty_version_channel,
@@ -420,7 +416,6 @@ workflow.onComplete {
         quality_tab = file("${params.output_dir_run}/${params.run_id}_quality.tsv")
         //dashb = file("${params.run_id}_transfer_result/QC_dashboard.html")
         // mulQC_ass = file("${params.output_dir_run}/${params.run_id}_multiqc_assembly.html")
-        //mulQC_reads = file("${params.run_id}_transfer_result/${params.run_id}_multiqc_trimmed.html")
         
 
         try {
@@ -431,7 +426,6 @@ workflow.onComplete {
                 if (quality_tab.exists()) { attach "${params.output_dir_run}/${params.run_id}_quality.tsv" }
                 //if (dashb.exists()) { attach "${params.run_id}_transfer_result/QC_dashboard.html" }
                 // if (mulQC_ass.exists()) { attach "${params.output_dir_run}/${params.run_id}_multiqc_assembly.html", fileName: "multiqc_report_assembly.html" }
-                //if (mulQC_reads.exists()) { attach "${params.run_id}_transfer_result/${params.run_id}_multiqc_trimmed.html", fileName: "multiqc_report_reads.html" }
 
                 body msg
         }

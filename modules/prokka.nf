@@ -2,11 +2,9 @@
 *  prokka module
 */
 
- // "bioconda::prokka=1.14.6"
 //params.CONTAINER = "quay.io/biocontainers/prokka:1.14.6--pl5262hdfd78af_1"
-//params.CONTAINER = "https://depot.galaxyproject.org/singularity/prokka:1.14.6--pl5262hdfd78af_1"
 //params.OUTPUT = "prokka_output"
-
+// Not used anymore but possibly useful in the future because it is faster than bakta
 process prokka {
     // publishDir(params.OUTPUT, mode: 'copy')
     publishDir("${params.output_dir_sample}/${sample_id}", pattern: "2_annotation/*", mode: 'copy')

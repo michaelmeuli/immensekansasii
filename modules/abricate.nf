@@ -12,10 +12,9 @@ process abricate {
     tuple val (sample_id), path (fasta)
 
     output:
-    path ("${sample_id}_resistance.tab"), emit: resistance
+    tuple val (sample_id), path ("${sample_id}_resistance.tab"), emit: resistance
     path ("${sample_id}_virulence.tab"), emit: virulence
     path "abricate_version.txt", emit: version
-    val ("${sample_id}"), emit:sample_id
 
     script:
     """

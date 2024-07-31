@@ -15,7 +15,6 @@ process checkm {
 
     output:
     tuple val (sample_id), path ("results/*"), emit: checkm_all
-    //tuple val (sample_id), val ("${params.output_dir_sample}/${sample_id}/3_quality/checkM/results"), emit: summary_specific_folder
     path "${sample_id}_checkm_version.txt", emit: version
     tuple val (sample_id), path ("checkm_output.tsv"), emit: summary_specific
     // Output the values to be included in the summary file:
@@ -39,5 +38,7 @@ process checkm {
     CHECKM_CONTAMINATION=`cat checkm_output.tsv | grep ${sample_id}_assembly | awk '{print \$(NF-1)}'`
     CHECKM_HETEROGENEITY=`cat checkm_output.tsv | grep ${sample_id}_assembly | awk '{print \$(NF)}'`
 
+    # Remove larg temp files that are not needed:
+    rm -R results/bins
     """
 }
