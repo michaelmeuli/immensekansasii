@@ -34,9 +34,9 @@ process checkm {
     #This was the original string manipulation to get the results:
     #CHECKM_RES=`cat checkm_output.tsv | grep ${sample_id} | awk '{print \$(NF-2), \$(NF-1), \$(NF)}'`
     
-    CHECKM_COMPLETENESS=`cat checkm_output.tsv | grep ${sample_id}_assembly | awk '{print \$(NF-2)}'`
-    CHECKM_CONTAMINATION=`cat checkm_output.tsv | grep ${sample_id}_assembly | awk '{print \$(NF-1)}'`
-    CHECKM_HETEROGENEITY=`cat checkm_output.tsv | grep ${sample_id}_assembly | awk '{print \$(NF)}'`
+    CHECKM_COMPLETENESS=`cat checkm_output.tsv | grep ${sample_id} | awk '{print \$(NF-2)}'`
+    CHECKM_CONTAMINATION=`cat checkm_output.tsv | grep ${sample_id} | awk '{print \$(NF-1)}'`
+    CHECKM_HETEROGENEITY=`cat checkm_output.tsv | grep ${sample_id} | awk '{print \$(NF)}'`
 
     # Remove larg temp files that are not needed:
     rm -R results/bins
