@@ -35,7 +35,7 @@ nohup lsof +D ${WORK_DIR} -r 600 &> /dev/null &
 LSOF_PID=$!
 trap "kill $LSOF_PID" EXIT
 
-WORK_DIR="/sctmp/progal"
+WORK_DIR="/sctmp/${USER}"
 echo "And monitoring ${WORK_DIR} for open files"
 nohup lsof +D ${WORK_DIR} -r 600 &> /dev/null &
 LSOF_PID=$!
