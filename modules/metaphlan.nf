@@ -91,6 +91,7 @@ process classify_metaphlan4_results {
 
     output:
     tuple val (sample_id), path ("01_taxa_classification/bacteria/${sample_id}_profiled_metagenome.txt"), emit: bacteria, optional: true
+    tuple val (sample_id), path ("01_taxa_classification/listeria_monocytogenes/${sample_id}_profiled_metagenome.txt"), emit: listeria_monocytogenes, optional: true
     path ("01_taxa_classification")
     
     script:
@@ -108,5 +109,17 @@ process classify_metaphlan4_results {
         echo "File does not contain 'k__Bacteria'."
     fi
     ################################################################
+    ################################################################
+    # Create output channel for everything classified as Listeria monocytogenes
+    mkdir -p 01_taxa_classification/listeria_monocytogenes
+    if grep -q "s__Listeria_monocytogenes" "\$file"; then
+        # Move the file to the Listeria_monocytogenes subfolder    
+        cp "\$file" "01_taxa_classification/listeria_monocytogenes/"
+        echo "File contains 's__Listeria_monocytogenes' and has been copied."
+    else
+        echo "File does not contain 's__Listeria_monocytogenes'."
+    fi
+    ################################################################
+
     """
 }
