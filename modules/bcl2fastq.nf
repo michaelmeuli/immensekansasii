@@ -9,7 +9,7 @@ params.OUTPUT = "bcl2fastq_output"
 
 process bcl2fastq {
     // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("demultiplexing", mode: 'copy', pattern: "result/**")
+    publishDir("demultiplexing", mode: 'copy', pattern: "reads/**")
     tag { "${params.run_id}" }
 
     input:
@@ -17,11 +17,10 @@ process bcl2fastq {
     path (samplesheet)
 
     output:
-    path ("result/**fastq.gz"), emit: raw_fastq
     path ("reads/*/*fastq.gz"), emit: fastq
-    path "result/SampleSheet.*"
-    path "result/Stats", emit: reports
-    path "result/Reports"
+    path "reads/SampleSheet.*"
+    path "reads/Stats", emit: reports
+    path "reads/Reports"
     path "bcl2fastq_version.txt", emit: version
     path "bcl2fastq_version.txt", emit: finished
 
@@ -46,9 +45,13 @@ process bcl2fastq {
     #    mkdir reads/No_Project
     #    mv reads/*.fastq.gz reads/No_Project/
     #fi
-
+    
+    # Rename the fastq.gz files to remove the unnecessary illumina ending
     for sample in reads/*/*R1*.fastq.gz; do mv \$sample \${sample/_*.fastq.gz/_R1.fastq.gz}; done
     for sample in reads/*/*.fastq.gz; do if [[ "\$sample" == *R2* ]]; then mv \$sample \${sample/_*.fastq.gz/_R2.fastq.gz}; fi; done
+
+    # Remove the result folder because its not needed, everything is in `reads`
+    rm -R result
 
     bcl2fastq --version &> bcl2fastq_info.txt
     cat bcl2fastq_info.txt | grep bcl2fastq > bcl2fastq_vers.txt
