@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Some checkM output files are deleted to save space
 - bcl2fastq container is now pulled from nfcore dockerhub because the previous container became unavailable
 - wgMLST (pyMLST) processes now runs only 2 process at 1 time to prevent database overload and reduce errors
+- tbprofiler module was added to run if metaphlan detects *Mycobacterium tubercolosis*. Can be skipped with `--skip_tbprofiler`.
 
 ## [1.2.0] - 2024-07-10
 

@@ -11,6 +11,7 @@ params.skip_gtdb = false
 params.skip_checkm = false
 params.skip_busco = false
 params.skip_wgmlst = false
+params.skip_tbprofiler = false
 
 // this prints the input parameters
 log.info """
@@ -127,6 +128,7 @@ include { pymlst_add_strain; pymlst_distance; pymlst_subgraph} from "./modules/p
 include { amrfinderplus  }                                    from  "./modules/amrfinderplus"
 include { bakta         }                                      from "./modules/bakta"
 include { bwaAlign_insertsize_coverage; bwaAlign_insertsize_coverageSE } from "./modules/align-and-extract"
+include { tbprofiler         }                                      from "./modules/tbprofiler"
 
 
 /*
@@ -279,7 +281,16 @@ workflow {
                         .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple (sample_id, assembly)
       
       checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      // if --skip_checkm flag is set, the input channel will be empty
-      
+
+
+      // Run tb-profiler for tubercolosis genomes (as identified by metaphlan4)
+      samples_to_run_tbprofiler_ch = trimm_out.trimmed_reads
+                        .join(metaphlan4_classified.mycobacterium_tubercolosis, remainder: false)
+                        // Only samples where assembly & bacterial classification is true will remain in channel
+                        .map { item -> return [item[0], item[1], item[2]]} // Return only the first three elements of the tuple (sample_id, reads)
+      samples_to_run_tbprofiler_ch.view()
+      tbprofiler_out          = tbprofiler(params.skip_tbprofiler? Channel.empty() : samples_to_run_tbprofiler_ch)
+
 
       // Run pyMLST based on rMLST species identification
       if (!params.skip_wgmlst) {  
@@ -363,6 +374,7 @@ workflow {
                                   all_channels.unicycler_out.version? unicycler_out.version.first() : empty_version_channel,
                                   all_channels.annotation? annotation.version.first() : empty_version_channel,
                                   all_channels.checkm_out? checkm_out.version.first() : empty_version_channel,
+                                  all_channels.tbprofiler_out? tbprofiler_out.version.first() : empty_version_channel,
                                   all_channels.busco_lineages? busco_lineages : empty_version_channel, // first() not needed - only runs once
                                   all_channels.assembly_stats? assembly_stats.version.first() : empty_version_channel,
                                   all_channels.mqc_assembly_out? mqc_assembly_out.version : empty_version_channel, // first() not needed - only runs once
