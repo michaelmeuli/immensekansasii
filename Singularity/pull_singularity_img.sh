@@ -25,4 +25,4 @@ singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-pymlst-2.1.6--
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-ncbi-amrfinderplus-3.12.8--h283d18e_0.img docker://quay.io/biocontainers/ncbi-amrfinderplus:3.12.8--h283d18e_0
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-bakta-1.9.3--pyhdfd78af_0.img docker://quay.io/biocontainers/bakta:1.9.3--pyhdfd78af_0
 singularity build --sandbox ${INSTALL_PATH}/pbieber-bwa-pilon-samtools-python-2.0.0.img docker://pbieber/bwa-pilon-samtools-python:2.0.0
-singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-tb-profiler:6.3.0--pyhdfd78af_0 docker://quay.io/biocontainers/tb-profiler:6.3.0--pyhdfd78af_0
+singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-tb-profiler-6.3.0--pyhdfd78af_0.img docker://quay.io/biocontainers/tb-profiler:6.3.0--pyhdfd78af_0
