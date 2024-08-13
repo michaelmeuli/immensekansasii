@@ -12,6 +12,7 @@ params.skip_checkm = false
 params.skip_busco = false
 params.skip_wgmlst = false
 params.skip_tbprofiler = false
+params.skip_lissero = false
 
 // this prints the input parameters
 log.info """
@@ -63,8 +64,8 @@ else if (params.input_type == "fastq") {
 
   if (params.SE == "NO") {
       Channel
-        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,R2,1,2}.fastq.gz")
-        .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}*_{R1,R2,1,2}.fastq.gz" }
+        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,R2}.fastq.gz")
+        .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}*_{R1,R2}.fastq.gz" }
         // .view { "Identified files: $it" }
         .branch{
           sarscov2: it =~ /sarscov-2/
@@ -83,6 +84,16 @@ else if (params.input_type == "fastq") {
           other: true}.set{ reads_for_trimming }
   }
   }
+
+
+  //TODO: Implement Hybrid sequencing approach:
+  // 1. automatically detect which sample names occur 3 times (2 paired-end short reads + 1 long read file)
+  // 2. Send the long read to long-read filtering & QC
+  // 3. For sampes with intact long-reads, short reads should be re-directed to hybrid assembly strategy
+  // 4. Print out how many files will go through which workflow (X short-read-assemblies, Y hybrid-assemblies, Z long-read-assemblies)
+  // 5. For hybrid assemblies: Run long-read assembly (long-first vs. short-first!? depends on the long-read quality & amount.)
+  // 6. Combine short & long reads to make perfect polished assemblies and then continue with the annotation part of the pipeline (simply concatenate the channels of short-only and hybrids)
+
 
 else if (params.input_type == "fasta") {
   Channel
@@ -129,7 +140,7 @@ include { amrfinderplus  }                                    from  "./modules/a
 include { bakta         }                                      from "./modules/bakta"
 include { bwaAlign_insertsize_coverage; bwaAlign_insertsize_coverageSE } from "./modules/align-and-extract"
 include { tbprofiler         }                                      from "./modules/tbprofiler"
-
+include { lissero         }                                      from "./modules/lissero"
 
 /*
 * main workflow
@@ -158,6 +169,23 @@ workflow {
     // End of BCL-specific pipeline
   }
   
+  // Get the expected species name from the input reads:
+  // reads_for_trimming.other.view()
+  expected_species_ch = reads_for_trimming.other.map { sample_id, fq_tuple -> 
+                                                          def firstFile = file(fq_tuple[0]).parent  // Access the parent directory of first fastq.gz file (so it works for single & paired-end)
+                                                          return [sample_id, firstFile.getName()] // Get the name of parent directory and output as tuple: sample_id, expected_species
+                                                          }
+
+  expected_species_ch.map {
+    sample_id, species -> 
+    return tuple(species, sample_id)
+    }.groupTuple(sort:true).map {
+      species, sample_ids ->
+      def length = sample_ids.size() // Get the length of the list of sample_ids
+      println "Species/Project: ${species}, Number of samples: ${length}" // Print the length
+      return tuple(species, length) // Return the species and length tuple if needed
+    }
+
   // Running fastQC on fastq reads before trimming and generating multiQC report
   fastqc_raw_reads_out   = fastqc_raw_reads(reads_for_trimming.other) // extract only the reads without sample_id
   multiqc_raw_fastqc_out = multiqc_raw_fastqc(fastqc_raw_reads_out.output.collect())
@@ -282,15 +310,21 @@ workflow {
       
       checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      // if --skip_checkm flag is set, the input channel will be empty
 
-
       // Run tb-profiler for tubercolosis genomes (as identified by metaphlan4)
       samples_to_run_tbprofiler_ch = trimm_out.trimmed_reads
                         .join(metaphlan4_classified.mycobacterium_tubercolosis, remainder: false)
                         // Only samples where assembly & bacterial classification is true will remain in channel
                         .map { item -> return [item[0], item[1], item[2]]} // Return only the first three elements of the tuple (sample_id, reads)
       samples_to_run_tbprofiler_ch.view()
-      tbprofiler_out          = tbprofiler(params.skip_tbprofiler? Channel.empty() : samples_to_run_tbprofiler_ch)
 
+      tbprofiler_out          = tbprofiler(params.skip_tbprofiler? Channel.empty() : samples_to_run_tbprofiler_ch)
+      // Run LisSero for Listeria monocytogenes genoems (as identified by metaphlan4)
+      samples_to_run_lissero_ch = unicycler_out.assembly
+                        .join(metaphlan4_classified.listeria_monocytogenes, remainder: false)
+                        // Only samples where assembly & bacterial classification is true will remain in channel
+                        .map { item -> return [item[0], item[1]]} // Return only the first two elements of the tuple (sample_id, assembly)
+      
+      lissero_out          = lissero(params.skip_lissero? Channel.empty() : samples_to_run_lissero_ch)
 
       // Run pyMLST based on rMLST species identification
       if (!params.skip_wgmlst) {  
@@ -329,6 +363,7 @@ workflow {
       // be replaced by `NA` in the output summary file. Therefore each value must 
       // represent 1 column in the summary output.
       summary_channel = empty_channel_per_sample.map { sample_id, value -> return [sample_id]}
+                                                .join(all_channels.expected_species_ch? expected_species_ch : empty_channel_per_sample, remainder: true)      
                                                 .join(all_channels.trimm_out? trimm_out.passed_reads_percentage : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.trimm_out? trimm_out.passed_reads_number : empty_channel_per_sample, remainder: true)
                                                 .join(all_channels.mapping_processes? mapping_processes.read_depth : empty_channel_per_sample, remainder: true)
@@ -365,7 +400,7 @@ workflow {
       single_summary  = summary_sample(summary_channel)
       summary         = merge_summaries(single_summary.sample_quality.collect(sort: true))
 
-      links_for_transfer(one_contig)
+      links_for_transfer(one_contig.join(expected_species_ch))
 
       // collecting the versions of the various software
       software_version_channel = Channel.empty().concat(
@@ -375,6 +410,7 @@ workflow {
                                   all_channels.annotation? annotation.version.first() : empty_version_channel,
                                   all_channels.checkm_out? checkm_out.version.first() : empty_version_channel,
                                   all_channels.tbprofiler_out? tbprofiler_out.version.first() : empty_version_channel,
+                                  all_channels.lissero_out? lissero_out.version.first() : empty_version_channel,
                                   all_channels.busco_lineages? busco_lineages : empty_version_channel, // first() not needed - only runs once
                                   all_channels.assembly_stats? assembly_stats.version.first() : empty_version_channel,
                                   all_channels.mqc_assembly_out? mqc_assembly_out.version : empty_version_channel, // first() not needed - only runs once

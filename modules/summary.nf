@@ -12,6 +12,7 @@ process summary_sample {
 
     input:
     tuple val (sample_id), \
+            val (expected_species), \
             val (trimm_out_passed_reads_percentage), \
             val (trimm_out_passed_reads_number), \
             val (coverage_read_depth), \
@@ -45,7 +46,6 @@ process summary_sample {
             val (qc_size_warning)
 
     output:
-    path ("*.txt"), emit: summary_files
     path ("${sample_id}.tab"), emit: sample_quality
 
     script:
@@ -53,16 +53,12 @@ process summary_sample {
     """
     #!/bin/bash
     
-    # Get the predicted species name from the parent directory of the fastq files.
-    if [[ -d $PWD/reads ]]; then find $PWD/reads -name ${sample_id}*.fastq.gz | awk -F/ '{print \$(NF-1)}' | uniq > ${sample_id}_expected_species.txt; else find ${params.input} -name ${sample_id}*.fastq.gz | awk -F/ '{print \$(NF-1)}' | uniq > ${sample_id}_expected_species.txt; fi
-    EXPECTED_SPECIES=`cat ${sample_id}_expected_species.txt`
-
     # Writing the variables passed as input to the sample specific file
     # These sample-specific summaries are then merged in the merge_summaries process
     
     echo "${sample_id}" > ${sample_id}_tmp.tab
     # This is an environmental variable in this script, not an input like the others
-    echo "\${EXPECTED_SPECIES}" >> ${sample_id}_tmp.tab
+    echo "${expected_species}" >> ${sample_id}_tmp.tab
     echo "${trimm_out_passed_reads_percentage}" >> ${sample_id}_tmp.tab
     echo "${trimm_out_passed_reads_number}" >> ${sample_id}_tmp.tab
     echo "${coverage_read_depth}" >> ${sample_id}_tmp.tab
