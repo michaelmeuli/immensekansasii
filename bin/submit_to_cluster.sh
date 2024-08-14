@@ -16,6 +16,9 @@ module load singularityce/4.1.0
 
 source activate env_immense
 
+# Increas the percentages available in the java heap space
+export NXF_JVM_ARGS="-XX:InitialRAMPercentage=10 -XX:MaxRAMPercentage=75"
+
 launchDir=$PWD
 
 # It's important that the arguments are supplied in the expected order.
