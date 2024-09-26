@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--skip_busco` and `--skip_wgmlst` flags were added to make pipeline faster if these are not needed
 - LisSero module was added to run if metaphlan detects *Listeria monocytogenes*. Can be skipped with `--skip_lissero`.
 - tbprofiler module was added to run if metaphlan detects *Mycobacterium tubercolosis*. Can be skipped with `--skip_tbprofiler`.
+- Added insilicoSeq which generates artificial fastq reads from input fasta file. This is used to run metaphlan4 to determine the taxa and then run taxa-specific tools.
 
 ### `Changed`
 - Bump nextflow version to 24.04.3

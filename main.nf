@@ -134,13 +134,14 @@ include { typing_16S }                                       from "./modules/typ
 include { abricate }                                         from "./modules/abricate"
 include { summary_sample; merge_summaries }                  from "./modules/summary"
 include { write_software_versions }                          from "./modules/write_software_versions"
-include { generate_resistance_table; merge_run_resistances }  from "./modules/resistance_table"
+include { generate_resistance_table; merge_run_resistances } from "./modules/resistance_table"
 include { pymlst_add_strain; pymlst_distance; pymlst_subgraph} from "./modules/pymlst"
 include { amrfinderplus  }                                    from  "./modules/amrfinderplus"
-include { bakta         }                                      from "./modules/bakta"
+include { bakta         }                                     from "./modules/bakta"
 include { bwaAlign_insertsize_coverage; bwaAlign_insertsize_coverageSE } from "./modules/align-and-extract"
-include { tbprofiler         }                                      from "./modules/tbprofiler"
-include { lissero         }                                      from "./modules/lissero"
+include { tbprofiler         }                                from "./modules/tbprofiler"
+include { lissero         }                                   from "./modules/lissero"
+include { insilicoseq         }                               from "./modules/insilicoseq"
 
 /*
 * main workflow
@@ -177,14 +178,14 @@ workflow {
                                                           }
 
   expected_species_ch.map {
-    sample_id, species -> 
-    return tuple(species, sample_id)
-    }.groupTuple(sort:true).map {
-      species, sample_ids ->
-      def length = sample_ids.size() // Get the length of the list of sample_ids
-      println "Species/Project: ${species}, Number of samples: ${length}" // Print the length
-      return tuple(species, length) // Return the species and length tuple if needed
-    }
+                            sample_id, species -> 
+                            return tuple(species, sample_id)
+                            }.groupTuple(sort:true).map {
+                              species, sample_ids ->
+                              def length = sample_ids.size() // Get the length of the list of sample_ids
+                              println "Species/Project: ${species}, Number of samples: ${length}" // Print the length
+                              return tuple(species, length) // Return the species and length tuple if needed
+                            }
 
   // Running fastQC on fastq reads before trimming and generating multiQC report
   fastqc_raw_reads_out   = fastqc_raw_reads(reads_for_trimming.other) // extract only the reads without sample_id
@@ -247,6 +248,25 @@ workflow {
     unicycler_out = [:]
     // Add the genome fasta files in the "assembly" channel within unicycler_out
     unicycler_out.assembly = genome
+    // Generate artificial illumina reads from an input fasta genome (so that they can be used to run metaphlan4 and downstread species-specific tools)
+    insilicoseq_out = insilicoseq(unicycler_out.assembly)
+    
+    // Get the expected species name from the input fasta files:
+    expected_species_ch = genome.map { sample_id, fq_tuple -> 
+                                        def parent_name = file(fq_tuple).parent  // Access the parent directory of first fastq.gz file (so it works for single & paired-end)
+                                        return [sample_id, parent_name.getName()] // Get the name of parent directory and output as tuple: sample_id, expected_species
+                                        }
+    
+    expected_species_ch.map {
+                              sample_id, species -> 
+                              return tuple(species, sample_id)
+                              }.groupTuple(sort:true).map {
+                                species, sample_ids ->
+                                def length = sample_ids.size() // Get the length of the list of sample_ids
+                                println "Species/Project: ${species}, Number of samples: ${length}" // Print the length
+                                return tuple(species, length) // Return the species and length tuple if needed
+                              }
+
   }
 
       // These processes are the same for single-end and paired-end datasets:
@@ -291,13 +311,22 @@ workflow {
       if (params.input_type != "fasta") {
       // These processes cannot run if the input was finished assemblies
       // Different metaphlan4 & alignment depending on single-end or paired-end reads
+      
+
       if (params.SE == "NO") {  
-        metaphlan_out      = metaphlan4(trimm_out_checked.passed.concat(trimm_out_checked.failed))
+        trimm_out_checked_all = trimm_out_checked.passed.concat(trimm_out_checked.failed)
+        metaphlan_out      = metaphlan4(trimm_out_checked_all)
         mapping_processes = bwaAlign_insertsize_coverage(one_contig.join(trimm_out_checked.passed))
 
       } else if (params.SE == "YES") {
-        metaphlan_out      = metaphlan4SE(trimm_out_checked.passed.concat(trimm_out_checked.failed))
+        trimm_out_checked_all = trimm_out_checked.passed.concat(trimm_out_checked.failed)
+        metaphlan_out      = metaphlan4SE(trimm_out_checked_all)
         mapping_processes = bwaAlign_insertsize_coverageSE(one_contig.join(trimm_out_checked.passed))
+      }
+      }
+      // If the input was fasta genomes, then use artificially created fastq reads for metaphlan4 to determine speciess
+      if (params.input_type == "fasta") {
+        metaphlan_out      = metaphlan4(insilicoseq_out.artificial_reads)
       }
 
       metaphlan4_classified = classify_metaphlan4_results(metaphlan_out.profile)
@@ -311,13 +340,17 @@ workflow {
       checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      // if --skip_checkm flag is set, the input channel will be empty
 
       // Run tb-profiler for tubercolosis genomes (as identified by metaphlan4)
+      // TBprofiler works based on reads, so it cannot be run when the input is fasta files
+      if (params.input_type != "fasta") {
       samples_to_run_tbprofiler_ch = trimm_out.trimmed_reads
                         .join(metaphlan4_classified.mycobacterium_tubercolosis, remainder: false)
                         // Only samples where assembly & bacterial classification is true will remain in channel
                         .map { item -> return [item[0], item[1], item[2]]} // Return only the first three elements of the tuple (sample_id, reads)
       samples_to_run_tbprofiler_ch.view()
-
+      
       tbprofiler_out          = tbprofiler(params.skip_tbprofiler? Channel.empty() : samples_to_run_tbprofiler_ch)
+      }
+
       // Run LisSero for Listeria monocytogenes genoems (as identified by metaphlan4)
       samples_to_run_lissero_ch = unicycler_out.assembly
                         .join(metaphlan4_classified.listeria_monocytogenes, remainder: false)
@@ -333,8 +366,6 @@ workflow {
       pymlst_subgraph(pymlst_out.summary_specific.join(metaphlan_out.taxa).join(distance.pymlst_distance))
       }
       
-      // End of processes that require input reads
-      }
       mqc_assembly_out    = multiqc_assembly( assembly_stats.stats.collect(), 
                                               annotation.annot_all.collect(), 
                                               params.skip_busco? Channel.empty() : busco_out.summary_specific.flatten().filter{it =~/short_summary/}.collect(),
@@ -419,12 +450,13 @@ workflow {
                                   all_channels.mapping_processes? mapping_processes.version_samtools.first() : empty_version_channel,
                                   all_channels.mapping_processes? mapping_processes.version_pilon.first() : empty_version_channel,
                                   all_channels.typing_rMLST? typing_rMLST.version.first() : empty_version_channel,
+                                  all_channels.insilicoseq_out? insilicoseq_out.version.first() : empty_version_channel,
                                   all_channels.metaphlan_out? metaphlan_out.version.first() : empty_version_channel,
                                   all_channels.typ16S? typ16S.version.first() : empty_version_channel,
                                   all_channels.abricate_out? abricate_out.version.first() : empty_version_channel,
                                   all_channels.amrfinderplus_out? amrfinderplus_out.version.first() : empty_version_channel,
                                   all_channels.pymlst_out? pymlst_out.version.first() : empty_version_channel,
-                                  all_channels.bcl2fastq_out? bcl2fastq_out.version.first() : empty_version_channel,
+                                  all_channels.bcl2fastq_out? bcl2fastq_out.version.first() : empty_version_channel
                                  ).collect()
 
       write_software_versions(software_version_channel)
