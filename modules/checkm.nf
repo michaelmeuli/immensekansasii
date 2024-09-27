@@ -24,6 +24,17 @@ process checkm {
 
     script:
     """
+    # Check if any .fna files exist in the current directory, if yes, rename to fasta
+    if ls *.fna 1> /dev/null 2>&1; then
+    # Loop through all .fna files and rename them to .fasta
+    for file in *.fna; do
+        mv "\$file" "\${file%.fna}.fasta"
+        echo "Renamed \$file to \${file%.fna}.fasta"
+    done
+    else
+    echo "No .fna files found."
+    fi
+
     checkm lineage_wf --reduced_tree -x fasta \$PWD "results/" > checkm_output.tsv
 
     echo "checkM" \$(checkm -h | grep '...:::' | grep -oE 'v[0-9]+\\.[0-9]+\\.[0-9]+') > checkm_vers.txt
