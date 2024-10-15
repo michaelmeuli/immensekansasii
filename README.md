@@ -6,8 +6,9 @@ IMM Extended Nextflow Sequencing Environment
 
 ## Author
 
-* Michèle Leemann, Marco Meola (mmeola@imm.uzh.ch)
+* Michèle Leemann, Marco Meola
 * Updated/extended by Philipp v. Bieberstein
+* developed and maintained by Vanni Benvenga (vbenvenga@imm.uzh.ch)
 
 Institution: Applied Microbiology Research - Institute of Medical Microbiology - University of Zurich (UZH)
 
