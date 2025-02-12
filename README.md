@@ -12,7 +12,6 @@ IMM Extended Nextflow Sequencing Environment
 * Michèle Leemann, Marco Meola
 * Updated/extended by Philipp v. Bieberstein
 * developed and maintained by Vanni Benvenga (vbenvenga@imm.uzh.ch)
-* Logo by Paola Dellea
 
 Institution: Applied Microbiology Research - Institute of Medical Microbiology - University of Zurich (UZH)
 
