@@ -2,7 +2,7 @@
 
 IMM Extended Nextflow Sequencing Environment
 
-[<img src="/pics/IMMense_logo_black.png" width="800" />](/pics/IMMense_logo_black.png)
+[<img src="/pics/IMMense_logo_black.jpg" width="800" />](/pics/IMMense_logo_black.jpg)
 
 [![Nextflow](https://img.shields.io/badge/Nextflow-21.10.0-brightgreen.svg)]([https://www.nextflow.io/])
 
