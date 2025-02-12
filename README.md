@@ -2,6 +2,8 @@
 
 IMM Extended Nextflow Sequencing Environment
 
+[<img src="IMMENSE_diagram.png" width="800" />](~/pics/IMMense_logo_black.svg)
+
 [![Nextflow](https://img.shields.io/badge/Nextflow-21.10.0-brightgreen.svg)]([https://www.nextflow.io/])
 
 ## Author
