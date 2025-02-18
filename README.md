@@ -2,7 +2,7 @@
 
 IMM Extended Nextflow Sequencing Environment
 
-[<img src="/pics/IMMense_logo_black.jpg" width="800" />](/pics/IMMense_logo_black.jpg)
+[<img src="/pics/IMMense_logo_black.jpg" width="80" />](/pics/IMMense_logo_black.jpg)
 
 <sub>Logo by Paola Dellea (https://www.paoladellea.art/)</sub>
 
