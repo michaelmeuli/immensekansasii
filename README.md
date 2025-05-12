@@ -442,7 +442,7 @@ metaphlan --bowtie2db mpa_vJun23_CHOCOPhlAnSGB_202307 --install
 
 ```{bash}
 singularity shell path/to/immense_dependencies/singularity/ezlabgva-busco_v5.3.2_cv1.img
-busco --download --download_path /path/to/immense_dependencies/busco_downloads
+busco --download "all" --download_path /path/to/immense_dependencies/busco_downloads
 ```
 
 #### GTDBtk
