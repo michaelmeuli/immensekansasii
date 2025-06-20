@@ -64,7 +64,7 @@ else if (params.input_type == "fastq") {
 
   if (params.SE == "NO") {
       Channel
-        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,R2}.fastq.gz")
+        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,R2}*.fastq.gz")
         .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}*_{R1,R2}.fastq.gz" }
         // .view { "Identified files: $it" }
         .branch{
@@ -75,7 +75,7 @@ else if (params.input_type == "fastq") {
   
   else if (params.SE == "YES") {
         Channel
-        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,1}.fastq.gz")
+        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,1}*.fastq.gz")
         .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}*_{R1,1}.fastq.gz" }
         //.view { "Identified files: $it" }
         .branch{
