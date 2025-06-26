@@ -136,6 +136,7 @@ include { summary_sample; merge_summaries }                  from "./modules/sum
 include { write_software_versions }                          from "./modules/write_software_versions"
 include { generate_resistance_table; merge_run_resistances } from "./modules/resistance_table"
 include { pymlst_add_strain; pymlst_distance; pymlst_subgraph} from "./modules/pymlst"
+include { mlst}                                               from "./modules/mlst"
 include { amrfinderplus  }                                    from  "./modules/amrfinderplus"
 include { bakta         }                                     from "./modules/bakta"
 include { bwaAlign_insertsize_coverage; bwaAlign_insertsize_coverageSE } from "./modules/align-and-extract"
@@ -375,6 +376,9 @@ workflow {
       abricate_out = abricate(unicycler_out.assembly)
       amrfinderplus_out = amrfinderplus(unicycler_out.assembly)
 
+      // Run MLST on the fasta
+      mlst_out = mlst(unicycler_out.assembly)
+
       // Summarize Abricate output and create summary for run
       summarized_resistances = generate_resistance_table(abricate_out.resistance)
       merge_run_resistances(summarized_resistances.output_file.collect(sort: true))
@@ -456,6 +460,7 @@ workflow {
                                   all_channels.abricate_out? abricate_out.version.first() : empty_version_channel,
                                   all_channels.amrfinderplus_out? amrfinderplus_out.version.first() : empty_version_channel,
                                   all_channels.pymlst_out? pymlst_out.version.first() : empty_version_channel,
+                                  all_channels.mlst_out? mlst_out.version.first() : empty_version_channel,
                                   all_channels.bcl2fastq_out? bcl2fastq_out.version.first() : empty_version_channel
                                  ).collect()
 
