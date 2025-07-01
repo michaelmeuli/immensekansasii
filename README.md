@@ -1,6 +1,10 @@
-# IMMENSE
+# IMMense
 
 IMM Extended Nextflow Sequencing Environment
+
+[<img src="/pics/IMMense_logo_black.jpg" width="80" />](/pics/IMMense_logo_black.jpg)
+
+<sub>Logo by Paola Dellea (https://www.paoladellea.art/)</sub>
 
 [![Nextflow](https://img.shields.io/badge/Nextflow-21.10.0-brightgreen.svg)]([https://www.nextflow.io/])
 
@@ -63,7 +67,7 @@ The steps that are included are:
 
 # Introduction
 
-IMMENSE is a nextflow pipeline. Information about Nextflow can be found under https://www.nextflow.io/ and in the [Nextflow documentation](https://www.nextflow.io/docs/latest/index.html).   
+IMMense is a nextflow pipeline. Information about Nextflow can be found under https://www.nextflow.io/ and in the [Nextflow documentation](https://www.nextflow.io/docs/latest/index.html).   
 
 The workflow of the pipeline is defined in the **main.nf** file. The underlying processes are defined in the **modules** of each tool. The configuration for the usage of the containers (Singularity) and the resource management for the executor (SLURM) are defined in the config files **nextflow.config** (for general settings) and **conf/profiles/*.config** for infrastructure specific settings. The infrastructure-specific profiles define where the locations of the required databases are on that system.
 
@@ -71,7 +75,7 @@ Each process of the pipeline has its own working directory that is located in th
 
 While the pipeline is running the status can be monitored in **.nextflow.log** or in the slurm file. With successful completion the **report.html**, **timeline.html** and **trace.txt** files are produced which give information about each process including the used ressources. 
 
->**NOTE:** To run IMMENSE on a SLURM cluster, the `run_IMMENSE.sh` will submit a SLURM job which will start the nextflow pipeline. If you run IMMENSE locally on a computer, you will directly launch the nextflow pipeline with `nextflow run main.nf ...`
+>**NOTE:** To run IMMense on a SLURM cluster, the `run_IMMENSE.sh` will submit a SLURM job which will start the nextflow pipeline. If you run IMMENSE locally on a computer, you will directly launch the nextflow pipeline with `nextflow run main.nf ...`
 
 <a name="Quickstart"></a>
 
@@ -148,7 +152,7 @@ nextflow run /path/to/IMMENSE/main.nf -profile imm --run_id test_run --input_typ
 The **additional options** as described for the usage on S3IT can be added in the same manner to the command and all parameters defined in the params.config file can be overwritten on the command line with `--<parames-name> <params-value>`.
 
 
-# Detailed running IMMENSE on S3IT (UZH SLURM cluster)
+# Detailed running IMMense on S3IT (UZH SLURM cluster)
 
 >The pipeline can be run on **raw BCL data**, **fastq files**, or **fasta files**. By default, the output and work directory is saved in the current working directory (can be changed in infrastructure-specific profiles).
 
@@ -353,10 +357,10 @@ The hidden `.nextflow.log` file in the main working directory also has a lot of 
 
 ### Install Dependencies
 
-Clone IMMENSE repository.
+Clone IMMense repository.
 
 ```
-git clone https://gitlab.uzh.ch/appliedmicrobiologyresearch/amr_research/immense.git
+git clone https://gitlab.uzh.ch/appliedmicrobiologyresearch/immense.git
 ```
 
 Install [miniconda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html). Then, for SLURM clusters with `module load` functionality, the `run_IMMENSE.sh` script automatically checks if you have all dependencies installed and if not installs them based on `environment.yml`. 
@@ -438,7 +442,7 @@ metaphlan --bowtie2db mpa_vJun23_CHOCOPhlAnSGB_202307 --install
 
 ```{bash}
 singularity shell path/to/immense_dependencies/singularity/ezlabgva-busco_v5.3.2_cv1.img
-busco --download --download_path /path/to/immense_dependencies/busco_downloads
+busco --download "all" --download_path /path/to/immense_dependencies/busco_downloads
 ```
 
 #### GTDBtk
