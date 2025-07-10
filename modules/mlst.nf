@@ -19,7 +19,22 @@ process mlst {
     """
     #!/bin/bash
 
-    mlst ${fasta} > mlst_output_${sample_id}.tsv
-    mlst --version > mlst_version.txt
+    mlst ${fasta} | \
+    awk -F'\t' '{
+        file=$1;
+        schema=$2;
+        seq_type=$3;
+        alleles=$4;
+        for(i=4; i<=NF; i++) {
+            alleles = alleles ", " $i;
+        }
+        print "File\tSchema\tSequence Type\tAllelels";
+        print file "\t" schema "\t" seq_type "\t" alleles;
+    }' > mlst_output_${sample_id}.tsv
+
+    echo ${task.container} > mlst_singularity.txt
+    mlst --version > mlst_vers.txt
+
+    cat mlst_vers.txt mlst_singularity.txt | tr "\\n" "\\t" > mlst_version.txt
     """
 }
