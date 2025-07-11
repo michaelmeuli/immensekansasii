@@ -34,8 +34,8 @@ process mlst {
     }' > mlst_output_${sample_id}.tsv
 
     # Extract values and export to files for Nextflow to pick up as env vars
-    awk -F'\t' 'NR==2 {print \$3}' mlst_output_${sample_id}.tsv > ST
-    awk -F'\t' 'NR==2 {print \$4}' mlst_output_${sample_id}.tsv > ALLELES
+    awk -F'\t' 'NR==2 {print $3}' mlst_output_${sample_id}.tsv > ST
+    awk -F'\t' 'NR==2 {print $4}' mlst_output_${sample_id}.tsv > ALLELES
 
     # Version info
     echo ${task.container} > mlst_singularity.txt
