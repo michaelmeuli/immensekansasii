@@ -13,34 +13,33 @@ process mlst {
 
     output:
     tuple val (sample_id), path ("mlst_output_${sample_id}.tsv"), emit: mlst_output
-    tuple val (sample_id), env(ST), emit: sequence_type
-    tuple val (sample_id), env(ALLELES), emit: alleles
+    tuple val (sample_id), env("ST"), emit: sequence_type
+    tuple val (sample_id), env("ALLELES"), emit: alleles
     path "mlst_version.txt", emit: version
 
     script:
-    """
+    '''
     #!/bin/bash
 
     mlst ${fasta} | \
-    awk -F'\t' '{
+    awk -F'\t' 'BEGIN { print "File\tSchema\tSequence Type\tAlleles" } {
         file=$1;
         schema=$2;
         seq_type=$3;
         alleles=$4;
-        for(i=4; i<=NF; i++) {
+        for(i=5; i<=NF; i++) {
             alleles = alleles ", " $i;
         }
-        print "File\tSchema\tSequence Type\tAllelels";
         print file "\t" schema "\t" seq_type "\t" alleles;
     }' > mlst_output_${sample_id}.tsv
 
-    # Extracting key information
-    ST = $(awk -F'\t' 'NR==2 {print $3}' mlst_output_${sample_id}.tsv)
-    ALLELES = $(awk -F'\t' 'NR==2 {print $4}' mlst_output_${sample_id}.tsv)
+    # Extract values and export to files for Nextflow to pick up as env vars
+    awk -F'\t' 'NR==2 {print $3}' mlst_output_${sample_id}.tsv > ST
+    awk -F'\t' 'NR==2 {print $4}' mlst_output_${sample_id}.tsv > ALLELES
 
+    # Version info
     echo ${task.container} > mlst_singularity.txt
     mlst --version > mlst_vers.txt
-
-    cat mlst_vers.txt mlst_singularity.txt | tr "\\n" "\\t" > mlst_version.txt
-    """
+    paste mlst_vers.txt mlst_singularity.txt > mlst_version.txt
+    '''
 }
