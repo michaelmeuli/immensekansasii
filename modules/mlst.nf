@@ -34,8 +34,8 @@ process mlst {
     }' > mlst_output_${sample_id}.tsv
 
     # Extract key values
-    ST = `tail -n +2 mlst_output_${sample_id}.tsv | cut -f3`
-    ALLELES = `tail -n +2 mlst_output_${sample_id}.tsv | cut -f4`
+    ST=`tail -n +2 mlst_output_${sample_id}.tsv | cut -f3`
+    ALLELES=`tail -n +2 mlst_output_${sample_id}.tsv | cut -f4`
 
     # Version info
     echo ${task.container} > mlst_singularity.txt
