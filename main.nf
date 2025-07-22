@@ -64,8 +64,8 @@ else if (params.input_type == "fastq") {
 
   if (params.SE == "NO") {
       Channel
-        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,R2}*.fastq.gz")
-        .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}*_{R1,R2}.fastq.gz" }
+        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,R2,1,2}*.f*q.gz")
+        .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}*_{R1,R2,1,2}*.fastq.gz" }
         // .view { "Identified files: $it" }
         .branch{
           sarscov2: it =~ /sarscov-2/
@@ -75,8 +75,8 @@ else if (params.input_type == "fastq") {
   
   else if (params.SE == "YES") {
         Channel
-        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,1}*.fastq.gz")
-        .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}*_{R1,1}.fastq.gz" }
+        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,1}*.f*q.gz")
+        .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}*_{R1,1}.*f*q.gz" }
         //.view { "Identified files: $it" }
         .branch{
           sarscov2: it =~ /sarscov-2/
