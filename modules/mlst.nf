@@ -21,7 +21,7 @@ process mlst {
     """
     #!/bin/bash
 
-    mlst ${fasta} | \
+    mlst --blastdb ${params.mlst_db}/blast/mlst.fa --datadir ${params.mlst_db}/pubmlst ${fasta} | \
     awk -F'\t' 'BEGIN { print "File\tSchema\tSequence Type\tAlleles" } {
         file=\$1;
         schema=\$2;
