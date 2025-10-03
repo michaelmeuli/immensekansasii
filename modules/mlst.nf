@@ -21,17 +21,32 @@ process mlst {
     """
     #!/bin/bash
 
-    mlst --blastdb ${params.mlst_db}/blast/mlst.fa --datadir ${params.mlst_db}/pubmlst ${fasta} | \
-    awk -F'\t' 'BEGIN { print "File\tSchema\tSequence Type\tAlleles" } {
-        file=\$1;
-        schema=\$2;
-        seq_type=\$3;
-        alleles=\$4;
-        for(i=5; i<=NF; i++) {
-            alleles = alleles ", " \$i;
-        }
-        print file "\t" schema "\t" seq_type "\t" alleles;
-    }' > mlst_output_${sample_id}.tsv
+    # Run MLST depending on whether params.mlst_db is set
+    if [! -d ${params.mlst_db}]; then
+        mlst ${fasta} | \
+        awk -F'\t' 'BEGIN { print "File\tSchema\tSequence Type\tAlleles" } {
+            file=\$1;
+            schema=\$2;
+            seq_type=\$3;
+            alleles=\$4;
+            for(i=5; i<=NF; i++) {
+                alleles = alleles ", " \$i;
+            }
+            print file "\t" schema "\t" seq_type "\t" alleles;
+        }' > mlst_output_${sample_id}.tsv
+    else
+        mlst --blastdb ${params.mlst_db}/blast/mlst.fa --datadir ${params.mlst_db}/pubmlst ${fasta} | \
+        awk -F'\t' 'BEGIN { print "File\tSchema\tSequence Type\tAlleles" } {
+            file=\$1;
+            schema=\$2;
+            seq_type=\$3;
+            alleles=\$4;
+            for(i=5; i<=NF; i++) {
+                alleles = alleles ", " \$i;
+            }
+            print file "\t" schema "\t" seq_type "\t" alleles;
+        }' > mlst_output_${sample_id}.tsv
+    fi
 
     # Extract key values
     ST=`tail -n +2 mlst_output_${sample_id}.tsv | cut -f3`
