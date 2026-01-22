@@ -37,6 +37,8 @@ process summary_sample {
             val (checkm_completeness), \
             val (checkm_contamination), \
             val (checkm_heterogeneity),\
+            val (mlst_out_sequence_type), \
+            val (mlst_out_alleles), \
             val (gtdb_out_species), \
             val (gtdb_out_ani_ref), \
             val (gtdb_out_ani_ani), \
@@ -95,6 +97,9 @@ process summary_sample {
     echo "${typ16S_taxa}" >> ${sample_id}_tmp.tab
     echo "${typ16S_aln_length}" >> ${sample_id}_tmp.tab
     echo "${typ16S_aln_identity}" >> ${sample_id}_tmp.tab
+
+    echo "${mlst_out_sequence_type}" >> ${sample_id}_tmp.tab
+    echo "${mlst_out_alleles}" >> ${sample_id}_tmp.tab
     
     echo "${qc_size_warning}" >> ${sample_id}_tmp.tab
     echo "${params.run_id}" >> ${sample_id}_tmp.tab
@@ -123,7 +128,7 @@ process merge_summaries {
     """
     #!/bin/bash
 
-    echo -e "Sample\\tinitial_species\\tRead_quality\\tPassed_reads\\tRead_depth\\tDepth_mean\\tDepth_SD\\tAlternative_bases\\tInsert_size\\tContig_count\\tTotal_length\\tN50\\tGC_percent\\tComplete_BUSCOs\\tBUSCO_Lineage\\tcheckm_completeness\\tcheckm_contamination\\tcheckm_heterogeneity\\tMetaPhlAn4_species\\tMetaPhlAn4_purity\\tgtdb_species\\tgtdb_fastani_reference\\tgtdb_fastani_ani\\tgtdb_fastani_af\\tgtdb_closest_placement_reference\\tgtdbdb_warnings\\trMLST_best_species\\trMLST_best_rST\\tAlleles_missing\\t16S_species\\tAlignment_length\\tAlignment_identity\\tWorkflow_Notes\\trun_id" > quality_temp.tab
+    echo -e "Sample\\tinitial_species\\tRead_quality\\tPassed_reads\\tRead_depth\\tDepth_mean\\tDepth_SD\\tAlternative_bases\\tInsert_size\\tContig_count\\tTotal_length\\tN50\\tGC_percent\\tComplete_BUSCOs\\tBUSCO_Lineage\\tcheckm_completeness\\tcheckm_contamination\\tcheckm_heterogeneity\\tMetaPhlAn4_species\\tMetaPhlAn4_purity\\tgtdb_species\\tgtdb_fastani_reference\\tgtdb_fastani_ani\\tgtdb_fastani_af\\tgtdb_closest_placement_reference\\tgtdbdb_warnings\\trMLST_best_species\\trMLST_best_rST\\tAlleles_missing\\t16S_species\\tAlignment_length\\tAlignment_identity\\tMLST_ST\\tMLST_alleles\\tWorkflow_Notes\\trun_id" > quality_temp.tab
     for sample in ${sample_quality}; do cat \$sample >> quality_temp.tab; printf "\n" >> quality_temp.tab; done
     (head -n 1 quality_temp.tab && tail -n +2 quality_temp.tab | sort) > ${params.run_id}_quality.tsv
     let sample_count=\$(grep -c "" ${params.run_id}_quality.tsv)-1
