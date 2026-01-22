@@ -48,7 +48,7 @@ trap "kill $LSOF_PID" EXIT
 # The profile has to be updated if running on a different infrastructure
 #nextflow run $MAIN_DIR/main.nf \
 nextflow -trace nextflow.executor run $MAIN_DIR/main.nf \
-          -profile s3it \
+          -profile imm \
           -resume \
           --run_id "$RUN_ID" \
           --input_type "$INPUT_TYPE" \
