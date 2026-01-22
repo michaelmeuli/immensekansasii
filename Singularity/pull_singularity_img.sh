@@ -16,7 +16,7 @@ singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-fastqc-0.12.1-
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-multiqc-1.23--pyhdfd78af_0.img docker://quay.io/biocontainers/multiqc:1.23--pyhdfd78af_0
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-quast-5.0.2--py37pl5262h190e900_4.img docker://quay.io/biocontainers/quast:5.0.2--py37pl5262h190e900_4
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-trimmomatic-0.39--hdfd78af_2.img docker://quay.io/biocontainers/trimmomatic:0.39--hdfd78af_2
-singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-unicycler-0.5.0--py39heaaa4ec_5.img docker://quay.io/biocontainers/unicycler:0.5.0--py39heaaa4ec_5
+singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-unicycler-0.5.1--py312hdcc493e_5.img docker://quay.io/biocontainers/unicycler:0.5.1--py312hdcc493e_5
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-gtdbtk-2.5.2---pyh1f0d9b5_0 docker://quay.io/biocontainers/gtdbtk:2.5.2--pyh1f0d9b5_0
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-metaphlan-4.1.0--pyhca03a8a_0.img docker://quay.io/biocontainers/metaphlan:4.1.0--pyhca03a8a_0
 singularity build --sandbox ${INSTALL_PATH}/r-base-4.3.3.img docker://r-base:4.3.3
