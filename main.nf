@@ -24,6 +24,7 @@ may be ripe for automation.
 
 =============================================
 Pipeline Directory         : ${workflow.projectDir}
+Run Profile                : ${workflow.profile}
 run ID                     : ${params.run_id}
 input type                 : ${params.input_type}
 input directory            : ${params.input}
