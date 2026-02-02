@@ -23,8 +23,6 @@ process fastqc_raw_reads {
     """
     # Below we try to run fastqc but if it doesn't work (ie file corrupted), write failed into log. Trimmomatic might still work
     fastqc -t 2 ${fastqs.join(' ')} && echo "Success" || echo "Failed to run fastqc completely" > fastqc_error.log
-    # Remove .zip files, as we will work with the htmls moving forward
-    rm *.zip
     # Record software and container version
     fastqc --version > fastqc_vers.txt
     echo ${task.container} > fastqc_singularity.txt
@@ -51,8 +49,6 @@ process fastqc_trimmed_reads {
     """
     # Run fastQC
     fastqc -t 2 ${fastqs.join(' ')} && echo "Success" || echo "Failed to run fastqc completely" > fastqc_error.log
-    # Remove .zip files, as we will work with the htmls moving forward
-    rm *.zip
     # Rename fastQC results with "_trimmed" to avoid mixing them up
     for f in ${sample_id}*_fastqc.*; do
     [ -e "\$f" ] || continue
