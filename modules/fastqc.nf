@@ -9,6 +9,7 @@ params.OUTPUT = "fastqc_output"
 process fastqc_raw_reads {
     // publishDir(params.OUTPUT, mode: 'copy')
     publishDir("${params.output_dir_run}/00_QC/00_fastqc_raw_reads/fastqc", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/fastQC", mode: 'copy')
     tag { sample_id }
 
     input:
@@ -20,9 +21,11 @@ process fastqc_raw_reads {
 
     script:
     """
-    # fastqc -t 2 ${fastqs.join(' ')}
     # Below we try to run fastqc but if it doesn't work (ie file corrupted), write failed into log. Trimmomatic might still work
     fastqc -t 2 ${fastqs.join(' ')} && echo "Success" || echo "Failed to run fastqc completely" > fastqc_error.log
+    # Remove .zip files, as we will work with the htmls moving forward
+    rm *.zip
+    # Record software and container version
     fastqc --version > fastqc_vers.txt
     echo ${task.container} > fastqc_singularity.txt
     cat fastqc_vers.txt fastqc_singularity.txt | tr "\\n" "\\t" > fastqc_version.txt
@@ -32,12 +35,13 @@ process fastqc_raw_reads {
 process fastqc_trimmed_reads {
     // publishDir(params.OUTPUT, mode: 'copy')
     publishDir("${params.output_dir_run}/00_QC/01_fastqc_after_trimming/fastqc", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/fastQC", mode: 'copy')
     tag { sample_id }
 
     input:
     //tuple val (sample_id), path (read1), path (read2)
     //path (reads)
-    tuple val(batch), file(fastqs)
+    tuple val(sample_id), file(fastqs)
 
     output:
     path("*_fastqc*"), emit: output
@@ -45,9 +49,16 @@ process fastqc_trimmed_reads {
 
     script:
     """
-    #fastqc -t 2 \${read1} \${read2}
+    # Run fastQC
     fastqc -t 2 ${fastqs.join(' ')} && echo "Success" || echo "Failed to run fastqc completely" > fastqc_error.log
-
+    # Remove .zip files, as we will work with the htmls moving forward
+    rm *.zip
+    # Rename fastQC results with "_trimmed" to avoid mixing them up
+    for f in ${sample_id}*_fastqc.*; do
+    [ -e "\$f" ] || continue
+    mv -- "\$f" "\${f/r1_fastqc/R1_trimmed_fastqc}"
+    done
+    # Record software and container version
     fastqc --version > fastqc_vers.txt
     echo ${task.container} > fastqc_singularity.txt
     cat fastqc_vers.txt fastqc_singularity.txt | tr "\\n" "\\t" > fastqc_version.txt
