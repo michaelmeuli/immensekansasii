@@ -468,7 +468,7 @@ workflow {
                                  ).collect()
 
 // build the run-level versions file once
-      write_software_versions(software_version_channel)
+write_software_versions(software_version_channel)
 versions_file_ch = write_software_versions.out.versions_file
 
 // sample ids from the earliest branch
