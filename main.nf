@@ -143,7 +143,7 @@ include { make_one_contig }                                  from "./modules/pyt
 include { typing_16S }                                       from "./modules/typing_16S.nf"
 include { abricate }                                         from "./modules/abricate"
 include { summary_sample; merge_summaries }                  from "./modules/summary"
-include { write_software_versions }                          from "./modules/write_software_versions"
+include { write_software_versions; write_versions_per_sample } from "./modules/write_software_versions"
 include { generate_resistance_table; merge_run_resistances } from "./modules/resistance_table"
 include { pymlst_add_strain; pymlst_distance; pymlst_subgraph} from "./modules/pymlst"
 include { mlst}                                               from "./modules/mlst"
@@ -357,7 +357,7 @@ workflow {
                         .join(metaphlan4_classified.mycobacterium_tubercolosis, remainder: false)
                         // Only samples where assembly & bacterial classification is true will remain in channel
                         .map { item -> return [item[0], item[1], item[2]]} // Return only the first three elements of the tuple (sample_id, reads)
-      samples_to_run_tbprofiler_ch.view()
+      // samples_to_run_tbprofiler_ch.view()
       
       tbprofiler_out          = tbprofiler(params.skip_tbprofiler? Channel.empty() : samples_to_run_tbprofiler_ch)
       }
@@ -476,8 +476,17 @@ workflow {
                                   all_channels.bcl2fastq_out? bcl2fastq_out.version.first() : empty_version_channel
                                  ).collect()
 
-      write_software_versions(software_version_channel)
+// build the run-level versions file once
+write_software_versions(software_version_channel)
+versions_file_ch = write_software_versions.out.versions_file
 
+// sample ids from the earliest branch
+def sample_ids_ch = reads_for_trimming.other
+    .map { sample_id, reads -> sample_id }
+    .distinct()
+
+// fan-out + publish per sample
+write_versions_per_sample( sample_ids_ch.combine(versions_file_ch) )
 }
 
 

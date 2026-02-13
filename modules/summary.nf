@@ -9,7 +9,6 @@ process summary_sample {
     // execute on the main node (no special software needed so no need to submit a job and use a container)
     tag { sample_id }
     
-
     input:
     tuple val (sample_id), \
             val (expected_species), \
@@ -57,8 +56,8 @@ process summary_sample {
     
     # Writing the variables passed as input to the sample specific file
     # These sample-specific summaries are then merged in the merge_summaries process
-    
-    echo "${sample_id}" > ${sample_id}_tmp.tab
+    echo -e "Sample\\tinitial_species\\tRead_quality\\tPassed_reads\\tRead_depth_median\\tDepth_mean\\tDepth_SD\\tAlternative_bases\\tInsert_size\\tContig_count\\tTotal_length\\tN50\\tGC_percent\\tComplete_BUSCOs\\tBUSCO_Lineage\\tcheckm_completeness\\tcheckm_contamination\\tcheckm_heterogeneity\\tMetaPhlAn4_species\\tMetaPhlAn4_purity\\tgtdb_species\\tgtdb_fastani_reference\\tgtdb_fastani_ani\\tgtdb_fastani_af\\tgtdb_closest_placement_reference\\tgtdbdb_warnings\\trMLST_best_species\\trMLST_best_rST\\tAlleles_missing\\t16S_species\\tAlignment_length\\tAlignment_identity\\tMLST_sequence_type\\tMLST_alleles\\tWorkflow_Notes\\trun_id" > ${sample_id}_tmp.tab
+    echo "${sample_id}" >> ${sample_id}_tmp.tab
     # This is an environmental variable in this script, not an input like the others
     echo "${expected_species}" >> ${sample_id}_tmp.tab
     echo "${trimm_out_passed_reads_percentage}" >> ${sample_id}_tmp.tab
@@ -105,12 +104,13 @@ process summary_sample {
     echo "${params.run_id}" >> ${sample_id}_tmp.tab
 
     # Replace newline with tabs
-    cat ${sample_id}_tmp.tab | tr "\\n" "\\t" > ${sample_id}.tab
-
+    {
+  head -n1 ${sample_id}_tmp.tab
+  tail -n +2 ${sample_id}_tmp.tab | paste -sd '\t'
+    } > ${sample_id}.tab
+    rm ${sample_id}_tmp.tab
     """
 }
-
-
 
 process merge_summaries {
     publishDir("${params.output_dir_run}", mode: 'copy')
@@ -128,17 +128,26 @@ process merge_summaries {
     """
     #!/bin/bash
 
-    echo -e "Sample\\tinitial_species\\tRead_quality\\tPassed_reads\\tRead_depth\\tDepth_mean\\tDepth_SD\\tAlternative_bases\\tInsert_size\\tContig_count\\tTotal_length\\tN50\\tGC_percent\\tComplete_BUSCOs\\tBUSCO_Lineage\\tcheckm_completeness\\tcheckm_contamination\\tcheckm_heterogeneity\\tMetaPhlAn4_species\\tMetaPhlAn4_purity\\tgtdb_species\\tgtdb_fastani_reference\\tgtdb_fastani_ani\\tgtdb_fastani_af\\tgtdb_closest_placement_reference\\tgtdbdb_warnings\\trMLST_best_species\\trMLST_best_rST\\tAlleles_missing\\t16S_species\\tAlignment_length\\tAlignment_identity\\tMLST_ST\\tMLST_alleles\\tWorkflow_Notes\\trun_id" > quality_temp.tab
+    # Loop through each sample in the sample_quality input list and append its content to the tab-separated file
+    # After adding the content of the sample, a newline is added at the end
     for sample in ${sample_quality}; do cat \$sample >> quality_temp.tab; printf "\n" >> quality_temp.tab; done
-    (head -n 1 quality_temp.tab && tail -n +2 quality_temp.tab | sort) > ${params.run_id}_quality.tsv
+
+    # Remove empty lines and duplicate lines (keeping only the first occurrence) before sorting
+    awk 'NF > 0' quality_temp.tab | awk '!seen[\$0]++' > quality_temp_no_duplicates.tab
+
+    # Sort the content of the quality_temp.tab file and write it into the final quality file
+    # The first line (header) is kept intact, while the rest is sorted alphabetically and written to the final file
+    (head -n 1 quality_temp_no_duplicates.tab && tail -n +2 quality_temp_no_duplicates.tab | sort) > ${params.run_id}_quality.tsv
+
+    # Count the number of samples and subtract 1 (since the header is included)
     let sample_count=\$(grep -c "" ${params.run_id}_quality.tsv)-1
+
+    # Append the number of analyzed samples to the quality file
     echo "analysed_samples: \$sample_count" >> ${params.run_id}_quality.tsv
 
-    # CSV file was deemed redundant
-    # sed 's/,/;/' ${params.run_id}_quality.tsv | sed 's/\\t/,/g' > ${params.run_id}_quality.csv
-    
-    # Run the evaluate QC script
+    # Finally, run the evaluate_QC.py script on the generated quality file, using the rules file
     evaluate_QC.py --qcfile ${params.run_id}_quality.tsv --rulesfile ${params.quality_rules}
+
 
     """
 }
