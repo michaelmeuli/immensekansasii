@@ -2,10 +2,6 @@
 *  16S module
 */
 
-//params.CONTAINER = "quay.io/biocontainers/blast:2.12.0--pl5262h3289130_0"
-
-//params.OUTPUT = "typing16s_output"
-
 process typing_16S {
     publishDir("${params.output_dir_sample}/${sample_id}/3_quality/16S", mode: 'copy')
     tag { sample_id }

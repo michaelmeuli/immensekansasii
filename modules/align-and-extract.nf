@@ -144,6 +144,8 @@ process bwaAlign_insertsize_coverageSE{
     tuple val (sample_id), env(INSERTSIZE), emit: insert_size
     path "pilon_version.txt", emit: version_pilon
     tuple val (sample_id), env(READ_DEPTH), emit: read_depth
+    tuple val (sample_id), env(DEPTH_MEAN), emit: depth_mean
+    tuple val (sample_id), env(DEPTH_SD), emit: depth_sd
     tuple val (sample_id), env(ALT_BASES), emit: alt_bases
 
     script:
@@ -226,8 +228,24 @@ process bwaAlign_insertsize_coverageSE{
     
     # Exracting the key information
     READ_DEPTH=`awk '/read_depth/{print \$3}' ${sample_id}_coverage.tab | sort -n  | awk ' { a[i++]=\$1; } END { print a[int(i/2)]; }'`
-    ALT_BASES=`grep -c alternative_base ${sample_id}_coverage.tab`
+    
+    # Calculating mean & standard deviation:
+    awk '/read_depth/{print \$3}' ${sample_id}_coverage.tab | sort -n | awk '
+                                                                                {
+                                                                                    a[i++] = \$1;
+                                                                                    sum += \$1;
+                                                                                    sumsq += \$1 * \$1;
+                                                                                } 
+                                                                                END {
+                                                                                    mean = sum / i;
+                                                                                    stddev = sqrt((sumsq / i) - (mean * mean));
+                                                                                    print mean;
+                                                                                    print stddev;
+                                                                                }' > mean_and_sd.tsv
 
+    DEPTH_MEAN=`head -n 1 mean_and_sd.tsv`
+    DEPTH_SD=`tail -n 1 mean_and_sd.tsv`
+    ALT_BASES=`grep -c alternative_base ${sample_id}_coverage.tab`
 
 
     """

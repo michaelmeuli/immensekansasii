@@ -71,19 +71,28 @@ else if (params.input_type == "fastq") {
         .branch{
           sarscov2: it =~ /sarscov-2/
           undet: it =~ /Undetermined/
-          other: true}.set{ reads_for_trimming }
+          other: true}
+          .set{ reads_for_trimming }
   }
   
   else if (params.SE == "YES") {
-        Channel
-        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,1}*.f*q.gz")
-        .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}*_{R1,1}.*f*q.gz" }
-        //.view { "Identified files: $it" }
-        .branch{
-          sarscov2: it =~ /sarscov-2/
-          undet: it =~ /Undetermined/
-          other: true}.set{ reads_for_trimming }
-  }
+      Channel
+        .fromPath("${params.input}/**${params.single_sample}*_{R1,1}*.f*q.gz") 
+        .ifEmpty { error "Cannot find any single-end reads matching: ${params.input}/**${params.single_sample}*.f*q.gz" } 
+        .map { file ->
+        def sample_id = file.name
+                .replaceFirst(/\.f(?:ast)?q\.gz$/, '')
+                .replaceFirst(/_(?:R?1)(?:_001)?$/, '')
+        [ sample_id, file ] }
+        .view { "Identified files: $it" } 
+        .branch {
+          sarscov2: it[0] =~ /sarscov-2/ 
+          undet:    it[0] =~ /Undetermined/ 
+          other:    true 
+          } 
+        .set { reads_for_trimming } 
+      }
+
   }
 
 
