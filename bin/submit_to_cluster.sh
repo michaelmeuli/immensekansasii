@@ -10,11 +10,10 @@ export SINGULARITY_BINDPATH=/scratch,/data,/home/$USER,/shares
 export SINGULARITY_TMPDIR=/tmp
 export TMPDIR="/tmp"
 
-module purge
-module load mamba
-module load singularityce/4.1.0
+module load miniforge3/25.3.0-3
 
 source activate env_immense
+module load apptainer
 
 # Increas the percentages available in the java heap space
 export NXF_JVM_ARGS="-XX:InitialRAMPercentage=10 -XX:MaxRAMPercentage=75"
@@ -48,7 +47,7 @@ trap "kill $LSOF_PID" EXIT
 # The profile has to be updated if running on a different infrastructure
 #nextflow run $MAIN_DIR/main.nf \
 nextflow -trace nextflow.executor run $MAIN_DIR/main.nf \
-          -profile imm \
+          -profile s3it \
           -resume \
           --run_id "$RUN_ID" \
           --input_type "$INPUT_TYPE" \

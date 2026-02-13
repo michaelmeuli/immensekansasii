@@ -82,7 +82,7 @@ fi
 ###############################################################
 ###############################################################
 
-module load mamba # Using mamba instead of anaconda because its smaller and faster
+module load miniforge3/25.3.0-3 # Using mamba instead of anaconda because its smaller and faster
 
 ###############################################################
 ## Check that Conda Environment has access to all Required Packages

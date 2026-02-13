@@ -2,8 +2,6 @@
 *  trimmomatic module
 */
 
-//params.CONTAINER = "quay.io/biocontainers/trimmomatic:0.39--hdfd78af_2"
-
 process trimmomaticPE {
     publishDir("${params.output_dir_sample}/${sample_id}/0_trimming", mode: 'copy')
     tag { sample_id }
