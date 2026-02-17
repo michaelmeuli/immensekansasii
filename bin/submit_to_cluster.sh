@@ -10,11 +10,10 @@ export SINGULARITY_BINDPATH=/scratch,/data,/home/$USER,/shares
 export SINGULARITY_TMPDIR=/tmp
 export TMPDIR="/tmp"
 
-module purge
-module load mamba
-module load singularityce/4.1.0
+module load miniforge3/25.3.0-3
 
 source activate env_immense
+module load apptainer
 
 # Increas the percentages available in the java heap space
 export NXF_JVM_ARGS="-XX:InitialRAMPercentage=10 -XX:MaxRAMPercentage=75"

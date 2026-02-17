@@ -24,6 +24,7 @@ may be ripe for automation.
 
 =============================================
 Pipeline Directory         : ${workflow.projectDir}
+Run Profile                : ${workflow.profile}
 run ID                     : ${params.run_id}
 input type                 : ${params.input_type}
 input directory            : ${params.input}
@@ -70,19 +71,28 @@ else if (params.input_type == "fastq") {
         .branch{
           sarscov2: it =~ /sarscov-2/
           undet: it =~ /Undetermined/
-          other: true}.set{ reads_for_trimming }
+          other: true}
+          .set{ reads_for_trimming }
   }
   
   else if (params.SE == "YES") {
-        Channel
-        .fromFilePairs( "${params.input}/**${params.single_sample}*_{R1,1}*.f*q.gz")
-        .ifEmpty { error "Cannot find any reads matching: ${params.input}/**${params.single_sample}*_{R1,1}.*f*q.gz" }
-        //.view { "Identified files: $it" }
-        .branch{
-          sarscov2: it =~ /sarscov-2/
-          undet: it =~ /Undetermined/
-          other: true}.set{ reads_for_trimming }
-  }
+      Channel
+        .fromPath("${params.input}/**${params.single_sample}*_{R1,1}*.f*q.gz") 
+        .ifEmpty { error "Cannot find any single-end reads matching: ${params.input}/**${params.single_sample}*.f*q.gz" } 
+        .map { file ->
+        def sample_id = file.name
+                .replaceFirst(/\.f(?:ast)?q\.gz$/, '')
+                .replaceFirst(/_(?:R?1)(?:_001)?$/, '')
+        [ sample_id, file ] }
+        .view { "Identified files: $it" } 
+        .branch {
+          sarscov2: it[0] =~ /sarscov-2/ 
+          undet:    it[0] =~ /Undetermined/ 
+          other:    true 
+          } 
+        .set { reads_for_trimming } 
+      }
+
   }
 
 
@@ -133,7 +143,7 @@ include { make_one_contig }                                  from "./modules/pyt
 include { typing_16S }                                       from "./modules/typing_16S.nf"
 include { abricate }                                         from "./modules/abricate"
 include { summary_sample; merge_summaries }                  from "./modules/summary"
-include { write_software_versions }                          from "./modules/write_software_versions"
+include { write_software_versions; write_versions_per_sample } from "./modules/write_software_versions"
 include { generate_resistance_table; merge_run_resistances } from "./modules/resistance_table"
 include { pymlst_add_strain; pymlst_distance; pymlst_subgraph} from "./modules/pymlst"
 include { mlst}                                               from "./modules/mlst"
@@ -340,14 +350,14 @@ workflow {
       
       checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      // if --skip_checkm flag is set, the input channel will be empty
 
-      // Run tb-profiler for tubercolosis genomes (as identified by metaphlan4)
+      // Run tb-profiler for tuberculosis genomes (as identified by metaphlan4)
       // TBprofiler works based on reads, so it cannot be run when the input is fasta files
       if (params.input_type != "fasta") {
       samples_to_run_tbprofiler_ch = trimm_out.trimmed_reads
-                        .join(metaphlan4_classified.mycobacterium_tubercolosis, remainder: false)
+                        .join(metaphlan4_classified.mycobacterium_tuberculosis, remainder: false)
                         // Only samples where assembly & bacterial classification is true will remain in channel
                         .map { item -> return [item[0], item[1], item[2]]} // Return only the first three elements of the tuple (sample_id, reads)
-      samples_to_run_tbprofiler_ch.view()
+      // samples_to_run_tbprofiler_ch.view()
       
       tbprofiler_out          = tbprofiler(params.skip_tbprofiler? Channel.empty() : samples_to_run_tbprofiler_ch)
       }
@@ -466,8 +476,17 @@ workflow {
                                   all_channels.bcl2fastq_out? bcl2fastq_out.version.first() : empty_version_channel
                                  ).collect()
 
-      write_software_versions(software_version_channel)
+// build the run-level versions file once
+write_software_versions(software_version_channel)
+versions_file_ch = write_software_versions.out.versions_file
 
+// sample ids from the earliest branch
+def sample_ids_ch = reads_for_trimming.other
+    .map { sample_id, reads -> sample_id }
+    .distinct()
+
+// fan-out + publish per sample
+write_versions_per_sample( sample_ids_ch.combine(versions_file_ch) )
 }
 
 

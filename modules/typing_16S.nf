@@ -2,10 +2,6 @@
 *  16S module
 */
 
-//params.CONTAINER = "quay.io/biocontainers/blast:2.12.0--pl5262h3289130_0"
-
-//params.OUTPUT = "typing16s_output"
-
 process typing_16S {
     publishDir("${params.output_dir_sample}/${sample_id}/3_quality/16S", mode: 'copy')
     tag { sample_id }
@@ -26,9 +22,10 @@ process typing_16S {
     #!/bin/bash
 
     DB=`find -L ${params.db_16s} -name "*.nhr" | sed 's/.nhr//'`
-    blastn -db \$DB  -num_threads ${task.cpus} -max_target_seqs 1 -max_hsps 1 \
-           -query ${one_contig} -out ${sample_id}_16S_blast.tab \
-           -outfmt "6 qseqid sseqid stitle qlen slen length pident nident mismatch gaps evalue bitscore"
+    blastn -query ${one_contig} \
+        -db \$DB -num_threads ${task.cpus} -max_target_seqs 1 -max_hsps 1 \
+        -out ${sample_id}_16S_blast.tab \
+        -outfmt "6 qseqid sseqid stitle qlen slen length pident nident mismatch gaps evalue bitscore"
     echo -e NA'\t'NA'\t'NA'\t'NA'\t'NA'\t'NA'\t'NA >> ${sample_id}_16S_blast.tab
 
     echo "16S \$(blastn -version | head -1)" > blastn_16S_vers.txt

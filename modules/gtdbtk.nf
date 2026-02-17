@@ -2,7 +2,7 @@
 * gtdbtk module
 */
 
-//params.CONTAINER = "quay.io/biocontainers/gtdbtk:2.3.2--pyhdfd78af_0"
+//params.CONTAINER = "quay.io-biocontainers-gtdbtk-2.5.2---pyh1f0d9b5_0"
 // For efficiency, multiple genomes are processed at the same time in GTDB and 
 // then results are separated per assembly afterwards
 process gtdbtk_classify_wf {
@@ -37,7 +37,7 @@ process gtdbtk_classify_wf {
   fi
   
   # Process all input files through gtdbtk at the same time:
-  gtdbtk classify_wf --genome_dir . --out_dir gtdbtk_output --prefix gtdbtk_output --cpus ${task.cpus} --mash_db ${params.gtdb_db}/mash_db --extension fasta
+  gtdbtk classify_wf --genome_dir . --out_dir gtdbtk_output --prefix gtdbtk_output --cpus ${task.cpus} --extension fasta
   
   # Make logfiles of each batch unique (prevent overwriting)
   mv gtdbtk_output/gtdbtk.log gtdbtk_output/batch${batch_number}_gtdbtk.log

@@ -17,9 +17,7 @@ process bakta {
 
     script:
     """
-    # Troubleshooting:
-    ls -lh
-    
+    export MPLCONFIGDIR=/tmp/matplotlib
     echo "Running bakta on: ${fasta}"
 
     bakta \\
@@ -31,12 +29,12 @@ process bakta {
         ${fasta}
     
     bakta --version > bakta_version.txt 2>&1
-    
     DB_VERSION=`cat ${params.bakta_db}/version.json | grep "doi" | awk -F '"' '{print \$4}'`
     DB_DATE=`cat ${params.bakta_db}/version.json | grep "date" | awk -F '"' '{print \$4}'`
     echo "Database DOI: \${DB_VERSION} Date: \${DB_DATE}" > database_version.txt
     echo ${task.container} > bakta_singularity.txt
-    cat bakta_version.txt database_version.txt bakta_singularity.txt | tr "\\n" "\\t" > bakta_version_all.txt
+    { grep -m1 '^bakta' bakta_version.txt; cat database_version.txt bakta_singularity.txt; } \
+    | tr '\n' '\t' > bakta_version_all.txt
 
     gzip 2_annotation/*.embl 2_annotation/*.gbff 2_annotation/*.json 2_annotation/*.svg
     """
