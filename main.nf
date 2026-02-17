@@ -350,11 +350,11 @@ workflow {
       
       checkm_out          = checkm(params.skip_checkm? Channel.empty() : samples_to_run_checkM_ch)      // if --skip_checkm flag is set, the input channel will be empty
 
-      // Run tb-profiler for tubercolosis genomes (as identified by metaphlan4)
+      // Run tb-profiler for tuberculosis genomes (as identified by metaphlan4)
       // TBprofiler works based on reads, so it cannot be run when the input is fasta files
       if (params.input_type != "fasta") {
       samples_to_run_tbprofiler_ch = trimm_out.trimmed_reads
-                        .join(metaphlan4_classified.mycobacterium_tubercolosis, remainder: false)
+                        .join(metaphlan4_classified.mycobacterium_tuberculosis, remainder: false)
                         // Only samples where assembly & bacterial classification is true will remain in channel
                         .map { item -> return [item[0], item[1], item[2]]} // Return only the first three elements of the tuple (sample_id, reads)
       // samples_to_run_tbprofiler_ch.view()
