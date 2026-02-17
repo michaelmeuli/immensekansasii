@@ -23,7 +23,7 @@ process rMLST {
     for gene in ${params.db_rMLST}/*.fas
     do
     let counter=counter+1
-    blastn -num_threads ${task.cpus} -db "\$gene" -query ${fasta} -max_target_seqs 100 -max_hsps 1 \
+    blastn -num_threads ${task.cpus} -db "\${gene%%.*}" -query ${fasta} -max_target_seqs 100 -max_hsps 1 \
     -outfmt "6 qseqid sseqid stitle qlen slen length pident nident mismatch gaps evalue bitscore" \
     > rMLST_blast_"\$counter".tab
     done
