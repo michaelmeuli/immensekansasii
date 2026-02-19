@@ -2,8 +2,6 @@
 *  7 gene MLST module
 */
 
-//params.CONTAINER = "quay.io/biocontainers/mlst:2.22.0--hdfd78af_0"
-
 process mlst {
     publishDir("${params.output_dir_sample}/${sample_id}/5_typing/mlst", mode: 'copy')
     tag { sample_id }
@@ -22,7 +20,7 @@ process mlst {
     #!/bin/bash
 
     # Run MLST depending on whether params.mlst_db is set
-    if [! -d ${params.mlst_db}]; then
+    if [ -z "${params.mlst_db}" ] || [ ! -d "${params.mlst_db}" ]; then
         mlst ${fasta} | \
         awk -F'\t' 'BEGIN { print "File\tSchema\tSequence Type\tAlleles" } {
             file=\$1;
@@ -49,8 +47,8 @@ process mlst {
     fi
 
     # Extract key values
-    ST=`tail -n +2 mlst_output_${sample_id}.tsv | cut -f3`
-    ALLELES=`tail -n +2 mlst_output_${sample_id}.tsv | cut -f4`
+    export ST=`tail -n +2 mlst_output_${sample_id}.tsv | cut -f3`
+    export ALLELES=`tail -n +2 mlst_output_${sample_id}.tsv | cut -f4`
 
     # Version info
     echo ${task.container} > mlst_singularity.txt
