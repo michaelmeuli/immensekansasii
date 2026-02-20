@@ -24,22 +24,22 @@ The steps that are included are:
 	* FastQC (0.12.1)
 	* MultiQC (1.23)
 * Assembly
-	* Unicycler (0.5.0)
+	* Unicycler (0.5.1)
 * Post-Assembly QC
 	* Quast (5.0.2)
-	* GenomeQC - BUSCO (5.3.2)
+	* GenomeQC - BUSCO (6.0.0)
 	* CheckM (1.2.2)
 * Taxonomy
-	* GTDB-tk (2.3.2)
+	* GTDB-tk (2.5.2)
 	* Metaphlan4 (4.1.0)
-	* 16S blastn (2.12.0+)
-	* rMLST blastn (2.11.0+)
+	* 16S blastn (2.17.0+)
+	* rMLST blastn (2.17.0+)
 	* pyMLST (2.1.6)
 * Genome annotation
-	* Bakta (1.9.3)
+	* Bakta (1.11.4)
 * Genome inspection (antimicrobial resistance genes, virulence factors)
 	* abricate (1.0.1)
-	* NCBI-AMRfinderplus (3.12.8)
+	* NCBI-AMRfinderplus (4.2.7)
 
 [<img src="IMMENSE_diagram.png" width="800" />](IMMENSE_diagram.png)
 
