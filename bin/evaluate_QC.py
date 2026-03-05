@@ -10,7 +10,7 @@ import os
 
 synonyms = {
     'GC_percent':'GC (%)',
-    'Read_depth':'assembly_coverageDepth',
+    'Read_depth_median':'assembly_coverageDepth',
     'Total_length':'Total length',
     'checkm_contamination':'ContamStatus',
     'Contig_count':'# contigs (>= 0 bp)'
