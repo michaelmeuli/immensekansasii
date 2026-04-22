@@ -63,6 +63,10 @@ The steps that are included are:
 	* [Creating a new config profile for my infrastructure](#Adjusting-the-Config-files)
 	* [Launching the pipeline](#Quickstart)
 		
+# Funding
+
+* [Funding](#Funding)
+
 <a name="Introduction"></a>
 
 # Introduction
@@ -617,6 +621,13 @@ Pat yourself on the shoulder if you made it this far. 🥳
 
 This repository follows the [trunk-based development methodolgy](https://trunkbaseddevelopment.com/) to working with Git. The master branch is continously developed on and should always be in a working state with the newest features. A specific release is published as it's own branch with a version number (such as v1.1.1) so that it can be validated and frozen in time (only urgent bugfixes should be published to these release branches).
 
+# Funding
+
+<a name="Funding"></a>
+
+This resource is supported in part by the National Institute Of Allergy And Infectious Diseases of the National Institutes of Health under grant <a href="https://reporter.nih.gov/search/JHbtQB-XeUu8wvs3vUlFFw/project-details/10913643">n°U24AI183840</a> - <a href="https://pathogendatanetwork.org/">Pathogen Data Network</a>.
+
+DEvelopment integration of hybrid assemblies and plasmid tools is supported by SwissUniversities Call B3.2 under the project <a href="https://www.swissuniversities.ch/fileadmin/swissuniversities/Dokumente/Hochschulpolitik/Open_Science/2025/2025_B3.2_Approved_Projects.pdf">SPSP-FAIR-Bact</a>.
 
 ## License
 
