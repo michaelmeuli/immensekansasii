@@ -371,11 +371,11 @@ workflow {
       lissero_out          = lissero(params.skip_lissero? Channel.empty() : samples_to_run_lissero_ch)
 
       // Run pyMLST based on rMLST species identification
-      /// if (!params.skip_wgmlst) {  
-      ///pymlst_out          = pymlst_add_strain(metaphlan_out.taxa.join(unicycler_out.assembly))
-      ///distance            = pymlst_distance(pymlst_out.summary_specific.join(metaphlan_out.taxa))
-      ///pymlst_subgraph(pymlst_out.summary_specific.join(metaphlan_out.taxa).join(distance.pymlst_distance))
-      ///}
+      if (!params.skip_wgmlst) {  
+      pymlst_out          = pymlst_add_strain(metaphlan_out.taxa.join(unicycler_out.assembly))
+      distance            = pymlst_distance(pymlst_out.summary_specific.join(metaphlan_out.taxa))
+      pymlst_subgraph(pymlst_out.summary_specific.join(metaphlan_out.taxa).join(distance.pymlst_distance))
+      }
       
       mqc_assembly_out    = multiqc_assembly( assembly_stats.stats.collect(), 
                                               annotation.annot_all.collect(), 
@@ -471,7 +471,7 @@ workflow {
                                   all_channels.typ16S? typ16S.version.first() : empty_version_channel,
                                   all_channels.abricate_out? abricate_out.version.first() : empty_version_channel,
                                   all_channels.amrfinderplus_out? amrfinderplus_out.version.first() : empty_version_channel,
-                                  ///all_channels.pymlst_out? pymlst_out.version.first() : empty_version_channel,
+                                  all_channels.pymlst_out? pymlst_out.version.first() : empty_version_channel,
                                   all_channels.mlst_out? mlst_out.version.first() : empty_version_channel,
                                   all_channels.bcl2fastq_out? bcl2fastq_out.version.first() : empty_version_channel
                                  ).collect()
@@ -480,11 +480,9 @@ workflow {
 write_software_versions(software_version_channel)
 versions_file_ch = write_software_versions.out.versions_file
 
-// Check if input is raw reads or assemblies (fasta)
-def sample_ids_ch = (params.input_type != "fasta") ? reads_for_trimming.other
+// sample ids from the earliest branch
+def sample_ids_ch = reads_for_trimming.other
     .map { sample_id, reads -> sample_id }
-    .distinct() : genome
-    .map { sample_id, fasta -> sample_id }
     .distinct()
 
 // fan-out + publish per sample
