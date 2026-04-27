@@ -37,7 +37,7 @@ process gtdbtk_classify_wf {
   fi
   
   # Process all input files through gtdbtk at the same time:
-  gtdbtk classify_wf --genome_dir . --out_dir gtdbtk_output --prefix gtdbtk_output --cpus ${task.cpus} --extension fasta
+  gtdbtk classify_wf --genome_dir . --out_dir gtdbtk_output --tmpdir . --prefix gtdbtk_output --cpus ${task.cpus} --extension fasta
   
   # Make logfiles of each batch unique (prevent overwriting)
   mv gtdbtk_output/gtdbtk.log gtdbtk_output/batch${batch_number}_gtdbtk.log
