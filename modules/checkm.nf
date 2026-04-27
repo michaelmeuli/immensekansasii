@@ -35,7 +35,7 @@ process checkm {
     echo "No .fna files found."
     fi
 
-    checkm lineage_wf --reduced_tree -x fasta \$PWD "results/" > checkm_output.tsv
+    checkm lineage_wf --reduced_tree -t ${task.cpus} -x fasta \$PWD "results/" > checkm_output.tsv
 
     echo "checkM" \$(checkm -h | grep '...:::' | grep -oE 'v[0-9]+\\.[0-9]+\\.[0-9]+') > checkm_vers.txt
     echo ${task.container} > checkm_singularity.txt
