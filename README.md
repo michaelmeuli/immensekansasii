@@ -386,8 +386,10 @@ To run on UZH's S3IT cluster, we use the `s3it.config`. To run locally on the IM
 
 To run the pipeline somewhere else (or if the setup changes) create a new "profile" by copying one of the existing `.config` files and changing the profile name and the **database paths** and any other settings you need. If using the `run_IMMENSE.sh` script to submit the pipeline to the SLURM scheduler, also update the `-profile` argument in the `bin/submit_to_cluster.sh` script which contains the nextflow command.
 
+For very big runs, the scheduler can be overwhelmed by thousands of jobs being fanned and queued into channels all at once. To prevent this we use the option `MaxForks` to cap simultaneous processes. The more resource intensive the process, the lower the fork cap should be. Remember, the fastest pipeline is not the one who parallelizes the most, but the one with the most efficient steady-state flow.
 
-### Download Singular containers
+
+### Download containers
 Get all the required singularity images. Either locally or by starting an interactive SLURM session if you're on a cluster: (login node will run out of memory)
 
 ```
