@@ -13,6 +13,7 @@ params.skip_busco = false
 params.skip_wgmlst = false
 params.skip_tbprofiler = false
 params.skip_lissero = false
+params.skip_kansasii_phylo = false
 
 // this prints the input parameters
 log.info """
@@ -153,6 +154,7 @@ include { bwaAlign_insertsize_coverage; bwaAlign_insertsize_coverageSE } from ".
 include { tbprofiler         }                                from "./modules/tbprofiler"
 include { lissero         }                                   from "./modules/lissero"
 include { insilicoseq         }                               from "./modules/insilicoseq"
+include { kansasii_snippy; kansasii_snippy_core; kansasii_tree } from "./modules/kansasii_phylo"
 
 /*
 * main workflow
@@ -313,8 +315,36 @@ workflow {
       // gtdb_out_batched_argumented.view()
       // Extract GTDB results for each individual assembly
       gtdb_out = extract_gtdb_output( gtdb_out_batched_argumented )
+
+      // Reference-based SNP phylogeny for the Mycobacterium kansasii complex.
+      // GTDB already resolves species-level identity within the complex via ANI,
+      // but strain-level relatedness needs a real SNP tree, so samples whose GTDB
+      // species falls in this complex get mapped against a curated, species-specific
+      // reference with Snippy. Results accumulate in a persistent per-species
+      // directory across runs (mirroring pyMLST's cgMLST db), and snippy-core +
+      // IQ-TREE rebuild the core-SNP alignment/tree from all accumulated isolates.
+      if (!params.skip_kansasii_phylo) {
+      def kansasii_complex_species = [
+        'Mycobacterium kansasii',
+        'Mycobacterium persicum',
+        'Mycobacterium pseudokansasii',
+        'Mycobacterium innocens',
+        'Mycobacterium attenuatum',
+        'Mycobacterium ostraviense',
+        'Mycobacterium gastri'
+      ]
+
+      samples_to_run_kansasii_ch = unicycler_out.assembly
+                        .join(gtdb_out.species.filter { sample_id, species -> species in kansasii_complex_species }, remainder: false)
+                        .map { item -> return [item[0], item[1], item[2]] } // sample_id, assembly, species
+
+      kansasii_snippy_out = kansasii_snippy(samples_to_run_kansasii_ch)
+      kansasii_species_ch = kansasii_snippy_out.done.map { sample_id, species -> species }.unique()
+      kansasii_core_out   = kansasii_snippy_core(kansasii_species_ch)
+      kansasii_tree(kansasii_core_out.core_aln)
       }
-      
+      }
+
       typing_rMLST        = rMLST(unicycler_out.assembly)
       rmlst_out           = rMLST_call(typing_rMLST.blast_tabs)
       one_contig          = make_one_contig(unicycler_out.assembly)
@@ -462,6 +492,7 @@ workflow {
                                   all_channels.assembly_stats? assembly_stats.version.first() : empty_version_channel,
                                   all_channels.mqc_assembly_out? mqc_assembly_out.version : empty_version_channel, // first() not needed - only runs once
                                   all_channels.gtdb_out_batched? gtdb_out_batched.version.first() : empty_version_channel,
+                                  all_channels.kansasii_snippy_out? kansasii_snippy_out.version.first() : empty_version_channel,
                                   all_channels.mapping_processes? mapping_processes.version_bwa_index.first() : empty_version_channel,
                                   all_channels.mapping_processes? mapping_processes.version_samtools.first() : empty_version_channel,
                                   all_channels.mapping_processes? mapping_processes.version_pilon.first() : empty_version_channel,
