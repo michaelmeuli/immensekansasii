@@ -30,7 +30,7 @@ The steps that are included are:
 	* GenomeQC - BUSCO (6.0.0)
 	* CheckM (1.2.2)
 * Taxonomy
-	* GTDB-tk (2.5.2)
+	* GTDB-tk (2.7.2)
 	* Metaphlan4 (4.1.0)
 	* 16S blastn (2.17.0+)
 	* rMLST blastn (2.17.0+)
@@ -454,16 +454,14 @@ busco --download "all" --download_path /path/to/immense_dependencies/busco_downl
 #### GTDBtk
 
 ```{bash}
-# To download the GTDBtk r207v2 dataset we used the following paths
-mkdir -p /path/to/immense_dependencies/gtdb/gtdbtk_r207_v2
-cd /path/to/immense_dependencies/gtdb/gtdbtk_r207_v2
+# To download the GTDBtk r232 dataset we used the following paths
+mkdir -p /path/to/immense_dependencies/gtdb/release_r232
+cd /path/to/immense_dependencies/gtdb/release_r232
 
-wget https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/auxillary_files/gtdbtk_r207_v2_data.tar.gz
-
-# Alternative mirror if the first url is too slow: https://data.gtdb.ecogenomic.org/releases/release207/207.0/auxillary_files/gtdbtk_r207_v2_data.tar.gz
+wget https://data.gtdb.ecogenomic.org/releases/release232/232.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r232_data.tar.gz
 
 # Unpack the dataset:
-tar xvzf gtdbtk_r207_v2_data.tar.gz
+tar xvzf gtdbtk_r232_data.tar.gz
 ```
 
 #### NCBI 16S Database:
