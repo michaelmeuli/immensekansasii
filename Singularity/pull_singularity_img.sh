@@ -29,3 +29,5 @@ singularity build --sandbox ${INSTALL_PATH}/pbieber-bwa-pilon-samtools-python-2.
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-tb-profiler-6.3.0--pyhdfd78af_0.img docker://quay.io/biocontainers/tb-profiler:6.3.0--pyhdfd78af_0
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-lissero-0.4.9--py_0.img docker://quay.io/biocontainers/lissero:0.4.9--py_0
 singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-insilicoseq-2.0.0--pyh7cba7a3_0.img docker://quay.io/biocontainers/insilicoseq:2.0.0--pyh7cba7a3_0
+singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-snippy-4.6.0--hdfd78af_6.img docker://quay.io/biocontainers/snippy:4.6.0--hdfd78af_6
+singularity build --sandbox ${INSTALL_PATH}/quay.io-biocontainers-iqtree-3.1.3--h8471819_0.img docker://quay.io/biocontainers/iqtree:3.1.3--h8471819_0
