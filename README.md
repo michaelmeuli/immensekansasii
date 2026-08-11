@@ -231,11 +231,11 @@ Depending on the reads use **fq_PE** or **fq_SE** for the **input_type**:
 
 Provide the absolute path to the **"reads" folder**, for example 
 ``` 
-/shares/amr.imm.uzh/data/illumina/routine/runQC/run500/reads 
+/shares/sander.imm.uzh/data/illumina/routine/runQC/run500/reads 
 ```  
 or for a single species
 ``` 
-/shares/amr.imm.uzh/data/illumina/routine/run500/reads/esccol 
+/shares/sander.imm.uzh/data/illumina/routine/run500/reads/esccol 
 ``` 
 > The pipeline uses the parent directory name that contains the *fastq.gz* files as the predicted species name. If you don't follow this convention, the expected species will be meaningless but everything should still work.
 
