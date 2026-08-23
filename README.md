@@ -434,11 +434,11 @@ The following databases/files are required (see below how to install/download):
 
 # The easiest way to download metaphlan4 database is to use metaphlan4 (depending on your system you may have to start an interactive SLURM session)
 
-conda activate env_immense
+module load apptainer
 
-singularity shell path/to/singularity/containers/quay.io-biocontainers-metaphlan-4.1.0--pyhca03a8a_0.img 
+apptainer shell /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/containers/quay.io-biocontainers-metaphlan-4.1.0--pyhca03a8a_0.img 
 
-cd path/to/immense_dependencies/metaphlan4/database # where you want the database to exist
+cd /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/metaphlan/Metaphlan4_Jun23 # where you want the database to exist
 
 # To download the June 2023 database use the following command
 metaphlan --bowtie2db mpa_vJun23_CHOCOPhlAnSGB_202307 --install
