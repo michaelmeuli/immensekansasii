@@ -2,8 +2,6 @@
 *  BUSCO module
 */
 
-//params.CONTAINER = "ezlabgva-busco_v5.3.2_cv1"
-
 process busco {
     publishDir("${params.output_dir_sample}/${sample_id}/3_quality/BUSCO", pattern: "${sample_id}/short_summary*.txt", mode: 'copy')
     tag { sample_id }

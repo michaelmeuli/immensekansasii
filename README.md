@@ -447,9 +447,20 @@ metaphlan --bowtie2db mpa_vJun23_CHOCOPhlAnSGB_202307 --install
 #### BUSCO
 
 ```{bash}
-singularity shell path/to/immense_dependencies/singularity/ezlabgva-busco_v5.3.2_cv1.img
+module load apptainer
+
+apptainer shell path/to/immense_dependencies/singularity/quay.io-biocontainers-busco-6.0.0--pyhdfd78af_2.img
 busco --download "all" --download_path /path/to/immense_dependencies/busco_downloads
 ```
+
+```{bash}
+# Since busco --download didn't work:
+
+curl -L -o /tmp/mycobacterium_odb12.tar.gz https://busco-data.ezlab.org/v5/data/lineages/mycobacterium_odb12.2026-05-22.tar.gz
+cd /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/busco/lineages/
+tar -xzf /tmp/mycobacterium_odb12.tar.gz
+```
+
 
 #### GTDBtk
 
