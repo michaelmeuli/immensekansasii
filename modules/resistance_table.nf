@@ -2,8 +2,6 @@
 *  Resistance table module
 */
 
-//params.CONTAINER = "ezlabgva-busco_v5.3.2_cv1" // this includes python and pandas library
-
 process generate_resistance_table {
     publishDir("${params.output_dir_sample}/${sample_id}/4_resistance_virulence/01_Abricate", mode: 'copy')
     tag { "${params.run_id}" }

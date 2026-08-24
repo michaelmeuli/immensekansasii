@@ -434,11 +434,11 @@ The following databases/files are required (see below how to install/download):
 
 # The easiest way to download metaphlan4 database is to use metaphlan4 (depending on your system you may have to start an interactive SLURM session)
 
-conda activate env_immense
+module load apptainer
 
-singularity shell path/to/singularity/containers/quay.io-biocontainers-metaphlan-4.1.0--pyhca03a8a_0.img 
+apptainer shell /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/containers/quay.io-biocontainers-metaphlan-4.1.0--pyhca03a8a_0.img 
 
-cd path/to/immense_dependencies/metaphlan4/database # where you want the database to exist
+cd /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/metaphlan/Metaphlan4_Jun23 # where you want the database to exist
 
 # To download the June 2023 database use the following command
 metaphlan --bowtie2db mpa_vJun23_CHOCOPhlAnSGB_202307 --install
@@ -447,9 +447,20 @@ metaphlan --bowtie2db mpa_vJun23_CHOCOPhlAnSGB_202307 --install
 #### BUSCO
 
 ```{bash}
-singularity shell path/to/immense_dependencies/singularity/ezlabgva-busco_v5.3.2_cv1.img
+module load apptainer
+
+apptainer shell path/to/immense_dependencies/singularity/quay.io-biocontainers-busco-6.0.0--pyhdfd78af_2.img
 busco --download "all" --download_path /path/to/immense_dependencies/busco_downloads
 ```
+
+```{bash}
+# Since busco --download didn't work:
+
+curl -L -o /tmp/mycobacterium_odb12.tar.gz https://busco-data.ezlab.org/v5/data/lineages/mycobacterium_odb12.2026-05-22.tar.gz
+cd /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/busco/lineages/
+tar -xzf /tmp/mycobacterium_odb12.tar.gz
+```
+
 
 #### GTDBtk
 
