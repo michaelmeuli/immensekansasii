@@ -128,7 +128,7 @@ done < type_strains_final_rows.tsv | sort -u >> type_strains_ena_biosample_speci
 # M. kansasii's two attached assemblies (2013 + 2024 resequencing) don't
 # both get downloaded, only the GTDB-representative one does.
 # ---------------------------------------------------------------------
-REFDIR=/shares/sander.imm.uzh/MM/kansasii/data/reference_genomes_gtdb_226
+REFDIR=/shares/sander.imm.uzh/MM/kansasii/data/reference_genomes_gtdb_232
 mkdir -p "$REFDIR"
 
 tail -n +2 type_strains_ena_biosample_species.tsv | cut -f1 | while read -r acc; do
