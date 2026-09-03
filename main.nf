@@ -481,9 +481,11 @@ write_software_versions(software_version_channel)
 versions_file_ch = write_software_versions.out.versions_file
 
 // sample ids from the earliest branch
-def sample_ids_ch = (params.input_type == "fasta")
-    ? genome.map { sample_id, fasta -> sample_id }.distinct()
-    : reads_for_trimming.other.map { sample_id, reads -> sample_id }.distinct()
+if (params.input_type == "fasta") {
+    sample_ids_ch = genome.map { sample_id, fasta -> sample_id }.distinct()
+} else {
+    sample_ids_ch = reads_for_trimming.other.map { sample_id, reads -> sample_id }.distinct()
+}
 
 // fan-out + publish per sample
 write_versions_per_sample( sample_ids_ch.combine(versions_file_ch) )
