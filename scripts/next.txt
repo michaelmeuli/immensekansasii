@@ -1,0 +1,44 @@
+~/kansasii/data/gtdb_genomes/Mycobacterium_attenuatum/ncbi_dataset/data$ ll
+total 18
+drwxrwsr-x 6 mimeul s3it_t_hpc_sander.imm.uzh 39754254 Aug 24 13:51 ./
+drwxrwsr-x 3 mimeul s3it_t_hpc_sander.imm.uzh 39754254 Aug 24 13:51 ../
+-rw------- 1 mimeul s3it_t_hpc_sander.imm.uzh    16164 Aug 24 07:51 assembly_data_report.jsonl
+-rw------- 1 mimeul s3it_t_hpc_sander.imm.uzh     1641 Aug 24 07:51 dataset_catalog.json
+drwxrwsr-x 2 mimeul s3it_t_hpc_sander.imm.uzh  9322588 Aug 24 13:51 GCA_002086865.1/
+drwxrwsr-x 2 mimeul s3it_t_hpc_sander.imm.uzh 10009678 Aug 24 13:51 GCF_900566065.1/
+drwxrwsr-x 2 mimeul s3it_t_hpc_sander.imm.uzh 10349909 Aug 24 13:51 GCF_900566085.1/
+drwxrwsr-x 2 mimeul s3it_t_hpc_sander.imm.uzh 10054274 Aug 24 13:51 GCF_900566105.1/
+~/kansasii/data/gtdb_genomes/Mycobacterium_attenuatum/ncbi_dataset/data$ cd GCA_002086865.1/
+~/kansasii/data/gtdb_genomes/Mycobacterium_attenuatum/ncbi_dataset/data/GCA_002086865.1$ ll
+total 9105
+drwxrwsr-x 2 mimeul s3it_t_hpc_sander.imm.uzh  9322588 Aug 24 13:51 ./
+drwxrwsr-x 6 mimeul s3it_t_hpc_sander.imm.uzh 39754254 Aug 24 13:51 ../
+-rw------- 1 mimeul s3it_t_hpc_sander.imm.uzh  6598173 Aug 24 07:51 GCA_002086865.1_ASM208686v1_genomic.fna
+-rw------- 1 mimeul s3it_t_hpc_sander.imm.uzh  2724415 Aug 24 07:51 genomic.gff
+~/kansasii/data/gtdb_genomes/Mycobacterium_attenuatum/ncbi_dataset/data/GCA_002086865.1$
+~/kansasii/data/gtdb_genomes/Mycobacterium_attenuatum/ncbi_dataset/data/GCA_002086865.1$ readlink -f .
+/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacterium_attenuatum/ncbi_dataset/data/GCA_002086865.1
+~/kansasii/data/gtdb_genomes/Mycobacterium_attenuatum/ncbi_dataset/data/GCA_002086865.1$
+
+~/kansasii/data$ ll
+total 0
+drwxrwsr-x 5 mimeul s3it_t_hpc_sander.imm.uzh  998926801 Aug 26 10:14 ./
+drwxrwsr-x 7 mimeul s3it_t_hpc_sander.imm.uzh 6618750203 Aug 22 11:09 ../
+drwxrwsr-x 9 mimeul s3it_t_hpc_sander.imm.uzh  909559541 Aug 24 13:51 gtdb_genomes/
+drwxrwsr-x 2 mimeul s3it_t_hpc_sander.imm.uzh   44683630 Aug 26 10:14 reference_genomes_gtdb_226/
+drwxrwsr-x 2 mimeul s3it_t_hpc_sander.imm.uzh   44683630 Aug 26 10:13 reference_genomes_gtdb_232/
+~/kansasii/data$ cd reference_genomes_gtdb_232/
+~/kansasii/data/reference_genomes_gtdb_232$ ll
+total 43638
+drwxrwsr-x 2 mimeul s3it_t_hpc_sander.imm.uzh  44683630 Aug 26 10:13 ./
+drwxrwsr-x 5 mimeul s3it_t_hpc_sander.imm.uzh 998926801 Aug 26 10:14 ../
+-rw-rw-r-- 1 mimeul s3it_t_hpc_sander.imm.uzh   6687022 Aug 26 10:12 GCA_000157895.2.fasta
+-rw-rw-r-- 1 mimeul s3it_t_hpc_sander.imm.uzh   6324660 Aug 26 10:12 GCA_002086675.1.fasta
+-rw-rw-r-- 1 mimeul s3it_t_hpc_sander.imm.uzh   5931130 Aug 26 10:12 GCA_002102175.1.fasta
+-rw-rw-r-- 1 mimeul s3it_t_hpc_sander.imm.uzh   6225824 Aug 26 10:12 GCA_002705925.1.fasta
+-rw-rw-r-- 1 mimeul s3it_t_hpc_sander.imm.uzh   6323832 Aug 26 10:13 GCA_900566055.1.fasta
+-rw-rw-r-- 1 mimeul s3it_t_hpc_sander.imm.uzh   6533064 Aug 26 10:13 GCA_900566075.1.fasta
+-rw-rw-r-- 1 mimeul s3it_t_hpc_sander.imm.uzh   6658098 Aug 26 10:13 GCA_900566085.1.fasta
+~/kansasii/data/reference_genomes_gtdb_232$ readlink -f .
+/shares/sander.imm.uzh/MM/kansasii/data/reference_genomes_gtdb_232
+~/kansasii/data/reference_genomes_gtdb_232$

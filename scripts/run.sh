@@ -21,3 +21,8 @@ tar -xf archive.tar
 # tar -xf htmls.tar
 
 # ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output && tar --exclude='./*/work' -cf /tmp/archive.tar ."
+
+
+mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/reference_genomes_gtdb_232
+cd /shares/sander.imm.uzh/MM/kansasii/output/reference_genomes_gtdb_232
+bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii/run_IMMENSE.sh -j ref_232_run -t fasta -r ref_run -i /shares/sander.imm.uzh/MM/kansasii/data/reference_genomes_gtdb_232/

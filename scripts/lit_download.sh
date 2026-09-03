@@ -13,3 +13,9 @@ scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/lit/gtdb/type_
 
 scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/lit/gtdb/type_strains_ena_biosample_species.tsv "$env:USERPROFILE\kansasii\downloads\"
 
+scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/lit/gtdb/gtdb232/type_strains_candidates.tsv "$env:USERPROFILE\kansasii\downloads\"
+
+scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/lit/gtdb/gtdb232/kansasii_complex_rows_metadata_type_strains.tsv "$env:USERPROFILE\kansasii\downloads\"
+
+
+scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/lit/gtdb/gtdb232/mycobacteriaceae_rows_metadata.tsv "$env:USERPROFILE\kansasii\downloads\"

@@ -79,6 +79,8 @@ TAX_COL=$(head -1 bac120_metadata_r232.tsv | tr '\t' '\n' | grep -n '^gtdb_taxon
 REPR_COL=$(head -1 bac120_metadata_r232.tsv | tr '\t' '\n' | grep -n '^gtdb_genome_representative$' | cut -d: -f1)
 ASSEMNAME_COL=$(head -1 bac120_metadata_r232.tsv | tr '\t' '\n' | grep -n '^ncbi_assembly_name$' | cut -d: -f1)
 
+#gtdb_representative
+
 # NB: use awk with field-index variables here, not `cut -f1,a,b,c,d` --
 # cut always emits fields in ascending column-number order regardless of
 # the order listed, so pulling several out-of-order columns that way
