@@ -1,0 +1,4 @@
+https://pubmlst.org/bigsdb?db=pubmlst_mycobacteria_seqdef&page=downloadProfiles&scheme_id=2
+
+curl https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes
+curl https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes/2

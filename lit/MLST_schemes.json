@@ -1,0 +1,73 @@
+{
+    "schemes": [
+        {
+            "scheme": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes/1",
+            "description": "Core genome (H37Rv ref vs 19 finished species)"
+        },
+        {
+            "description": "MLST",
+            "scheme": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes/2"
+        },
+        {
+            "scheme": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes/3",
+            "description": "MTBC cgMLST"
+        },
+        {
+            "description": "De novo purine biosynthesis pathway",
+            "scheme": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes/12"
+        },
+        {
+            "scheme": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes/13",
+            "description": "mAGP complex pathway"
+        },
+        {
+            "scheme": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes/4",
+            "description": "M. avium cgMLST"
+        },
+        {
+            "description": "Meromycolic acid biosynthesis",
+            "scheme": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes/11"
+        },
+        {
+            "description": "Meromycolic acid biosynthesis, FAS II",
+            "scheme": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes/10"
+        }
+    ],
+    "records": 8
+}
+
+
+{
+    "profiles": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes/2/profiles",
+    "profiles_csv": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes/2/profiles_csv",
+    "locus_count": 8,
+    "last_updated": "2026-09-01",
+    "primary_key_field": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes/2/fields/ST",
+    "last_added": "2026-09-01",
+    "allow_presence": false,
+    "fields": [
+        "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes/2/fields/species",
+        "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes/2/fields/ST"
+    ],
+    "curators": [
+        "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/users/3",
+        "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/users/64"
+    ],
+    "has_primary_key_field": true,
+    "id": 2,
+    "description": "MLST",
+    "allow_missing_loci": false,
+    "records": 1148,
+    "display_order": 1,
+    "loci": [
+        "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/loci/S14Z",
+        "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/loci/L35",
+        "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/loci/S19",
+        "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/loci/L19",
+        "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/loci/S12",
+        "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/loci/S8",
+        "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/loci/L16",
+        "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/loci/S7"
+    ],
+    "message": "Please note that you are currently restricted to accessing data that was submitted on or prior to 2024-12-31. Please authenticate to access the full dataset."
+}
