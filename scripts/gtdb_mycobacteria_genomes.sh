@@ -42,14 +42,22 @@ awk -F'\t' -v OFS='\t' \
 
 
 OUTDIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae"
+CHUNK_SIZE=500
+MAX_RETRIES=3
 
 # unlike gtdb-adv-search-genomes.sh, this script isn't split per named
 # species -- mycobacteriaceae_selected_columns.tsv already covers the
-# whole family, so this downloads it as a single batch instead of looping
-# over a SPECIES_NAME table
+# whole family, so this loops over accession chunks instead of a
+# SPECIES_NAME table. A single ~18.6k-accession request produces a >30GB
+# zip that NCBI's server has been failing to assemble ("Internal error
+# (invalid zip archive)") partway through validation -- splitting into
+# chunks keeps each request well under the size where that happens, and
+# means a failed chunk only costs a re-download of that chunk, not
+# everything.
 download_species() {
   local accfile="mycobacteriaceae_accessions.txt"
   local dest="$OUTDIR"
+  local chunkdir="$dest/.accession_chunks"
 
   # GTDB accessions are prefixed with a 3-char source flag ("RS_"/"GB_")
   # that NCBI's `datasets` CLI doesn't accept -- strip it to get the bare
@@ -57,14 +65,34 @@ download_species() {
   tail -n +2 mycobacteriaceae_rows_metadata.tsv | cut -f1 | cut -c4- > "$accfile"
 
   if [ ! -s "$accfile" ]; then
-    echo "SKIP: no accessions found in mycobacteriaceae_selected_columns.tsv" >&2
+    echo "SKIP: no accessions found in mycobacteriaceae_rows_metadata.tsv" >&2
     return
   fi
 
-  mkdir -p "$dest"
-  echo "-- Mycobacteriaceae: downloading $(wc -l < "$accfile") accession(s) --"
-  datasets download genome accession --inputfile "$accfile" --include gff3,genome --filename "$dest/mycobacteriaceae.zip"
-  unzip -o -q "$dest/mycobacteriaceae.zip" -d "$dest"
+  mkdir -p "$dest" "$chunkdir"
+  echo "-- Mycobacteriaceae: downloading $(wc -l < "$accfile") accession(s) in chunks of $CHUNK_SIZE --"
+  split -d -a 4 -l "$CHUNK_SIZE" "$accfile" "$chunkdir/chunk_"
+
+  local chunk zip attempt ok
+  for chunk in "$chunkdir"/chunk_*; do
+    zip="$chunk.zip"
+    ok=0
+    for attempt in $(seq 1 "$MAX_RETRIES"); do
+      echo "-- chunk $(basename "$chunk"): attempt $attempt/$MAX_RETRIES ($(wc -l < "$chunk") accession(s)) --"
+      if datasets download genome accession --inputfile "$chunk" --include gff3,genome --filename "$zip" \
+        && unzip -o -q "$zip" -d "$dest"; then
+        ok=1
+        break
+      fi
+      echo "chunk $(basename "$chunk") failed on attempt $attempt" >&2
+      rm -f "$zip"
+    done
+    if [ "$ok" -ne 1 ]; then
+      echo "ERROR: chunk $(basename "$chunk") failed after $MAX_RETRIES attempts" >&2
+      return 1
+    fi
+    rm -f "$zip"
+  done
 }
 
 download_species

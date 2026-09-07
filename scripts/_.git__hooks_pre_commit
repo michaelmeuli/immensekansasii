@@ -1,0 +1,6 @@
+#!/bin/sh
+# Auto-mark staged .sh files as executable in git's index so they arrive
+# on the cluster already runnable, without a manual chmod there.
+git diff --cached --name-only --diff-filter=ACM | grep '\.sh$' | while read -r f; do
+    git update-index --chmod=+x "$f"
+done
