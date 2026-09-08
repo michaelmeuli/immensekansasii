@@ -40,6 +40,16 @@ awk -F'\t' -v OFS='\t' \
   '{print $acc, $repr, $gtdbrep, $tax, $gtype, $an, $bs, $ntype}' \
   mycobacteriaceae_rows_metadata.tsv > mycobacteriaceae_selected_columns.tsv
 
+# gtdb_type_designation_ncbi_taxa is the 5th column in mycobacteriaceae_selected_columns.tsv
+awk -F'\t' -v OFS='\t' 'NR==1 || $5=="type strain of species"' \
+  mycobacteriaceae_selected_columns.tsv > mycobacteriaceae_type_strains.tsv
+
+SPECIES_PATTERN='s__Mycobacterium (kansasii|persicum|pseudokansasii|innocens|attenuatum|ostraviense|gastri)'
+(head -1 mycobacteriaceae_type_strains.tsv; grep -E "$SPECIES_PATTERN" mycobacteriaceae_type_strains.tsv) > kansasii_complex_type_strains.tsv
+
+
+
+
 
 OUTDIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae"
 CHUNK_SIZE=500

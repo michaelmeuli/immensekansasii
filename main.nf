@@ -319,10 +319,10 @@ workflow {
       // Reference-based SNP phylogeny for the Mycobacterium kansasii complex.
       // GTDB already resolves species-level identity within the complex via ANI,
       // but strain-level relatedness needs a real SNP tree, so samples whose GTDB
-      // species falls in this complex get mapped against a curated, species-specific
-      // reference with Snippy. Results accumulate in a persistent per-species
-      // directory across runs (mirroring pyMLST's cgMLST db), and snippy-core +
-      // IQ-TREE rebuild the core-SNP alignment/tree from all accumulated isolates.
+      // species falls in this complex get mapped against a single shared reference
+      // with Snippy. Results accumulate in a persistent database across runs
+      // (mirroring pyMLST's cgMLST db), and snippy-core + IQ-TREE rebuild one
+      // combined core-SNP alignment/tree across all accumulated complex isolates.
       if (!params.skip_kansasii_phylo) {
       def kansasii_complex_species = [
         'Mycobacterium kansasii',
@@ -339,8 +339,7 @@ workflow {
                         .map { item -> return [item[0], item[1], item[2]] } // sample_id, assembly, species
 
       kansasii_snippy_out = kansasii_snippy(samples_to_run_kansasii_ch)
-      kansasii_species_ch = kansasii_snippy_out.done.map { sample_id, species -> species }.unique()
-      kansasii_core_out   = kansasii_snippy_core(kansasii_species_ch)
+      kansasii_core_out   = kansasii_snippy_core(kansasii_snippy_out.done.collect())
       kansasii_tree(kansasii_core_out.core_aln)
       }
       }
