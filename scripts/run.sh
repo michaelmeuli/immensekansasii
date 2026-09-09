@@ -34,3 +34,31 @@ New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii\downloads\referenc
 scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/archive.tar "$env:USERPROFILE\kansasii\downloads\reference_genomes_gtdb_232\"
 cd "$env:USERPROFILE\kansasii\downloads\reference_genomes_gtdb_232\"
 tar -xf archive.tar
+
+
+
+
+# -i only takes a single directory (the pipeline recurses through it with
+# **/*.{fasta,fna}), so it can't be handed a glob of per-genome dirs -- only
+# the first match would ever be used. Build a flat directory of symlinks,
+# one per accession listed in mycobacterium_representative_type_strain_accessions.txt,
+# and point -i at that instead.
+ACCESSIONS_FILE="/shares/sander.imm.uzh/MM/kansasii/lit/gtdb/gtdb232/mycobacterium_representative_type_strain_accessions.txt"
+GENOME_DATA_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data"
+SELECTED_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/selected_type_strains"
+
+mkdir -p "$SELECTED_DIR"
+while read -r acc; do
+  [ -z "$acc" ] && continue
+  acc=$(echo "$acc" | cut -c4-)  # strip RS_/GB_ source-flag prefix
+  src=$(find "$GENOME_DATA_DIR/$acc" -maxdepth 1 \( -name '*.fna' -o -name '*.fasta' \) | head -1)
+  if [ -z "$src" ]; then
+    echo "WARNING: no fasta/fna found for $acc" >&2
+    continue
+  fi
+  ln -sf "$src" "$SELECTED_DIR/$acc.fasta"
+done < "$ACCESSIONS_FILE"
+
+mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/tree_run
+cd /shares/sander.imm.uzh/MM/kansasii/output/tree_run
+bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii/run_IMMENSE.sh -j job_tree_run -t fasta -r tree_run -i "$SELECTED_DIR"

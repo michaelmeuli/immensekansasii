@@ -43,5 +43,5 @@ drwxrwsr-x 5 mimeul s3it_t_hpc_sander.imm.uzh 998926801 Aug 26 10:14 ../
 /shares/sander.imm.uzh/MM/kansasii/data/reference_genomes_gtdb_232
 ~/kansasii/data/reference_genomes_gtdb_232$
 
-/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data/GCF_000157895.3/GCF_000157895.3_ASM15789v2_genomic.fna
-/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data/GCF_000157895.3/genomic.gff
+
+/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data/GCF_00015/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data/GCF_000157895.3/GCF_000157895.3_ASM15789v2_genomic.fna7895.3/genomic.gff

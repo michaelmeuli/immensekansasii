@@ -48,7 +48,18 @@ SPECIES_PATTERN='s__Mycobacterium (kansasii|persicum|pseudokansasii|innocens|att
 (head -1 mycobacteriaceae_type_strains.tsv; grep -E "$SPECIES_PATTERN" mycobacteriaceae_type_strains.tsv) > kansasii_complex_type_strains.tsv
 
 
-
+# Mycobacterium (genus-level, not just family) GTDB species-representative
+# genomes, accession only, with the RS_/GB_ source-flag prefix stripped
+# (e.g. RS_GCF_002102175.1 -> GCF_002102175.1). Not filtered on type-strain
+# designation: GTDB picks the representative by assembly quality, so it's
+# often a different (better) genome than the one NCBI flags as the type
+# strain -- requiring both conditions at once returns an empty set.
+MYCOBACTERIUM_PATTERN='g__Mycobacterium'
+awk -F'\t' -v OFS='\t' \
+  -v acc="$ACCESSION" -v tax="$TAX_COL" -v gtdbrep="$GTDB_REP_COL" \
+  -v pat="$MYCOBACTERIUM_PATTERN" \
+  '$tax ~ pat && $gtdbrep == "t" {print $acc}' \
+  mycobacteriaceae_rows_metadata.tsv | cut -c4- > mycobacterium_representative_accessions.txt
 
 
 OUTDIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae"
