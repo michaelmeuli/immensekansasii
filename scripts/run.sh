@@ -9,15 +9,15 @@ bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii/run_IMMENSE.sh -j test_r
 
 
 ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output && tar --exclude='work' -cf /tmp/archive.tar ."
-scp mimeul@cluster.s3it.uzh.ch:/tmp/archive.tar "$env:USERPROFILE\kansasii\downloads\"
-cd "$env:USERPROFILE\kansasii\downloads"
+scp mimeul@cluster.s3it.uzh.ch:/tmp/archive.tar "$env:USERPROFILE\kansasii_C\downloads\"
+cd "$env:USERPROFILE\kansasii_C\downloads"
 tar -xf archive.tar
 
 
 
 # ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output && find . -name '*.html' | tar -cf /tmp/htmls.tar -T -"
-# scp mimeul@cluster.s3it.uzh.ch:/tmp/htmls.tar "$env:USERPROFILE\kansasii\downloads\"
-# cd "$env:USERPROFILE\kansasii\downloads"
+# scp mimeul@cluster.s3it.uzh.ch:/tmp/htmls.tar "$env:USERPROFILE\kansasii_C\downloads\"
+# cd "$env:USERPROFILE\kansasii_C\downloads"
 # tar -xf htmls.tar
 
 # ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output && tar --exclude='./*/work' -cf /tmp/archive.tar ."
@@ -30,9 +30,9 @@ bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii/run_IMMENSE.sh -j ref_23
 
 ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
 ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output/reference_genomes_gtdb_232 && tar --exclude='work' -cf /shares/sander.imm.uzh/MM/kansasii/output/archive.tar ."
-New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii\downloads\reference_genomes_gtdb_232\" -Force
-scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/archive.tar "$env:USERPROFILE\kansasii\downloads\reference_genomes_gtdb_232\"
-cd "$env:USERPROFILE\kansasii\downloads\reference_genomes_gtdb_232\"
+New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\reference_genomes_gtdb_232\" -Force
+scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/archive.tar "$env:USERPROFILE\kansasii_C\downloads\reference_genomes_gtdb_232\"
+cd "$env:USERPROFILE\kansasii_C\downloads\reference_genomes_gtdb_232\"
 tar -xf archive.tar
 
 
@@ -62,3 +62,27 @@ done < "$ACCESSIONS_FILE"
 mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/tree_run
 cd /shares/sander.imm.uzh/MM/kansasii/output/tree_run
 bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii/run_IMMENSE.sh -j job_tree_run -t fasta -r tree_run -i "$SELECTED_DIR"
+
+
+
+ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
+ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output/tree_run && tar --exclude='work' -cf /shares/sander.imm.uzh/MM/kansasii/output/archive.tar ."
+New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\tree_run\" -Force
+scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/archive.tar "$env:USERPROFILE\kansasii_C\downloads\tree_run\"
+cd "$env:USERPROFILE\kansasii_C\downloads\tree_run\"
+tar -xf archive.tar
+
+
+
+
+mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/ref_tree_run_test
+cd /shares/sander.imm.uzh/MM/kansasii/output/ref_tree_run_test
+bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii/run_IMMENSE.sh -j job_ref_tree_run_test -t fasta -r ref_tree_run_test -i /shares/sander.imm.uzh/MM/kansasii/data/reference_genomes_gtdb_232
+
+
+ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
+ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output/ref_tree_run_test && tar --exclude='work' -cf /shares/sander.imm.uzh/MM/kansasii/output/archive.tar ."
+New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\ref_tree_run_test\" -Force
+scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/archive.tar "$env:USERPROFILE\kansasii_C\downloads\ref_tree_run_test\"
+cd "$env:USERPROFILE\kansasii_C\downloads\ref_tree_run_test\"
+tar -xf archive.tar
