@@ -2,6 +2,6 @@
 
 # git config core.hooksPath .githooks
 
-ssh mimeul@cluster.s3it.uzh.ch  "cd /shares/sander.imm.uzh/MM/kansasii/immensekansasii && git pull"
+git push
 
-# test
+ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/immensekansasii && git pull"
