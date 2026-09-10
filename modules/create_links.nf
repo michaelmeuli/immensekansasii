@@ -140,7 +140,7 @@ PY
   # Assembly link is relative.
   src_genome="!{one_contig}"
   rel_genome="\$(relpath "\$src_genome" "\$dest_genome_dir")"
-  ln -srf ${params.output_dir_sample}/${sample_id}/2_annotation/${sample_id}.fna ${params.output_dir_run}/genomes/${species}/
+  ln -srf "\$rel_genome" "\$dest_genome_dir/\$(basename "\$src_genome")"
 
   # Reads come from trimming folder and are linked relatively (SE or PE; .fq.gz or .fastq.gz)
   if [[ "\$INPUT_TYPE" != "fasta" ]]; then
