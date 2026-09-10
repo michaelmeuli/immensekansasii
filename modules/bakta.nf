@@ -3,7 +3,7 @@
 */
 
 process bakta {
-    publishDir("${params.output_dir_sample}/${sample_id}", pattern: "2_annotation/*", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}", pattern: "2_annotation/*", mode: 'link')
     tag { sample_id }
     containerOptions "-B ${params.bakta_db}"
 

@@ -6,7 +6,7 @@
 //params.OUTPUT = "pyMLST_output"
 
 process pymlst_add_strain {
-    publishDir("${params.output_dir_sample}/${sample_id}/5_typing/pyMLST", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/5_typing/pyMLST", mode: 'link')
     tag { sample_id }
     containerOptions "-B ${params.pymlst_cgmlst_db}"
 
@@ -62,7 +62,7 @@ process pymlst_add_strain {
 process pymlst_distance {
     // Multiple processes with the same species will overwrite each other
     // In the end, the latest will have the most genomes in the analysis
-    publishDir("${params.output_dir_run}/cgMLST", mode: 'copy')
+    publishDir("${params.output_dir_run}/cgMLST", mode: 'link')
     tag { sample_id }
     containerOptions "-B ${params.pymlst_cgmlst_db}"
 
@@ -85,7 +85,7 @@ process pymlst_distance {
 }
 
 process pymlst_subgraph {
-    publishDir("${params.output_dir_run}/cgMLST", mode: 'copy')
+    publishDir("${params.output_dir_run}/cgMLST", mode: 'link')
     tag { sample_id }
     containerOptions "-B ${params.pymlst_cgmlst_db}"
 

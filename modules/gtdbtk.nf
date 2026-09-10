@@ -82,7 +82,7 @@ process gtdbtk_classify_wf {
 // This process will get a GTDB summary file with only 1 sample result and then 
 // extract the parameters we are interested in
 process extract_gtdb_output {
-  publishDir("${params.output_dir_sample}/${sample_id}/3_quality/GTDB", mode: 'copy')
+  publishDir("${params.output_dir_sample}/${sample_id}/3_quality/GTDB", mode: 'link')
   tag { sample_id }
   
   input:

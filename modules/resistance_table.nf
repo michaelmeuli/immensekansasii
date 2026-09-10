@@ -3,7 +3,7 @@
 */
 
 process generate_resistance_table {
-    publishDir("${params.output_dir_sample}/${sample_id}/4_resistance_virulence/01_Abricate", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/4_resistance_virulence/01_Abricate", mode: 'link')
     tag { "${params.run_id}" }
     
 
@@ -25,7 +25,7 @@ process generate_resistance_table {
 
 
 process merge_run_resistances {
-    publishDir("${params.output_dir_run}", mode: 'copy')
+    publishDir("${params.output_dir_run}", mode: 'link')
     tag { "${params.run_id}" }
     
     input:

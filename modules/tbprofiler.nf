@@ -5,7 +5,7 @@
 //params.CONTAINER = "quay.io/biocontainers/tb-profiler:6.3.0--pyhdfd78af_0"
 
 process tbprofiler {
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/tb-profiler", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/tb-profiler", mode: 'link')
     tag { sample_id }
 
     input:

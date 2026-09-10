@@ -3,7 +3,7 @@
 */
 
 process mlst {
-    publishDir("${params.output_dir_sample}/${sample_id}/5_typing/mlst", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/5_typing/mlst", mode: 'link')
     tag { sample_id }
 
     input:

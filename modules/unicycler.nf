@@ -7,7 +7,7 @@
 //params.OUTPUT = "unicycler_output"
 
 process unicycler {
-    publishDir("${params.output_dir_sample}/${sample_id}/1_unicycler", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/1_unicycler", mode: 'link')
     tag { sample_id }
 
     input:
@@ -36,7 +36,7 @@ process unicycler {
 
 
 process unicyclerSE {
-    publishDir("${params.output_dir_sample}/${sample_id}/1_unicycler", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/1_unicycler", mode: 'link')
     tag { sample_id }
 
     input:

@@ -9,8 +9,8 @@ params.OUTPUT = "multiqc_output"
 
 process multiqc_bcl {
     // multiQC report of the bcl2fastq process
-    publishDir("demultiplexing/multiqc", mode: 'copy')
-    publishDir("${params.output_dir_run}", pattern: '*_multiqc_bcl.html', mode: 'copy')
+    publishDir("demultiplexing/multiqc", mode: 'link')
+    publishDir("${params.output_dir_run}", pattern: '*_multiqc_bcl.html', mode: 'link')
     tag { "${params.run_id}" }
     
 
@@ -35,8 +35,8 @@ process multiqc_bcl {
 
 process multiqc_raw_fastqc {
     // multiQC report of the raw fastq files
-    publishDir("${params.output_dir_run}/00_QC/00_fastqc_raw_reads", mode: 'copy')
-    publishDir("${params.output_dir_run}/00_QC", pattern: '*_multiqc_fastq.html', mode: 'copy')
+    publishDir("${params.output_dir_run}/00_QC/00_fastqc_raw_reads", mode: 'link')
+    publishDir("${params.output_dir_run}/00_QC", pattern: '*_multiqc_fastq.html', mode: 'link')
     tag { "${params.run_id}" }
     
 
@@ -61,8 +61,8 @@ process multiqc_raw_fastqc {
 
 process multiqc_trimmed_fastqc {
     // multiQC report of the trimmed fastq files
-    publishDir("${params.output_dir_run}/00_QC/01_fastqc_after_trimming", mode: 'copy')
-    publishDir("${params.output_dir_run}/00_QC", pattern: '*_multiqc_trimmed.html', mode: 'copy')
+    publishDir("${params.output_dir_run}/00_QC/01_fastqc_after_trimming", mode: 'link')
+    publishDir("${params.output_dir_run}/00_QC", pattern: '*_multiqc_trimmed.html', mode: 'link')
     tag { "${params.run_id}" }
     
 
@@ -86,9 +86,9 @@ process multiqc_trimmed_fastqc {
 }
 
 process multiqc_assembly {
-    // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("${params.output_dir_run}/00_QC/02_multiqc_assembly", mode: 'copy')
-    publishDir("${params.output_dir_run}", pattern: '*_multiqc_assembly.html', mode: 'copy')
+    // publishDir(params.OUTPUT, mode: 'link')
+    publishDir("${params.output_dir_run}/00_QC/02_multiqc_assembly", mode: 'link')
+    publishDir("${params.output_dir_run}", pattern: '*_multiqc_assembly.html', mode: 'link')
     tag { "${params.run_id}" }
     
 

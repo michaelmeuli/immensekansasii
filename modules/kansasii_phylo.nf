@@ -12,7 +12,7 @@
 */
 
 process kansasii_snippy {
-    publishDir("${params.output_dir_sample}/${sample_id}/5_typing/kansasii_snippy", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/5_typing/kansasii_snippy", mode: 'link')
     tag { sample_id }
     containerOptions "-B ${params.kansasii_ref_dir} -B ${params.kansasii_snippy_db}"
 
@@ -49,7 +49,7 @@ process kansasii_snippy {
 }
 
 process kansasii_snippy_core {
-    publishDir("${params.output_dir_run}/kansasii_phylogeny", mode: 'copy')
+    publishDir("${params.output_dir_run}/kansasii_phylogeny", mode: 'link')
     containerOptions "-B ${params.kansasii_ref_dir} -B ${params.kansasii_snippy_db}"
 
     input:
@@ -69,7 +69,7 @@ process kansasii_snippy_core {
 }
 
 process kansasii_tree {
-    publishDir("${params.output_dir_run}/kansasii_phylogeny", mode: 'copy')
+    publishDir("${params.output_dir_run}/kansasii_phylogeny", mode: 'link')
 
     input:
     path (core_aln)
