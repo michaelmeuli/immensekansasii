@@ -311,7 +311,7 @@ workflow {
       // Run GTDB on batched assemblies
       gtdb_out_batched            = gtdbtk_classify_wf(batched_samples)
       // Make tuple with sample_id derived from filenames
-      gtdb_out_batched_argumented = gtdb_out_batched.summary_files.flatten().map {it -> return [it.getSimpleName(), it ] }
+      gtdb_out_batched_argumented = gtdb_out_batched.summary_files.flatten().map {it -> return [it.getBaseName(), it ] }
       // gtdb_out_batched_argumented.view()
       // Extract GTDB results for each individual assembly
       gtdb_out = extract_gtdb_output( gtdb_out_batched_argumented )
