@@ -86,3 +86,43 @@ New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\ref_tr
 scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/archive.tar "$env:USERPROFILE\kansasii_C\downloads\ref_tree_run_test\"
 cd "$env:USERPROFILE\kansasii_C\downloads\ref_tree_run_test\"
 tar -xf archive.tar
+
+
+
+
+# Same idea as the selected_type_strains block above, but for the broader
+# "relevant species" set (kansasii complex + MTBC + MAC + simiae) in
+# mycobacterium_relevant_species_representative_accessions.txt. That file
+# is already stripped of the RS_/GB_ source-flag prefix (unlike
+# mycobacterium_representative_type_strain_accessions.txt above), so no
+# `cut -c4-` is needed here. Feeding this SELECTED_DIR into run_IMMENSE.sh
+# with -t fasta runs kansasii_phylo.nf and produces a tree
+# (kansasii_complex_tree.treefile) with tip labels = accessions -- see
+# scripts/generate_itol_species_labels.sh for turning those into iTOL
+# species-name annotations after upload.
+ACCESSIONS_FILE="/shares/sander.imm.uzh/MM/kansasii/lit/gtdb/gtdb232/mycobacterium_relevant_species_representative_accessions.txt"
+GENOME_DATA_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data"
+SELECTED_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/selected_relevant_species"
+
+mkdir -p "$SELECTED_DIR"
+while read -r acc; do
+  [ -z "$acc" ] && continue
+  src=$(find "$GENOME_DATA_DIR/$acc" -maxdepth 1 \( -name '*.fna' -o -name '*.fasta' \) | head -1)
+  if [ -z "$src" ]; then
+    echo "WARNING: no fasta/fna found for $acc" >&2
+    continue
+  fi
+  ln -sf "$src" "$SELECTED_DIR/$acc.fasta"
+done < "$ACCESSIONS_FILE"
+
+mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run
+cd /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run
+bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii/run_IMMENSE.sh -j job_relevant_species_tree_run -t fasta -r relevant_species_tree_run -i "$SELECTED_DIR"
+
+
+ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
+ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run && tar --exclude='work' -cf /shares/sander.imm.uzh/MM/kansasii/output/archive.tar ."
+New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run\" -Force
+scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/archive.tar "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run\"
+cd "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run\"
+tar -xf archive.tar
