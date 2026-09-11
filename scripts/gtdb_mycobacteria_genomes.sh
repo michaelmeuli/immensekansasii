@@ -27,12 +27,12 @@ ASSEMNAME_COL=$(head -1 bac120_metadata_r232.tsv | tr '\t' '\n' | grep -n '^ncbi
 BIOSAMPLE_COL=$(head -1 bac120_metadata_r232.tsv | tr '\t' '\n' | grep -n '^ncbi_biosample$' | cut -d: -f1)
 NCBITYPE_COL=$(head -1 bac120_metadata_r232.tsv | tr '\t' '\n' | grep -n '^ncbi_type_material_designation$' | cut -d: -f1)
 
-# NB: use awk with field-index variables here, not `cut -f...` -- cut
-# always emits fields in ascending column-number order regardless of the
-# order listed, so pulling several out-of-order columns that way silently
-# mismatches which value lands in which position. Applying this to every
-# row (header included) reproduces the correct header text for free, since
-# the header row's own fields are the column names.
+# not used in pipeline
+# for pipline filter by gtdb_representative (t/f) (and gtdb_taxonomy) and not by gtdb_type_designation_ncbi_taxa
+# gtdb_type_designation_ncbi_taxa
+# Mycobacterium kansasii shows up twice if you filter by gtdb_type_designation_ncbi_taxa = type strain of species, 
+# because GTDB has two accessions from the same ncbi_biosample. 
+# gtdb_representative = t picks one of them.
 awk -F'\t' -v OFS='\t' \
   -v acc="$ACCESSION" -v repr="$REPR_COL" -v gtdbrep="$GTDB_REP_COL" \
   -v tax="$TAX_COL" -v gtype="$GTDBTYPE_COL" -v an="$ASSEMNAME_COL" \
@@ -41,8 +41,22 @@ awk -F'\t' -v OFS='\t' \
   mycobacteriaceae_rows_metadata.tsv > mycobacteriaceae_selected_columns.tsv
 
 # gtdb_type_designation_ncbi_taxa is the 5th column in mycobacteriaceae_selected_columns.tsv
-awk -F'\t' -v OFS='\t' 'NR==1 || $5=="type strain of species"' \
+# (position fixed by the print order above, unrelated to GTDBTYPE_COL which
+# indexes the original bac120_metadata_r232.tsv)
+GTYPE_SEL_COL=5
+awk -F'\t' -v OFS='\t' -v gtype="$GTYPE_SEL_COL" 'NR==1 || $gtype=="type strain of species"' \
   mycobacteriaceae_selected_columns.tsv > mycobacteriaceae_type_strains.tsv
+
+# Filter selected-columns table the same way as mycobacterium_representative_accessions.txt
+# below (tax ~ g__Mycobacterium && gtdb_representative == "t"), not by
+# gtdb_type_designation_ncbi_taxa, adjusted for the column positions in
+# mycobacteriaceae_selected_columns.tsv (tax=4, gtdbrep=3).
+MYCOBACTERIUM_PATTERN='g__Mycobacterium'
+TAX_SEL_COL=4
+GTDBREP_SEL_COL=3
+awk -F'\t' -v OFS='\t' -v tax="$TAX_SEL_COL" -v gtdbrep="$GTDBREP_SEL_COL" -v pat="$MYCOBACTERIUM_PATTERN" \
+  'NR==1 || ($tax ~ pat && $gtdbrep == "t")' \
+  mycobacteriaceae_selected_columns.tsv > mycobacterium_type_strains.tsv
 
 SPECIES_PATTERN='s__Mycobacterium (kansasii|persicum|pseudokansasii|innocens|attenuatum|ostraviense|gastri)'
 (head -1 mycobacteriaceae_type_strains.tsv; grep -E "$SPECIES_PATTERN" mycobacteriaceae_type_strains.tsv) > kansasii_complex_type_strains.tsv
@@ -66,15 +80,7 @@ OUTDIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae"
 CHUNK_SIZE=500
 MAX_RETRIES=3
 
-# unlike gtdb-adv-search-genomes.sh, this script isn't split per named
-# species -- mycobacteriaceae_selected_columns.tsv already covers the
-# whole family, so this loops over accession chunks instead of a
-# SPECIES_NAME table. A single ~18.6k-accession request produces a >30GB
-# zip that NCBI's server has been failing to assemble ("Internal error
-# (invalid zip archive)") partway through validation -- splitting into
-# chunks keeps each request well under the size where that happens, and
-# means a failed chunk only costs a re-download of that chunk, not
-# everything.
+
 download_species() {
   local accfile="mycobacteriaceae_accessions.txt"
   local dest="$OUTDIR"
