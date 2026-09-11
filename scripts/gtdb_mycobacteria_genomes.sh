@@ -76,6 +76,24 @@ awk -F'\t' -v OFS='\t' \
   mycobacteriaceae_rows_metadata.tsv | cut -c4- > mycobacterium_representative_accessions.txt
 
 
+# mycobacterium_representative_accessions.txt above is every Mycobacterium
+# representative genome (850+ in r232) -- too verbose to work with directly.
+# Narrow it down to representative genomes of well-known/clinically relevant
+# species: the kansasii complex, M. tuberculosis complex (GTDB clusters
+# bovis, bovis BCG, africanum, canettii, orygis, microti, caprae and
+# pinnipedii into the single species s__Mycobacterium tuberculosis, so no
+# separate terms are needed for them), the M. avium complex (avium,
+# intracellulare -- which also absorbs M. chimaera strains in GTDB --
+# colombiense, arosiense, marseillense, vulneris, including their GTDB
+# _A/_B/_C suffixed subclusters), and simiae (incl. simiae_A).
+RELEVANT_SPECIES_PATTERN='s__Mycobacterium (kansasii|persicum|pseudokansasii|innocens|attenuatum|ostraviense|gastri|tuberculosis|avium|intracellulare|colombiense|arosiense|marseillense|vulneris|simiae)'
+awk -F'\t' -v OFS='\t' \
+  -v acc="$ACCESSION" -v tax="$TAX_COL" -v gtdbrep="$GTDB_REP_COL" \
+  -v pat="$RELEVANT_SPECIES_PATTERN" \
+  '$tax ~ pat && $gtdbrep == "t" {print $acc}' \
+  mycobacteriaceae_rows_metadata.tsv | cut -c4- > mycobacterium_relevant_species_representative_accessions.txt
+
+
 OUTDIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae"
 CHUNK_SIZE=500
 MAX_RETRIES=3
