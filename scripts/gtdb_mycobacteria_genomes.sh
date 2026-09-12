@@ -94,6 +94,19 @@ awk -F'\t' -v OFS='\t' \
   mycobacteriaceae_rows_metadata.tsv | cut -c4- > mycobacterium_relevant_species_representative_accessions.txt
 
 
+# Every accession above is itself a GTDB-Tk reference genome (they were
+# selected from bac120_metadata_r232.tsv, which is GTDB-Tk's own reference
+# metadata), so feeding them to gtdbtk_classify_wf as query genomes fails
+# outright: "You have N genomes with the same id as GTDB-Tk reference
+# genomes, please rename them." Pair each accession with a renamed id
+# (suffixed "_query") that run.sh uses as the destination filename when
+# symlinking genomes into the pipeline input directory -- the original
+# accession is kept in column 1 to still locate the source .fna/.fasta under
+# GENOME_DATA_DIR.
+awk -F'\t' -v OFS='\t' '{print $1, $1"_query"}' \
+  mycobacterium_relevant_species_representative_accessions.txt > mycobacterium_relevant_species_representative_accessions_renamed.txt
+
+
 OUTDIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae"
 CHUNK_SIZE=500
 MAX_RETRIES=3

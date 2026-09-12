@@ -95,24 +95,36 @@ tar -xf archive.tar
 # mycobacterium_relevant_species_representative_accessions.txt. That file
 # is already stripped of the RS_/GB_ source-flag prefix (unlike
 # mycobacterium_representative_type_strain_accessions.txt above), so no
-# `cut -c4-` is needed here. Feeding this SELECTED_DIR into run_IMMENSE.sh
-# with -t fasta runs kansasii_phylo.nf and produces a tree
-# (kansasii_complex_tree.treefile) with tip labels = accessions -- see
+# `cut -c4-` is needed here.
+#
+# Every one of these accessions is itself a GTDB-Tk reference genome, so
+# gtdbtk_classify_wf rejects them outright as query input ("You have N
+# genomes with the same id as GTDB-Tk reference genomes, please rename
+# them."). mycobacterium_relevant_species_representative_accessions_renamed.txt
+# (built in gtdb_mycobacteria_genomes.sh) pairs each accession with a
+# "_query"-suffixed id; symlink under the renamed id so the destination
+# filename -- which is what gtdbtk/Channel.fromFilePairs key tips off --
+# no longer collides.
+#
+# Feeding this SELECTED_DIR into run_IMMENSE.sh with -t fasta runs
+# kansasii_phylo.nf and produces a tree (kansasii_complex_tree.treefile)
+# with tip labels = renamed ids (accession + "_query") -- see
 # scripts/generate_itol_species_labels.sh for turning those into iTOL
-# species-name annotations after upload.
-ACCESSIONS_FILE="/shares/sander.imm.uzh/MM/kansasii/lit/gtdb/gtdb232/mycobacterium_relevant_species_representative_accessions.txt"
+# species-name annotations after upload (that script will need updating to
+# match on the renamed ids too).
+ACCESSIONS_FILE="/shares/sander.imm.uzh/MM/kansasii/lit/gtdb/gtdb232/mycobacterium_relevant_species_representative_accessions_renamed.txt"
 GENOME_DATA_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data"
 SELECTED_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/selected_relevant_species"
 
 mkdir -p "$SELECTED_DIR"
-while read -r acc; do
+while read -r acc renamed; do
   [ -z "$acc" ] && continue
   src=$(find "$GENOME_DATA_DIR/$acc" -maxdepth 1 \( -name '*.fna' -o -name '*.fasta' \) | head -1)
   if [ -z "$src" ]; then
     echo "WARNING: no fasta/fna found for $acc" >&2
     continue
   fi
-  ln -sf "$src" "$SELECTED_DIR/$acc.fasta"
+  ln -sf "$src" "$SELECTED_DIR/$renamed.fasta"
 done < "$ACCESSIONS_FILE"
 
 mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run
