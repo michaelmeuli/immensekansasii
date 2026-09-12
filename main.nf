@@ -316,26 +316,16 @@ workflow {
       // Extract GTDB results for each individual assembly
       gtdb_out = extract_gtdb_output( gtdb_out_batched_argumented )
 
-      // Reference-based SNP phylogeny for the Mycobacterium kansasii complex.
-      // GTDB already resolves species-level identity within the complex via ANI,
-      // but strain-level relatedness needs a real SNP tree, so samples whose GTDB
-      // species falls in this complex get mapped against a single shared reference
-      // with Snippy. Results accumulate in a persistent database across runs
-      // (mirroring pyMLST's cgMLST db), and snippy-core + IQ-TREE rebuild one
-      // combined core-SNP alignment/tree across all accumulated complex isolates.
+      // Reference-based SNP phylogeny across all samples. GTDB already resolves
+      // species-level identity via ANI, but strain-level relatedness needs a
+      // real SNP tree, so every sample gets mapped against a single shared
+      // reference with Snippy regardless of its GTDB species. Results
+      // accumulate in a persistent database across runs (mirroring pyMLST's
+      // cgMLST db), and snippy-core + IQ-TREE rebuild one combined core-SNP
+      // alignment/tree across all accumulated isolates.
       if (!params.skip_kansasii_phylo) {
-      def kansasii_complex_species = [
-        'Mycobacterium kansasii',
-        'Mycobacterium persicum',
-        'Mycobacterium pseudokansasii',
-        'Mycobacterium innocens',
-        'Mycobacterium attenuatum',
-        'Mycobacterium ostraviense',
-        'Mycobacterium gastri'
-      ]
-
       samples_to_run_kansasii_ch = unicycler_out.assembly
-                        .join(gtdb_out.species.filter { sample_id, species -> species in kansasii_complex_species }, remainder: false)
+                        .join(gtdb_out.species, remainder: false)
                         .map { item -> return [item[0], item[1], item[2]] } // sample_id, assembly, species
 
       kansasii_snippy_out = kansasii_snippy(samples_to_run_kansasii_ch)
