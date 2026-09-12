@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 #
 # The kansasii_phylo.nf tree (kansasii_complex_tree.treefile) has tip labels
-# equal to the input accessions (Channel.fromFilePairs keys tips off the
-# fasta filename -- see selected_relevant_species/$acc.fasta in run.sh), so
-# the raw tree is unreadable on iTOL without a species mapping. This script
-# builds that mapping from GTDB metadata and writes two iTOL annotation
-# files that can be dragged onto the tree in the iTOL browser after
-# uploading the .treefile there (Tree menu is unaffected -- both are display
-# overlays, not changes to the underlying tree/accession IDs):
+# equal to the renamed input ids (Channel.fromFilePairs keys tips off the
+# fasta filename -- see selected_relevant_species/$renamed.fasta in run.sh,
+# where $renamed is the accession suffixed "_query" to avoid colliding with
+# GTDB-Tk's own reference genome ids), so the raw tree is unreadable on iTOL
+# without a species mapping. This script builds that mapping from GTDB
+# metadata and writes two iTOL annotation files that can be dragged onto the
+# tree in the iTOL browser after uploading the .treefile there (Tree menu is
+# unaffected -- both are display overlays, not changes to the underlying
+# tree/tip IDs):
 #
 #   itol_species_labels.txt      LABELS dataset: renames each tip's display
 #                                 text to "Species name [accession]"
@@ -18,13 +20,13 @@
 #
 # Usage: bash generate_itol_species_labels.sh
 # Reads (from gtdb232, hardcoded below): bac120_metadata_r232.tsv,
-#   mycobacterium_relevant_species_representative_accessions.txt
+#   mycobacterium_relevant_species_representative_accessions_renamed.txt
 # Writes: itol_species_labels.txt, itol_species_colorstrip.txt (same dir)
 
 set -euo pipefail
 cd /shares/sander.imm.uzh/MM/kansasii/lit/gtdb/gtdb232
 
-ACCESSIONS_FILE="mycobacterium_relevant_species_representative_accessions.txt"
+ACCESSIONS_FILE="mycobacterium_relevant_species_representative_accessions_renamed.txt"
 METADATA="bac120_metadata_r232.tsv"
 
 ACC_COL=$(head -1 "$METADATA" | tr '\t' '\n' | grep -n '^accession$' | cut -d: -f1)
@@ -39,7 +41,11 @@ awk -F'\t' -v OFS='\t' -v acc="$ACC_COL" -v tax="$TAX_COL" '
     print a, t
   }' "$METADATA" > /tmp/acc_species.$$.tsv
 
-join -t $'\t' <(sort "$ACCESSIONS_FILE") <(sort -t $'\t' -k1,1 /tmp/acc_species.$$.tsv) \
+# ACCESSIONS_FILE is (accession, renamed_id); join on accession against the
+# species map, keeping (accession, renamed_id, species) -- renamed_id is the
+# key the DATA lines below must use to match the tree's tips, while
+# accession is kept around for the "Species [accession]" display text.
+join -t $'\t' -1 1 -2 1 <(sort -t $'\t' -k1,1 "$ACCESSIONS_FILE") <(sort -t $'\t' -k1,1 /tmp/acc_species.$$.tsv) \
   > /tmp/acc_species_joined.$$.tsv
 rm -f /tmp/acc_species.$$.tsv
 
@@ -54,7 +60,7 @@ fi
   echo "LABELS"
   echo "SEPARATOR TAB"
   echo "DATA"
-  awk -F'\t' -v OFS='\t' '{print $1, $2 " [" $1 "]"}' /tmp/acc_species_joined.$$.tsv
+  awk -F'\t' -v OFS='\t' '{print $2, $3 " [" $1 "]"}' /tmp/acc_species_joined.$$.tsv
 } > itol_species_labels.txt
 
 # --- DATASET_COLORSTRIP dataset: color by species complex ---
@@ -73,8 +79,8 @@ fi
   echo "DATA"
   awk -F'\t' -v OFS='\t' '
     {
-      acc = $1
-      sp = $2
+      id = $2
+      sp = $3
       base = sp
       sub(/_[A-Z]$/, "", base)
       if (base ~ /^Mycobacterium (kansasii|persicum|pseudokansasii|innocens|attenuatum|ostraviense|gastri)$/) {
@@ -88,7 +94,7 @@ fi
       } else {
         color = "#999999"; group = "other"
       }
-      print acc, color, group
+      print id, color, group
     }' /tmp/acc_species_joined.$$.tsv
 } > itol_species_colorstrip.txt
 
