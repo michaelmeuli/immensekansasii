@@ -8,5 +8,6 @@ pipeline.complete
 report*
 /.fleet
 /.idea
-/.vscode
+/.vscode/*
+!/.vscode/settings.json
 .DS_Store
