@@ -203,3 +203,44 @@ bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii-master-test/run_IMMENSE.
 # zero output; only kansasii's if/else version actually works.
 
 
+# Does cherry-picking just c2ad8c452e489550 onto master make it produce the
+# same output as kansasii? Test on a dedicated branch (not master itself),
+# via its own worktree so it can run without disturbing this checkout.
+git branch master-fasta-fix-test master
+git checkout master-fasta-fix-test
+git cherry-pick c2ad8c452e489550
+git checkout kansasii
+git worktree add /shares/sander.imm.uzh/MM/kansasii/immensekansasii-fasta-fix-test master-fasta-fix-test
+
+mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run_master_fasta_fix_test
+cd /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run_master_fasta_fix_test
+bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii-fasta-fix-test/run_IMMENSE.sh -j job_relevant_species_tree_run_master_fasta_fix_test -t fasta -r relevant_species_tree_run_master_fasta_fix_test -i /shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/selected_relevant_species
+
+# Confirmed: the cherry-pick alone is not enough. The run actually executes
+# now (compiles, all 20 samples processed, 39min), but genomes/<species>/ in
+# the published transfer_result comes out completely empty -- all 20
+# assembly links missing -- because modules/create_links.nf's
+# links_for_transfer process on master builds its `ln -srf` destination from
+# bare relative paths without ever cd-ing to the launch/run directory first,
+# so it runs against the task's own (unrelated) work dir and fails with
+# "No such file or directory" on every single sample. It even computes the
+# correct relative path via a `relpath` helper into $rel_genome, then never
+# uses it -- dead code. kansasii fixes this independently in dea5850 ("Fix
+# busco lineage, gtdbtk data path, and links_for_transfer symlink bug"),
+# swapping the broken hardcoded line for `ln -srf "$rel_genome"
+# "$dest_genome_dir/$(basename "$src_genome")"`. Every other output
+# (cgMLST, quality QC row counts, trimmed_reads -- empty on both sides for
+# fasta input, as expected) matched between the two runs.
+#
+# Conclusion for the merge request: master needs BOTH c2ad8c452e489550 and
+# dea5850 (at minimum) before -t fasta produces complete output; neither fix
+# alone is sufficient, and kansasii is the only branch that has both plus
+# the whole phylogeny feature.
+
+# cleanup once done inspecting
+cd /shares/sander.imm.uzh/MM/kansasii/immensekansasii
+git worktree remove immensekansasii-fasta-fix-test
+rm -rf /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run_master_fasta_fix_test
+# master-fasta-fix-test branch kept and pushed to origin as MR-supporting evidence
+
+
