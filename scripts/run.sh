@@ -173,3 +173,33 @@ bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii-master-test/run_IMMENSE.
 # supporting the merge request.
 
 
+# master had since moved: origin/master picked up d78b6df ("fixed
+# sample_ids_ch when running on .fasta files", a colleague's fix merged via
+# upstream/sample_ids_ch-fix) after the run above. It replaces the
+# unconditional `reads_for_trimming` reference with a ternary:
+#   def sample_ids_ch = (params.input_type == "fasta")
+#       ? genome.map { sample_id, fasta -> sample_id }.distinct()
+#       : reads_for_trimming.other.map { sample_id, reads -> sample_id }.distinct()
+# Update master and re-test the exact same input against it to see whether
+# that actually resolves things.
+git -C /shares/sander.imm.uzh/MM/kansasii/immensekansasii-master-test merge --ff-only origin/master
+
+mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run_master_test2
+cd /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run_master_test2
+bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii-master-test/run_IMMENSE.sh -j job_relevant_species_tree_run_master_test2 -t fasta -r relevant_species_tree_run_master_test2 -i /shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/selected_relevant_species
+
+# Confirmed: it doesn't. This fails even harder -- a Nextflow DSL2 SCRIPT
+# COMPILATION error, before the run reaches the point the previous version
+# crashed at:
+#   ERROR ~ Script compilation error
+#   - cause: Variable `genome` already defined in the process scope @ line
+#     485, column 7.
+# The ternary's two branches reference channels from different conditional
+# scopes (`genome` from the `input_type == "fasta"` block, `reads_for_trimming`
+# from the `!= "fasta"` block), which DSL2 rejects outright when written as a
+# ternary -- explaining why kansasii's c2ad8c452e489550 rewrites this as
+# if/else instead (main.nf:504-508 on kansasii), which does compile and run.
+# So both the pre- and post-d78b6df states of master fail on -t fasta with
+# zero output; only kansasii's if/else version actually works.
+
+
