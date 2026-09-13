@@ -5,7 +5,7 @@
 //params.OUTPUT = "write_software_versions"
 
 process write_software_versions {
-    publishDir("${params.output_dir_run}", mode: 'copy')
+    publishDir("${params.output_dir_run}", mode: 'link')
     tag { "${params.run_id}" }
 
     input:
@@ -25,7 +25,7 @@ process write_software_versions {
 }
 
 process write_versions_per_sample {
-    publishDir("${params.output_dir_sample}/${sample_id}/", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/", mode: 'link')
     tag { sample_id }
 
     input:

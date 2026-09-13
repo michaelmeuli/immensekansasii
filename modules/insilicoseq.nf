@@ -4,7 +4,7 @@
 */
 
 process insilicoseq {
-    // publishDir("${params.output_dir_sample}/${sample_id}/", mode: 'copy')
+    // publishDir("${params.output_dir_sample}/${sample_id}/", mode: 'link')
     tag { sample_id }
 
     input:

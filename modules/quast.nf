@@ -7,8 +7,8 @@
 //params.OUTPUT = "quast_output"
 
 process quast {
-    // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/quast", mode: 'copy')
+    // publishDir(params.OUTPUT, mode: 'link')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/quast", mode: 'link')
     tag { fasta }
 
     input:

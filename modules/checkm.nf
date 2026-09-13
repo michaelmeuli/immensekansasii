@@ -7,7 +7,7 @@
 //params.OUTPUT = "checkm_output"
 
 process checkm {
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/checkM", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/checkM", mode: 'link')
     tag { sample_id }
 
     input:

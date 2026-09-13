@@ -3,7 +3,7 @@
 */
 
 process typing_16S {
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/16S", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/16S", mode: 'link')
     tag { sample_id }
     containerOptions "-B ${params.db_16s}"
 

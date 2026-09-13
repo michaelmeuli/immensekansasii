@@ -8,8 +8,8 @@
 params.OUTPUT = "bcl2fastq_output"
 
 process bcl2fastq {
-    // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("demultiplexing", mode: 'copy', pattern: "reads/**")
+    // publishDir(params.OUTPUT, mode: 'link')
+    publishDir("demultiplexing", mode: 'link', pattern: "reads/**")
     tag { "${params.run_id}" }
 
     input:

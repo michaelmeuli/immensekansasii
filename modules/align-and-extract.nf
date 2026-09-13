@@ -7,8 +7,8 @@
 // params.OUTPUT = ""
 
 process bwaAlign_insertsize_coverage{
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", pattern: "${sample_id}.insertions.tab",mode: 'copy')
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", pattern: "${sample_id}_coverage.tab", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", pattern: "${sample_id}.insertions.tab",mode: 'link')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", pattern: "${sample_id}_coverage.tab", mode: 'link')
     tag { sample_id }
 
     input:
@@ -130,8 +130,8 @@ process bwaAlign_insertsize_coverage{
 }
 
 process bwaAlign_insertsize_coverageSE{
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", pattern: "${sample_id}.insertions.tab",mode: 'copy')
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", pattern: "${sample_id}_coverage.tab", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", pattern: "${sample_id}.insertions.tab",mode: 'link')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", pattern: "${sample_id}_coverage.tab", mode: 'link')
     tag { sample_id }
 
     input:

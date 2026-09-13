@@ -6,8 +6,8 @@
 //params.OUTPUT = "prokka_output"
 // Not used anymore but possibly useful in the future because it is faster than bakta
 process prokka {
-    // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("${params.output_dir_sample}/${sample_id}", pattern: "2_annotation/*", mode: 'copy')
+    // publishDir(params.OUTPUT, mode: 'link')
+    publishDir("${params.output_dir_sample}/${sample_id}", pattern: "2_annotation/*", mode: 'link')
     tag { sample_id }
 
     input:

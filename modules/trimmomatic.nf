@@ -3,7 +3,7 @@
 */
 
 process trimmomaticPE {
-    publishDir("${params.output_dir_sample}/${sample_id}/0_trimming", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/0_trimming", mode: 'link')
     tag { sample_id }
     
     input:
@@ -46,7 +46,7 @@ process trimmomaticPE {
 
 
 process trimmomaticSE {
-    publishDir("${params.output_dir_sample}/${sample_id}/0_trimming", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/0_trimming", mode: 'link')
     tag { sample_id }
 
     input:

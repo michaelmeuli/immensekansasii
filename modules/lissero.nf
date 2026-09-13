@@ -4,7 +4,7 @@
 */
 
 process lissero {
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/lissero", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/lissero", mode: 'link')
     tag { sample_id }
 
     input:

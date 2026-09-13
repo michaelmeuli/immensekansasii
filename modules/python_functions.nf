@@ -5,7 +5,7 @@
 params.OUTPUT = ""
 
 process make_one_contig {
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/remapping", mode: 'link')
     tag { fasta }
 
     input:

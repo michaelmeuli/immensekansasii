@@ -36,8 +36,8 @@ process rMLST {
 }
 
 process rMLST_call {
-    // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/rMLST", mode: 'copy')
+    // publishDir(params.OUTPUT, mode: 'link')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/rMLST", mode: 'link')
     tag { sample_id }
     containerOptions "-B ${params.bigsdb_rMLST}"
     

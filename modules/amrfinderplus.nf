@@ -5,7 +5,7 @@
 
 
 process amrfinderplus {
-  publishDir("${params.output_dir_sample}/${sample_id}/4_resistance_virulence/02_AMRfinderplus", mode: 'copy')
+  publishDir("${params.output_dir_sample}/${sample_id}/4_resistance_virulence/02_AMRfinderplus", mode: 'link')
   containerOptions "-B ${params.amrfinderplus_db}"
   tag { sample_id }
   

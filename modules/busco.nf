@@ -3,7 +3,7 @@
 */
 
 process busco {
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/BUSCO", pattern: "${sample_id}/short_summary*.txt", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/BUSCO", pattern: "${sample_id}/short_summary*.txt", mode: 'link')
     tag { sample_id }
     containerOptions "-B ${params.busco_files}"
 
@@ -57,7 +57,7 @@ process get_busco_lineages {
 
 process busco_plot {
     // Currently this creates one plot of all assemblies at the same time and publishes in run directory
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/BUSCO", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/BUSCO", mode: 'link')
     tag { sample_id }
 
     input:

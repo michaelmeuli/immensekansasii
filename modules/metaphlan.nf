@@ -10,7 +10,7 @@ params.OUTPUT = "metaphlan_output"
 
 
 process metaphlan4 {
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/Metaphlan4", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/Metaphlan4", mode: 'link')
     tag { sample_id }
     containerOptions "-B ${params.metaphlan_db}"
 
@@ -46,8 +46,8 @@ process metaphlan4 {
 
 
 process metaphlan4SE {
-    // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/Metaphlan4", mode: 'copy')
+    // publishDir(params.OUTPUT, mode: 'link')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/Metaphlan4", mode: 'link')
     tag { sample_id }
     // containerOptions "-B ${params.metaphlan_db}"
 
@@ -83,7 +83,7 @@ process metaphlan4SE {
 
 
 process classify_metaphlan4_results {
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/Metaphlan4", mode: 'copy')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/Metaphlan4", mode: 'link')
     tag { sample_id }
     
     input:

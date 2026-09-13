@@ -5,9 +5,9 @@
 params.OUTPUT = "fastqc_output"
 
 process fastqc_raw_reads {
-    // publishDir(params.OUTPUT, mode: 'copy')
-    publishDir("${params.output_dir_run}/00_QC/00_fastqc_raw_reads/fastqc", mode: 'copy')
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/fastQC", mode: 'copy')
+    // publishDir(params.OUTPUT, mode: 'link')
+    publishDir("${params.output_dir_run}/00_QC/00_fastqc_raw_reads/fastqc", mode: 'link')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/fastQC", mode: 'link')
     tag { sample_id }
 
     input:
@@ -29,8 +29,8 @@ process fastqc_raw_reads {
 }
 
 process fastqc_trimmed_reads {
-    publishDir("${params.output_dir_run}/00_QC/01_fastqc_after_trimming/fastqc", mode: 'copy')
-    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/fastQC", mode: 'copy')
+    publishDir("${params.output_dir_run}/00_QC/01_fastqc_after_trimming/fastqc", mode: 'link')
+    publishDir("${params.output_dir_sample}/${sample_id}/3_quality/fastQC", mode: 'link')
     tag { sample_id }
 
     input:
