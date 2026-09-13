@@ -138,3 +138,5 @@ New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\releva
 scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/archive.tar "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run\"
 cd "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run\"
 tar -xf archive.tar
+
+

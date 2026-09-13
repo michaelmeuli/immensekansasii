@@ -24,3 +24,9 @@ scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/lit/gtdb/gtdb2
 scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/lit/gtdb/gtdb232/kansasii_complex_type_strains.tsv "$env:USERPROFILE\kansasii_C\downloads\"
 scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/lit/gtdb/gtdb232/mycobacterium_representative_type_strain_accessions.txt "$env:USERPROFILE\kansasii_C\downloads\"
 
+
+scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/lit/gtdb/gtdb232/itol_species_labels.txt "$env:USERPROFILE\kansasii_C\downloads\"
+scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/lit/gtdb/gtdb232/itol_species_colorstrip.txt "$env:USERPROFILE\kansasii_C\downloads\"
+
+
+scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run/relevant_species_tree_run_transfer_result/kansasii_phylogeny/* "$env:USERPROFILE\kansasii_C\downloads\"
