@@ -1,14 +1,13 @@
 /*
 * kansasii_phylo module
 *
-* Reference-based SNP phylogeny for the Mycobacterium kansasii complex.
-* GTDB-Tk already resolves species-level identity within the complex via
-* ANI, but doesn't give strain-level relatedness. These processes map
-* every sample's assembly against a single shared reference with Snippy
-* (so all complex members land on the same coordinate system), accumulate
-* results in a persistent database (mirroring the pyMLST cgMLST pattern),
-* and build one core-SNP tree with IQ-TREE across all complex isolates
-* seen so far (not just this run).
+* Reference-based SNP phylogeny across all samples. GTDB-Tk already
+* resolves species-level identity via ANI, but doesn't give strain-level
+* relatedness. These processes map every sample's assembly against a
+* single shared reference with Snippy (so all samples land on the same
+* coordinate system), accumulate results in a persistent database
+* (mirroring the pyMLST cgMLST pattern), and build one core-SNP tree with
+* IQ-TREE across all isolates seen so far (not just this run).
 */
 
 process kansasii_snippy {
