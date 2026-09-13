@@ -140,3 +140,36 @@ cd "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run\"
 tar -xf archive.tar
 
 
+
+
+# Sanity check ahead of a merge request against
+# https://gitlab.uzh.ch/appliedmicrobiologyresearch/immense.git: kansasii is
+# 48 commits ahead of upstream/master (their common ancestor), including
+# c2ad8c452e489550 ("fix sample_ids_ch for .fasta"), which is NOT on master.
+# Without it, sample_ids_ch is only ever derived from reads_for_trimming
+# (see main.nf on master), so a fasta-input run leaves it empty and
+# write_versions_per_sample silently emits nothing per sample -- no error,
+# just quietly incomplete output. Re-run the exact same relevant-species
+# input (selected_relevant_species/, unchanged) against master in an
+# isolated worktree to see whether/where that shows up, before proposing the
+# merge.
+git -C /shares/sander.imm.uzh/MM/kansasii/immensekansasii worktree add /shares/sander.imm.uzh/MM/kansasii/immensekansasii-master-test master
+
+mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run_master_test
+cd /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run_master_test
+bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii-master-test/run_IMMENSE.sh -j job_relevant_species_tree_run_master_test -t fasta -r relevant_species_tree_run_master_test -i /shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/selected_relevant_species
+
+
+# -h dereferences symlinks (e.g. snippy's ref.fa, GTDB per-sample summary
+# tsvs) into real file content at archive time, instead of storing them as
+# symlink entries pointing into the (excluded) work/ dir -- see the
+# relevant_species_tree_run archive above, where that broke extraction on
+# Windows.
+ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
+ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run_master_test && tar -h --exclude='work' -cf /shares/sander.imm.uzh/MM/kansasii/output/archive.tar ."
+New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run_master_test\" -Force
+scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/archive.tar "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run_master_test\"
+cd "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run_master_test\"
+tar -xf archive.tar
+
+
