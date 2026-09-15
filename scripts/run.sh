@@ -156,3 +156,8 @@ New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\releva
 scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/archive.tar "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run_master\"
 cd "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run_master\"
 tar -xf archive.tar
+
+
+New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\mic\" -Force
+scp -r mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/mic /local/destination/ "$env:USERPROFILE\kansasii_C\downloads\mic\"
+ 
