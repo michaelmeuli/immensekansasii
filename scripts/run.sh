@@ -161,3 +161,6 @@ tar -xf archive.tar
 New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\" -Force
 scp -r mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/mic "$env:USERPROFILE\kansasii_C\downloads\"
  
+New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\" -Force
+scp -r mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/mlsa-kansasii/results "$env:USERPROFILE\kansasii_C\downloads\"
+ 
