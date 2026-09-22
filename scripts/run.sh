@@ -3,7 +3,7 @@
 
 # By default the output is always written in the current directory
 cd /shares/sander.imm.uzh/MM/kansasii/output
-bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii/run_IMMENSE.sh -j test_run -t fq_PE -r test_run -i /shares/sander.imm.uzh/MM/kansasii/immensekansasii/data/test_dataset
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j test_run -t fq_PE -r test_run -i /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/data/test_dataset
 
 
 
@@ -26,7 +26,7 @@ tar -xf archive.tar
 
 mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/reference_genomes_gtdb_232
 cd /shares/sander.imm.uzh/MM/kansasii/output/reference_genomes_gtdb_232
-bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii/run_IMMENSE.sh -j ref_232_run -t fasta -r ref_run -i /shares/sander.imm.uzh/MM/kansasii/data/reference_genomes_gtdb_232/
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j ref_232_run -t fasta -r ref_run -i /shares/sander.imm.uzh/MM/kansasii/data/reference_genomes_gtdb_232/
 
 ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
 ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output/reference_genomes_gtdb_232 && tar --exclude='work' -cf /shares/sander.imm.uzh/MM/kansasii/output/archive.tar ."
@@ -43,7 +43,7 @@ tar -xf archive.tar
 # the first match would ever be used. Build a flat directory of symlinks,
 # one per accession listed in mycobacterium_representative_type_strain_accessions.txt,
 # and point -i at that instead.
-ACCESSIONS_FILE="/shares/sander.imm.uzh/MM/kansasii/lit/gtdb/gtdb232/mycobacterium_representative_type_strain_accessions.txt"
+ACCESSIONS_FILE="/shares/sander.imm.uzh/MM/kansasii/output/lit/gtdb/gtdb232/mycobacterium_representative_type_strain_accessions.txt"
 GENOME_DATA_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data"
 SELECTED_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/selected_type_strains"
 
@@ -61,7 +61,7 @@ done < "$ACCESSIONS_FILE"
 
 mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/tree_run
 cd /shares/sander.imm.uzh/MM/kansasii/output/tree_run
-bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii/run_IMMENSE.sh -j job_tree_run -t fasta -r tree_run -i "$SELECTED_DIR"
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_tree_run -t fasta -r tree_run -i "$SELECTED_DIR"
 
 
 
@@ -77,7 +77,7 @@ tar -xf archive.tar
 
 mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/ref_tree_run_test
 cd /shares/sander.imm.uzh/MM/kansasii/output/ref_tree_run_test
-bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii/run_IMMENSE.sh -j job_ref_tree_run_test -t fasta -r ref_tree_run_test -i /shares/sander.imm.uzh/MM/kansasii/data/reference_genomes_gtdb_232
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_ref_tree_run_test -t fasta -r ref_tree_run_test -i /shares/sander.imm.uzh/MM/kansasii/data/reference_genomes_gtdb_232
 
 
 ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
@@ -112,7 +112,7 @@ tar -xf archive.tar
 # scripts/generate_itol_species_labels.sh for turning those into iTOL
 # species-name annotations after upload (that script will need updating to
 # match on the renamed ids too).
-ACCESSIONS_FILE="/shares/sander.imm.uzh/MM/kansasii/lit/gtdb/gtdb232/mycobacterium_relevant_species_representative_accessions_renamed.txt"
+ACCESSIONS_FILE="/shares/sander.imm.uzh/MM/kansasii/output/lit/gtdb/gtdb232/mycobacterium_relevant_species_representative_accessions_renamed.txt"
 GENOME_DATA_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data"
 SELECTED_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/selected_relevant_species"
 
@@ -129,7 +129,7 @@ done < "$ACCESSIONS_FILE"
 
 mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run
 cd /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run
-bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii/run_IMMENSE.sh -j job_relevant_species_tree_run -t fasta -r relevant_species_tree_run -i "$SELECTED_DIR"
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_relevant_species_tree_run -t fasta -r relevant_species_tree_run -i "$SELECTED_DIR"
 
 
 ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
@@ -147,7 +147,7 @@ tar -xf archive.tar
 SELECTED_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/selected_relevant_species"
 mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run_master 
 cd /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run_master
-bash /shares/sander.imm.uzh/MM/kansasii/immensekansasii/run_IMMENSE.sh -j job_relevant_species_tree_run_master -t fasta -r relevant_species_tree_run_master -i "$SELECTED_DIR"
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_relevant_species_tree_run_master -t fasta -r relevant_species_tree_run_master -i "$SELECTED_DIR"
 
 
 ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
@@ -162,5 +162,5 @@ New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\" -For
 scp -r mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/mic "$env:USERPROFILE\kansasii_C\downloads\"
  
 New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\" -Force
-scp -r mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/mlsa-kansasii/results "$env:USERPROFILE\kansasii_C\downloads\"
+scp -r mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/repos/mlsa-kansasii/results "$env:USERPROFILE\kansasii_C\downloads\"
  

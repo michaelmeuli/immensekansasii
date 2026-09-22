@@ -4,4 +4,4 @@
 
 git push
 
-ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/immensekansasii && git pull"
+ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii && git pull"
