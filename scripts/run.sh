@@ -157,7 +157,8 @@ scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/archive
 cd "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run_master\"
 tar -xf archive.tar
 
- 
+scp -r "A:\projects\kansasii\input\*" mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/data/imm/
+
 New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\" -Force
 scp -r mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/* "$env:USERPROFILE\kansasii_C\downloads\"
  
