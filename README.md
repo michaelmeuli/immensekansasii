@@ -156,6 +156,25 @@ nextflow run /path/to/IMMENSE/main.nf -profile imm --run_id test_run --input_typ
 The **additional options** as described for the usage on S3IT can be added in the same manner to the command and all parameters defined in the params.config file can be overwritten on the command line with `--<parames-name> <params-value>`.
 
 
+# Kansasii project: where to run the pipeline
+
+Start every run of the immensekansasii (IMMense) pipeline in its own
+subdirectory of `/shares/sander.imm.uzh/MM/kansasii/runs/`, not in `output/`.
+Nextflow writes its `work/` directory into the directory the run is started
+from. `work/` is large and only temporary, so it must not end up in
+`output/`, which gets downloaded to local `kansasii_C`. Once a run has
+finished and been checked, copy its end results to
+`/shares/sander.imm.uzh/MM/kansasii/output/<run_name>/` and delete `work/`.
+
+```bash
+mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>
+cd /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j <job_name> -t <input_type> -r <run_name> -i <input_dir>
+
+# after the run: collect results (without work/) in output/
+rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>/ /shares/sander.imm.uzh/MM/kansasii/output/<run_name>/
+```
+
 # Detailed running IMMense on S3IT (UZH SLURM cluster)
 
 >The pipeline can be run on **raw BCL data**, **fastq files**, or **fasta files**. By default, the output and work directory is saved in the current working directory (can be changed in infrastructure-specific profiles).
