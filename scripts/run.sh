@@ -1,9 +1,15 @@
 
 
 
-# By default the output is always written in the current directory
-cd /shares/sander.imm.uzh/MM/kansasii/output
+# By default the output (and the large, temporary Nextflow work/ dir) is
+# written in the current directory, so start every run in its own subdir of
+# runs/ and afterwards copy only the end results (no work/) to output/.
+mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/test_run
+cd /shares/sander.imm.uzh/MM/kansasii/runs/test_run
 bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j test_run -t fq_PE -r test_run -i /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/data/test_dataset
+# run_IMMENSE.sh only submits a SLURM job: once it has finished, copy the
+# end results (without work/) to output/
+rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/test_run/ /shares/sander.imm.uzh/MM/kansasii/output/test_run/
 
 
 
@@ -24,9 +30,12 @@ tar -xf archive.tar
 
 
 
-mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/reference_genomes_gtdb_232
-cd /shares/sander.imm.uzh/MM/kansasii/output/reference_genomes_gtdb_232
+mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/reference_genomes_gtdb_232
+cd /shares/sander.imm.uzh/MM/kansasii/runs/reference_genomes_gtdb_232
 bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j ref_232_run -t fasta -r ref_run -i /shares/sander.imm.uzh/MM/kansasii/data/reference_genomes_gtdb_232/
+# run_IMMENSE.sh only submits a SLURM job: once it has finished, copy the
+# end results (without work/) to output/
+rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/reference_genomes_gtdb_232/ /shares/sander.imm.uzh/MM/kansasii/output/reference_genomes_gtdb_232/
 
 ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
 ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output/reference_genomes_gtdb_232 && tar --exclude='work' -cf /shares/sander.imm.uzh/MM/kansasii/output/archive.tar ."
@@ -59,9 +68,12 @@ while read -r acc; do
   ln -sf "$src" "$SELECTED_DIR/$acc.fasta"
 done < "$ACCESSIONS_FILE"
 
-mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/tree_run
-cd /shares/sander.imm.uzh/MM/kansasii/output/tree_run
+mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/tree_run
+cd /shares/sander.imm.uzh/MM/kansasii/runs/tree_run
 bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_tree_run -t fasta -r tree_run -i "$SELECTED_DIR"
+# run_IMMENSE.sh only submits a SLURM job: once it has finished, copy the
+# end results (without work/) to output/
+rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/tree_run/ /shares/sander.imm.uzh/MM/kansasii/output/tree_run/
 
 
 
@@ -75,9 +87,12 @@ tar -xf archive.tar
 
 
 
-mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/ref_tree_run_test
-cd /shares/sander.imm.uzh/MM/kansasii/output/ref_tree_run_test
+mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/ref_tree_run_test
+cd /shares/sander.imm.uzh/MM/kansasii/runs/ref_tree_run_test
 bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_ref_tree_run_test -t fasta -r ref_tree_run_test -i /shares/sander.imm.uzh/MM/kansasii/data/reference_genomes_gtdb_232
+# run_IMMENSE.sh only submits a SLURM job: once it has finished, copy the
+# end results (without work/) to output/
+rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/ref_tree_run_test/ /shares/sander.imm.uzh/MM/kansasii/output/ref_tree_run_test/
 
 
 ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
@@ -127,9 +142,12 @@ while read -r acc renamed; do
   ln -sf "$src" "$SELECTED_DIR/$renamed.fasta"
 done < "$ACCESSIONS_FILE"
 
-mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run
-cd /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run
+mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/relevant_species_tree_run
+cd /shares/sander.imm.uzh/MM/kansasii/runs/relevant_species_tree_run
 bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_relevant_species_tree_run -t fasta -r relevant_species_tree_run -i "$SELECTED_DIR"
+# run_IMMENSE.sh only submits a SLURM job: once it has finished, copy the
+# end results (without work/) to output/
+rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/relevant_species_tree_run/ /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run/
 
 
 ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
@@ -145,9 +163,12 @@ tar -xf archive.tar
 
 
 SELECTED_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/selected_relevant_species"
-mkdir -p /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run_master 
-cd /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run_master
+mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/relevant_species_tree_run_master
+cd /shares/sander.imm.uzh/MM/kansasii/runs/relevant_species_tree_run_master
 bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_relevant_species_tree_run_master -t fasta -r relevant_species_tree_run_master -i "$SELECTED_DIR"
+# run_IMMENSE.sh only submits a SLURM job: once it has finished, copy the
+# end results (without work/) to output/
+rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/relevant_species_tree_run_master/ /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run_master/
 
 
 ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
