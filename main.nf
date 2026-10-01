@@ -15,6 +15,11 @@ params.skip_tbprofiler = false
 params.skip_lissero = false
 params.skip_kansasii_phylo = false
 
+// The snippy db accumulates all isolates of a project, so it has no global default
+if (!params.skip_kansasii_phylo && !params.kansasii_snippy_db) {
+    error "kansasii_snippy_db is not set. Pass --kansasii_snippy_db <project dir> (run_IMMENSE.sh -x) or use --skip_kansasii_phylo true."
+}
+
 // this prints the input parameters
 log.info """
 IMMENSE  ~  version ${workflow.manifest.version}
