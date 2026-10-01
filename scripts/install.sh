@@ -21,22 +21,14 @@ tar -xzf /tmp/mycobacterium_odb12.tar.gz
 ls -la mycobacterium_odb12/
 
 
-# To download the GTDBtk r207v2 dataset we used the following paths
-mkdir -p /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/gtdbtk_r226
-cd /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/gtdbtk_r226
-wget -c https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/auxillary_files/gtdbtk_r207_v2_data.tar.gz
-# Alternative mirror if the first url is too slow: https://data.gtdb.ecogenomic.org/releases/release207/207.0/auxillary_files/gtdbtk_r207_v2_data.tar.gz
-# Unpack the dataset:
-tar xvzf gtdbtk_r207_v2_data.tar.gz
+# To download the GTDBtk r232 dataset we used the following paths
+mkdir -p /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/gtdbtk_r232
+cd /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/gtdbtk_r232
+wget -c https://data.ace.uq.edu.au/public/gtdb/data/releases/release232/232.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r232_data.tar.gz
+tar xvzf gtdbtk_r232_data.tar.gz
 
 conda env remove -n env_immense
 conda env create -f environment.yml
-
-
-# https://gtdb.ecogenomic.org/   -> adanced search
-/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacterium_attenuatum/ncbi_dataset/data/GCA_002086865.1/
-   GCA_002086865.1_ASM208686v1_genomic.fna
-   genomic.gff
 
 srun --pty -n 1 -c 6 --time=03:00:00 --mem=16G bash -l
 mkdir -p /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/16S_ribosomal_20260123

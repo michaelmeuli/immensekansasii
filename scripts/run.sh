@@ -1,121 +1,9 @@
 
 
-
-# By default the output (and the large, temporary Nextflow work/ dir) is
-# written in the current directory, so start every run in its own subdir of
-# runs/ and afterwards copy only the end results (no work/) to output/.
-mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/test_run
-cd /shares/sander.imm.uzh/MM/kansasii/runs/test_run
-bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j test_run -t fq_PE -r test_run -x "--kansasii_snippy_db /shares/sander.imm.uzh/MM/kansasii/snippy_db/test_run" -i /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/data/test_dataset
-# run_IMMENSE.sh only submits a SLURM job: once it has finished, copy the
-# end results (without work/) to output/
-rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/test_run/ /shares/sander.imm.uzh/MM/kansasii/output/test_run/
-
-
-
-
-ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output && tar --exclude='work' -cf /tmp/archive.tar ."
-scp mimeul@cluster.s3it.uzh.ch:/tmp/archive.tar "$env:USERPROFILE\kansasii_C\downloads\"
-cd "$env:USERPROFILE\kansasii_C\downloads"
-tar -xf archive.tar
-
-
-
-# ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output && find . -name '*.html' | tar -cf /tmp/htmls.tar -T -"
-# scp mimeul@cluster.s3it.uzh.ch:/tmp/htmls.tar "$env:USERPROFILE\kansasii_C\downloads\"
-# cd "$env:USERPROFILE\kansasii_C\downloads"
-# tar -xf htmls.tar
-
-# ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output && tar --exclude='./*/work' -cf /tmp/archive.tar ."
-
-
-
-mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/reference_genomes_gtdb_232
-cd /shares/sander.imm.uzh/MM/kansasii/runs/reference_genomes_gtdb_232
-bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j ref_232_run -t fasta -r ref_run -x "--kansasii_snippy_db /shares/sander.imm.uzh/MM/kansasii/snippy_db/ref_run" -i /shares/sander.imm.uzh/MM/kansasii/data/reference_genomes_gtdb_232/
-# run_IMMENSE.sh only submits a SLURM job: once it has finished, copy the
-# end results (without work/) to output/
-rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/reference_genomes_gtdb_232/ /shares/sander.imm.uzh/MM/kansasii/output/reference_genomes_gtdb_232/
-
-ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
-ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output/reference_genomes_gtdb_232 && tar --exclude='work' -cf /shares/sander.imm.uzh/MM/kansasii/output/archive.tar ."
-New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\reference_genomes_gtdb_232\" -Force
-scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/archive.tar "$env:USERPROFILE\kansasii_C\downloads\reference_genomes_gtdb_232\"
-cd "$env:USERPROFILE\kansasii_C\downloads\reference_genomes_gtdb_232\"
-tar -xf archive.tar
-
-
-
-
-# -i only takes a single directory (the pipeline recurses through it with
-# **/*.{fasta,fna}), so it can't be handed a glob of per-genome dirs -- only
-# the first match would ever be used. Build a flat directory of symlinks,
-# one per accession listed in mycobacterium_representative_type_strain_accessions.txt,
-# and point -i at that instead.
-ACCESSIONS_FILE="/shares/sander.imm.uzh/MM/kansasii/output/lit/gtdb/gtdb232/mycobacterium_representative_type_strain_accessions.txt"
-GENOME_DATA_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data"
-SELECTED_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/selected_type_strains"
-
-mkdir -p "$SELECTED_DIR"
-while read -r acc; do
-  [ -z "$acc" ] && continue
-  acc=$(echo "$acc" | cut -c4-)  # strip RS_/GB_ source-flag prefix
-  src=$(find "$GENOME_DATA_DIR/$acc" -maxdepth 1 \( -name '*.fna' -o -name '*.fasta' \) | head -1)
-  if [ -z "$src" ]; then
-    echo "WARNING: no fasta/fna found for $acc" >&2
-    continue
-  fi
-  ln -sf "$src" "$SELECTED_DIR/$acc.fasta"
-done < "$ACCESSIONS_FILE"
-
-mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/tree_run
-cd /shares/sander.imm.uzh/MM/kansasii/runs/tree_run
-bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_tree_run -t fasta -r tree_run -x "--kansasii_snippy_db /shares/sander.imm.uzh/MM/kansasii/snippy_db/tree_run" -i "$SELECTED_DIR"
-# run_IMMENSE.sh only submits a SLURM job: once it has finished, copy the
-# end results (without work/) to output/
-rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/tree_run/ /shares/sander.imm.uzh/MM/kansasii/output/tree_run/
-
-
-
-ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
-ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output/tree_run && tar --exclude='work' -cf /shares/sander.imm.uzh/MM/kansasii/output/archive.tar ."
-New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\tree_run\" -Force
-scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/archive.tar "$env:USERPROFILE\kansasii_C\downloads\tree_run\"
-cd "$env:USERPROFILE\kansasii_C\downloads\tree_run\"
-tar -xf archive.tar
-
-
-
-
-mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/ref_tree_run_test
-cd /shares/sander.imm.uzh/MM/kansasii/runs/ref_tree_run_test
-bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_ref_tree_run_test -t fasta -r ref_tree_run_test -x "--kansasii_snippy_db /shares/sander.imm.uzh/MM/kansasii/snippy_db/ref_tree_run_test" -i /shares/sander.imm.uzh/MM/kansasii/data/reference_genomes_gtdb_232
-# run_IMMENSE.sh only submits a SLURM job: once it has finished, copy the
-# end results (without work/) to output/
-rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/ref_tree_run_test/ /shares/sander.imm.uzh/MM/kansasii/output/ref_tree_run_test/
-
-
-ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
-ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output/ref_tree_run_test && tar --exclude='work' -cf /shares/sander.imm.uzh/MM/kansasii/output/archive.tar ."
-New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\ref_tree_run_test\" -Force
-scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/archive.tar "$env:USERPROFILE\kansasii_C\downloads\ref_tree_run_test\"
-cd "$env:USERPROFILE\kansasii_C\downloads\ref_tree_run_test\"
-tar -xf archive.tar
-
-
-
-
-# Same idea as the selected_type_strains block above, but for the broader
-# "relevant species" set (kansasii complex + MTBC + MAC + simiae) in
-# mycobacterium_relevant_species_representative_accessions.txt. That file
-# is already stripped of the RS_/GB_ source-flag prefix (unlike
-# mycobacterium_representative_type_strain_accessions.txt above), so no
-# `cut -c4-` is needed here.
-#
 # Every one of these accessions is itself a GTDB-Tk reference genome, so
 # gtdbtk_classify_wf rejects them outright as query input ("You have N
 # genomes with the same id as GTDB-Tk reference genomes, please rename
-# them."). mycobacterium_relevant_species_representative_accessions_renamed.txt
+# them."). kansasii_complex_gtdb_representative_accessions_renamed.txt
 # (built in gtdb_mycobacteria_genomes.sh) pairs each accession with a
 # "_query"-suffixed id; symlink under the renamed id so the destination
 # filename -- which is what gtdbtk/Channel.fromFilePairs key tips off --
@@ -127,9 +15,9 @@ tar -xf archive.tar
 # scripts/generate_itol_species_labels.sh for turning those into iTOL
 # species-name annotations after upload (that script will need updating to
 # match on the renamed ids too).
-ACCESSIONS_FILE="/shares/sander.imm.uzh/MM/kansasii/output/lit/gtdb/gtdb232/mycobacterium_relevant_species_representative_accessions_renamed.txt"
+ACCESSIONS_FILE="/shares/sander.imm.uzh/MM/kansasii/output/lit/gtdb/gtdb232/kansasii_complex_gtdb_representative_accessions_renamed.txt"
 GENOME_DATA_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data"
-SELECTED_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/selected_relevant_species"
+SELECTED_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/kansasii_complex_gtdb_representatives"
 
 mkdir -p "$SELECTED_DIR"
 while read -r acc renamed; do
@@ -142,43 +30,29 @@ while read -r acc renamed; do
   ln -sf "$src" "$SELECTED_DIR/$renamed.fasta"
 done < "$ACCESSIONS_FILE"
 
-mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/relevant_species_tree_run
-cd /shares/sander.imm.uzh/MM/kansasii/runs/relevant_species_tree_run
-bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_relevant_species_tree_run -t fasta -r relevant_species_tree_run -x "--kansasii_snippy_db /shares/sander.imm.uzh/MM/kansasii/snippy_db/relevant_species_tree_run" -i "$SELECTED_DIR"
+mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/kansasii_complex_gtdb_representatives
+cd /shares/sander.imm.uzh/MM/kansasii/runs/kansasii_complex_gtdb_representatives
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_kansasii_complex_gtdb_representatives -t fasta -r kansasii_complex_gtdb_representatives -x "--kansasii_snippy_db /shares/sander.imm.uzh/MM/kansasii/snippy_db/kansasii_complex_gtdb_representatives" -i "$SELECTED_DIR"
 # run_IMMENSE.sh only submits a SLURM job: once it has finished, copy the
 # end results (without work/) to output/
-rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/relevant_species_tree_run/ /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run/
-
-
-ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
-ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run && tar --exclude='work' -cf /shares/sander.imm.uzh/MM/kansasii/output/archive.tar ."
-New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run\" -Force
-scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/archive.tar "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run\"
-cd "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run\"
-tar -xf archive.tar
+rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/kansasii_complex_gtdb_representatives/ /shares/sander.imm.uzh/MM/kansasii/output/kansasii_complex_gtdb_representatives/
 
 
 
 
 
 
-SELECTED_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/selected_relevant_species"
-mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/relevant_species_tree_run_master
-cd /shares/sander.imm.uzh/MM/kansasii/runs/relevant_species_tree_run_master
-bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_relevant_species_tree_run_master -t fasta -r relevant_species_tree_run_master -x "--kansasii_snippy_db /shares/sander.imm.uzh/MM/kansasii/snippy_db/relevant_species_tree_run_master" -i "$SELECTED_DIR"
+
+mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/mkan329
+cd /shares/sander.imm.uzh/MM/kansasii/runs/mkan329
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_mkan329 -t fasta -r mkan329 -x "--kansasii_snippy_db /shares/sander.imm.uzh/MM/kansasii/snippy_db/mkan329" -i "$SELECTED_DIR"
 # run_IMMENSE.sh only submits a SLURM job: once it has finished, copy the
 # end results (without work/) to output/
-rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/relevant_species_tree_run_master/ /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run_master/
+rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/mkan329/ /shares/sander.imm.uzh/MM/kansasii/output/mkan329/
 
 
-ssh mimeul@cluster.s3it.uzh.ch "rm -f /shares/sander.imm.uzh/MM/kansasii/output/archive.tar"
-ssh mimeul@cluster.s3it.uzh.ch "cd /shares/sander.imm.uzh/MM/kansasii/output/relevant_species_tree_run_master && tar --exclude='work' -cf /shares/sander.imm.uzh/MM/kansasii/output/archive.tar ."
-New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run_master\" -Force
-scp mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/archive.tar "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run_master\"
-cd "$env:USERPROFILE\kansasii_C\downloads\relevant_species_tree_run_master\"
-tar -xf archive.tar
 
-scp -r "A:\projects\kansasii\input\*" mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/data/imm/
+
 
 New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\" -Force
 scp -r mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/* "$env:USERPROFILE\kansasii_C\downloads\"
