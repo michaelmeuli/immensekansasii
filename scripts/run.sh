@@ -18,8 +18,12 @@
 ACCESSIONS_FILE="/shares/sander.imm.uzh/MM/kansasii/output/lit/gtdb/gtdb232/kansasii_complex_gtdb_representative_accessions_renamed.txt"
 GENOME_DATA_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data"
 SELECTED_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/kansasii_complex_gtdb_representatives"
+SNIPPY_DB_DIR="/shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/kansasii_complex_gtdb_representatives"
+RUN_DIR="/shares/sander.imm.uzh/MM/kansasii/runs/kansasii_complex_gtdb_representatives"
 
 mkdir -p "$SELECTED_DIR"
+mkdir -p "$SNIPPY_DB_DIR"
+mkdir -p "$RUN_DIR"
 while read -r acc renamed; do
   [ -z "$acc" ] && continue
   src=$(find "$GENOME_DATA_DIR/$acc" -maxdepth 1 \( -name '*.fna' -o -name '*.fasta' \) | head -1)
@@ -30,9 +34,8 @@ while read -r acc renamed; do
   ln -sf "$src" "$SELECTED_DIR/$renamed.fasta"
 done < "$ACCESSIONS_FILE"
 
-mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/kansasii_complex_gtdb_representatives
-cd /shares/sander.imm.uzh/MM/kansasii/runs/kansasii_complex_gtdb_representatives
-bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_kansasii_complex_gtdb_representatives -t fasta -r kansasii_complex_gtdb_representatives -x "--kansasii_snippy_db /shares/sander.imm.uzh/MM/kansasii/snippy_db/kansasii_complex_gtdb_representatives" -i "$SELECTED_DIR"
+cd "$RUN_DIR"
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_kansasii_complex_gtdb_representatives -t fasta -r kansasii_complex_gtdb_representatives -x "--kansasii_snippy_db $SNIPPY_DB_DIR" -i "$SELECTED_DIR"
 # run_IMMENSE.sh only submits a SLURM job: once it has finished, copy the
 # end results (without work/) to output/
 rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/kansasii_complex_gtdb_representatives/ /shares/sander.imm.uzh/MM/kansasii/output/kansasii_complex_gtdb_representatives/
@@ -42,10 +45,12 @@ rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/r
 
 
 
-
-mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/mkan329
-cd /shares/sander.imm.uzh/MM/kansasii/runs/mkan329
-bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_mkan329 -t fasta -r mkan329 -x "--kansasii_snippy_db /shares/sander.imm.uzh/MM/kansasii/snippy_db/mkan329" -i "$SELECTED_DIR"
+RUN_DIR="/shares/sander.imm.uzh/MM/kansasii/runs/mkan329"
+SNIPPY_DB_DIR="/shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/mkan329"
+INPUT_DIR="/shares/sander.imm.uzh/MM/kansasii/data/mkan329"
+mkdir -p "$RUN_DIR"
+cd "$RUN_DIR"
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_mkan329 -t fasta -r mkan329 -x "--kansasii_snippy_db $SNIPPY_DB_DIR" -i "$INPUT_DIR"
 # run_IMMENSE.sh only submits a SLURM job: once it has finished, copy the
 # end results (without work/) to output/
 rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/mkan329/ /shares/sander.imm.uzh/MM/kansasii/output/mkan329/
