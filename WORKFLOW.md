@@ -91,6 +91,17 @@ Writes `itol_species_labels.txt` (`Species [accession]`) and `itol_species_color
 (kansasii complex / MTBC / MAC / *M. simiae* complex / other) to
 `output/lit/gtdb/gtdb232/`. `-a` selects another accessions file, e.g. the 20-genome list.
 
+Getting the files into iTOL (the script only writes them on the server):
+
+1. Copy to your computer, run from your laptop (not on the server):
+   ```bash
+   scp "<user>@<server-hostname>:/shares/sander.imm.uzh/MM/kansasii/output/lit/gtdb/gtdb232/itol_species_*.txt" ~/Downloads/
+   ```
+   For the mkan329 tree use `output/mkan329/mkan329_itol_species_*.txt` instead. A GUI
+   client (WinSCP, Cyberduck, MobaXterm) works too. Also fetch the `.treefile` the same way.
+2. At <https://itol.embl.de> upload the `.treefile`, open the tree, then drag
+   `*_itol_species_labels.txt` and `*_itol_species_colorstrip.txt` onto the tree view.
+
 ### 2b. `mkan329` (real isolates, `-t fq_PE`)
 
 Input: paired-end fastq in `data/mkan329/` (not yet run; the block in `run.sh` is untested).
@@ -112,7 +123,8 @@ Input: paired-end fastq in `data/mkan329/` (not yet run; the block in `run.sh` i
 4. **iTOL labels** for the sample tree:
    `bash scripts/generate_itol_species_labels.sh -m samples -p mkan329_` writes
    `mkan329_itol_species_labels.txt` (`Species [Mkan329-NNN]`) and
-   `mkan329_itol_species_colorstrip.txt` to `output/mkan329/`.
+   `mkan329_itol_species_colorstrip.txt` to `output/mkan329/`. Copy them to your computer
+   and load them into iTOL as described in section 2a.
 
 Where results are: species is **not** in `assembly/results/<s>/5_typing/` (that holds
 `mlst/`, `pyMLST/`, `kansasii_snippy/`). It is in `3_quality/GTDB/<s>.tsv_gtdb_summary.tsv`
