@@ -28,47 +28,54 @@
 #            Display text is "Species [Mkan329-NNN]".
 #
 # Usage: bash generate_itol_species_labels.sh [-m gtdb|samples] [-a ACCESSIONS_FILE]
-#                                              [-r RESULTS_CSV] [-o OUT_DIR] [-p PREFIX]
+#                                              [-r RESULTS_CSV] [-n RUN] [-o OUT_DIR] [-p PREFIX]
 #   -m  mode (default gtdb)
 #   -a  gtdb mode: accessions file name/path (default
-#       kansasii_complex_gtdb_representative_accessions_renamed.txt in OUT_DIR; use
+#       kansasii_complex_gtdb_representative_accessions_renamed.txt in output/lit/gtdb/gtdb232; use
 #       mycobacterium_relevant_species_representative_accessions_renamed.txt for the 20-genome set)
 #   -r  samples mode: screening_map_results.csv (default data/imm/screening_map_results.csv)
-#   -o  output dir (default output/lit/gtdb/gtdb232 in gtdb mode, output/mkan329 in samples mode)
+#   -n  pipeline run name (default kansasii_complex_gtdb_representatives in gtdb mode,
+#       mkan329 in samples mode); the tree files are copied from output/<run>/<run>_transfer_result/kansasii_phylogeny/
+#   -o  output dir (default output/iTOL/<run>)
 #   -p  output file prefix, e.g. "mkan329_" (default none)
 # Writes: <prefix>itol_species_labels.txt, <prefix>itol_species_colorstrip.txt in OUT_DIR
+# (also copies the run's .treefile/.iqtree there, so OUT_DIR is all of iTOL's input)
 
 set -euo pipefail
 
 K=/shares/sander.imm.uzh/MM/kansasii
 DATA_DIR=$K/data/lit/gtdb/gtdb232
 METADATA="$DATA_DIR/bac120_metadata_r232.tsv"
+ACC_DIR=$K/output/lit/gtdb/gtdb232   # accessions files
 
 MODE=gtdb
 ACCESSIONS_FILE="kansasii_complex_gtdb_representative_accessions_renamed.txt"
 RESULTS_CSV="$K/data/imm/screening_map_results.csv"
+RUN=
 OUT_DIR=""
 PREFIX=""
-while getopts "m:a:r:o:p:" opt; do
+while getopts "m:a:r:n:o:p:" opt; do
   case $opt in
     m) MODE=$OPTARG ;;
     a) ACCESSIONS_FILE=$OPTARG ;;
     r) RESULTS_CSV=$OPTARG ;;
+    n) RUN=$OPTARG ;;
     o) OUT_DIR=$OPTARG ;;
     p) PREFIX=$OPTARG ;;
-    *) echo "usage: $0 [-m gtdb|samples] [-a accessions] [-r results.csv] [-o outdir] [-p prefix]" >&2; exit 2 ;;
+    *) echo "usage: $0 [-m gtdb|samples] [-a accessions] [-r results.csv] [-n run] [-o outdir] [-p prefix]" >&2; exit 2 ;;
   esac
 done
 
 case $MODE in
-  gtdb)    : "${OUT_DIR:=$K/output/lit/gtdb/gtdb232}" ;;
-  samples) : "${OUT_DIR:=$K/output/mkan329}" ;;
+  gtdb)    : "${RUN:=kansasii_complex_gtdb_representatives}" ;;
+  samples) : "${RUN:=mkan329}" ;;
   *) echo "unknown mode: $MODE" >&2; exit 2 ;;
 esac
+: "${OUT_DIR:=$K/output/iTOL/$RUN}"
 
-# resolve the accessions file against OUT_DIR if given as a bare name
+# resolve the accessions file against ACC_DIR if given as a bare name
 if [ "$MODE" = gtdb ] && [ "${ACCESSIONS_FILE#/}" = "$ACCESSIONS_FILE" ] && [ ! -f "$ACCESSIONS_FILE" ]; then
-  ACCESSIONS_FILE="$OUT_DIR/$ACCESSIONS_FILE"
+  ACCESSIONS_FILE="$ACC_DIR/$ACCESSIONS_FILE"
 fi
 mkdir -p "$OUT_DIR"
 
@@ -157,5 +164,9 @@ fi
       print id, color, group
     }' "$JOINED"
 } > "$OUT_DIR/${PREFIX}itol_species_colorstrip.txt"
+
+TREE_DIR=$K/output/$RUN/${RUN}_transfer_result/kansasii_phylogeny
+cp -v "$TREE_DIR"/kansasii_complex_tree.treefile "$TREE_DIR"/kansasii_complex_tree.iqtree "$OUT_DIR/" ||
+  echo "WARNING: no tree files copied from $TREE_DIR" >&2
 
 echo "Wrote ${PREFIX}itol_species_labels.txt and ${PREFIX}itol_species_colorstrip.txt to $OUT_DIR ($n_joined tips, mode $MODE)"

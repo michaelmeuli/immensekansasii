@@ -89,16 +89,18 @@ bash repos/immensekansasii/scripts/generate_itol_species_labels.sh
 
 Writes `itol_species_labels.txt` (`Species [accession]`) and `itol_species_colorstrip.txt`
 (kansasii complex / MTBC / MAC / *M. simiae* complex / other) to
-`output/lit/gtdb/gtdb232/`. `-a` selects another accessions file, e.g. the 20-genome list.
+`output/iTOL/kansasii_complex_gtdb_representatives/`, together with a copy of the run's
+`.treefile` and `.iqtree`. `-a` selects another accessions file (e.g. the 20-genome list),
+`-n` another run name.
 
 Getting the files into iTOL (the script only writes them on the server):
 
 1. Copy to your computer, run from your laptop (not on the server):
    ```bash
-   scp "<user>@<server-hostname>:/shares/sander.imm.uzh/MM/kansasii/output/lit/gtdb/gtdb232/itol_species_*.txt" ~/Downloads/
+   scp "<user>@<server-hostname>:/shares/sander.imm.uzh/MM/kansasii/output/iTOL/kansasii_complex_gtdb_representatives/*" ~/Downloads/
    ```
-   For the mkan329 tree use `output/mkan329/mkan329_itol_species_*.txt` instead. A GUI
-   client (WinSCP, Cyberduck, MobaXterm) works too. Also fetch the `.treefile` the same way.
+   For the mkan329 tree use `output/iTOL/mkan329/*` instead. A GUI
+   client (WinSCP, Cyberduck, MobaXterm) works too. The `.treefile` is in the same directory for the GTDB tree.
 2. At <https://itol.embl.de> upload the `.treefile`, open the tree, then drag
    `*_itol_species_labels.txt` and `*_itol_species_colorstrip.txt` onto the tree view.
 
@@ -123,7 +125,7 @@ Input: paired-end fastq in `data/mkan329/` (not yet run; the block in `run.sh` i
 4. **iTOL labels** for the sample tree:
    `bash scripts/generate_itol_species_labels.sh -m samples -p mkan329_` writes
    `mkan329_itol_species_labels.txt` (`Species [Mkan329-NNN]`) and
-   `mkan329_itol_species_colorstrip.txt` to `output/mkan329/`. Copy them to your computer
+   `mkan329_itol_species_colorstrip.txt` and a copy of the tree to `output/iTOL/mkan329/`. Copy them to your computer
    and load them into iTOL as described in section 2a.
 
 Where results are: species is **not** in `assembly/results/<s>/5_typing/` (that holds
