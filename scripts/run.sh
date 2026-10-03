@@ -82,7 +82,7 @@ bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j 
 rsync -a --exclude work --exclude .nextflow --exclude '*_transfer_result/genomes/' /shares/sander.imm.uzh/MM/kansasii/runs/mkan329/ /shares/sander.imm.uzh/MM/kansasii/output/mkan329/
 
 # Afterwards (conda activate kansasii_mic): add GTDB species + TNR_MLSA to the
-# screening map (writes data/imm/screening_map_results.csv, copy in output/mlsa)
+# screening map (writes data/imm/screening_map_results.csv, copy in output)
 # and generate iTOL labels for the tree tips (short ids -> "Species [Mkan329-NNN]").
 python /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/screening_map_results.py \
   --quality /shares/sander.imm.uzh/MM/kansasii/output/mkan329/mkan329_transfer_result/mkan329_quality.tsv \

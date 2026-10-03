@@ -80,7 +80,7 @@ def main():
                     default=K / "output/mlsa/main2_sanger_differentiation/representative_reads.tsv")
     ap.add_argument("--sanger-class", type=Path,
                     default=K / "output/mlsa/main2_sanger_differentiation/isolate_classification.tsv")
-    ap.add_argument("--copy-to", type=Path, default=K / "output/mlsa",
+    ap.add_argument("--copy-to", type=Path, default=K / "output",
                     help="directory to also copy the output to")
     args = ap.parse_args()
     link_path = args.link or args.indir / "screening_map_link.csv"

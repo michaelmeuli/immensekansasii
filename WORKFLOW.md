@@ -19,7 +19,7 @@ relative to `/shares/sander.imm.uzh/MM/kansasii/` (`K`) unless absolute.
 | `runs/<run_name>/` | working dir of a pipeline run (contains large, temporary `work/`) |
 | `output/<run_name>/` | end results of a run (no `work/`); downloaded to local `kansasii_C` |
 | `output/lit/gtdb/gtdb232/` | accession lists, type strains, iTOL files |
-| `output/mlsa/` | MLSA outputs and copies of the screening map tables |
+| `output/mlsa/` | MLSA outputs |
 
 Scripts (`repos/immensekansasii/scripts/`):
 
@@ -143,7 +143,7 @@ conda activate kansasii_mic
 python repos/immensekansasii/scripts/screening_map_link.py [--indir DIR] [--out FILE] [--copy-to DIR]
 ```
 
-Writes `data/imm/screening_map_link.csv` (copy in `output/mlsa/`): one row per isolate,
+Writes `data/imm/screening_map_link.csv` (copy in `output/`): one row per isolate,
 key `PROBENNUMMER` (`Mkan329-NNN`), with `LNR`, `LNR2`, `TNR`, `TNR_NGS`, `TNR3..`, `NGS`,
 `MHK`, `LABEL` (reference strains, NR 126-133). Extra TNR columns exist because a case can
 be re-opened under a new TNR; their number follows the isolate with the most (Mkan329-183).
@@ -159,7 +159,7 @@ and links the `.ab1` files whose path contains one of the 10-digit TNRs;
 ### Results table
 
 `screening_map_results.py` reads `screening_map_link.csv` (never modifies it) and writes
-`data/imm/screening_map_results.csv` (copy in `output/mlsa/`): all link columns plus
+`data/imm/screening_map_results.csv` (copy in `output/`): all link columns plus
 - `species`, `gtdb_ani`, `gtdb_af`, `gtdb_reference`: GTDB-Tk call from the run's `quality.tsv`
 - `species_sanger`: `nearest_species` from `isolate_classification.tsv` (mlsa)
 - `TNR_MLSA`: TNR(s) of the representative Sanger reads (`representative_reads.tsv`)

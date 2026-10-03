@@ -160,7 +160,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--indir", type=Path, default=Path("/shares/sander.imm.uzh/MM/kansasii/data/imm"))
     ap.add_argument("--out", type=Path, default=None, help="default: <indir>/screening_map_link.csv")
-    ap.add_argument("--copy-to", type=Path, default=Path("/shares/sander.imm.uzh/MM/kansasii/output/mlsa"),
+    ap.add_argument("--copy-to", type=Path, default=Path("/shares/sander.imm.uzh/MM/kansasii/output"),
                     help="directory to also copy the output to")
     args = ap.parse_args()
     out = args.out or args.indir / "screening_map_link.csv"
