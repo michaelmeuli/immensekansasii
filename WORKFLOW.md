@@ -226,7 +226,7 @@ and links the `.ab1` files whose path contains one of the 10-digit TNRs;
 `data/imm/screening_map_results.csv` (copy in `output/`): all link columns plus
 - `species`, `gtdb_ani`, `gtdb_af`, `gtdb_reference`: GTDB-Tk call from the run's `quality.tsv`
 - `species_mlsa1`, `species_mlsa2`: hsp65 `nearest_species` from `isolate_classification.tsv` of mlsa main2 and main2_excluded
-- `species_ref`: `closest_species` of main3 `reference_alignment.tsv` for the representative hsp65 read (empty until main3 is run)
+- `species_ref`: `closest_species` of main3 `reference_alignment.tsv` for the representative hsp65 read, only if status is `ok` (empty for ambiguous/divergent/no_hit or until main3 is run)
 - `TNR_MLSA`: TNR(s) of the representative Sanger reads (`representative_reads.tsv`)
   that differ from the row's `TNR`. Currently only Mkan329-183 (`2023500268`).
 

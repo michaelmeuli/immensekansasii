@@ -9,10 +9,14 @@ script never modifies it. Added columns:
       (gtdb_species, gtdb_fastani_ani/af/reference). 5_typing holds no species.
       The quality table's Sample is the short id (NR) used as fasta name by
       scripts/run.sh, or Mkan329-NNN if not renamed; --id-map resolves it.
-  species_sanger
-      nearest_species from mlsa-kansasii isolate_classification.tsv (optional
-      cross-check; empty if the file is missing). Multiple loci -> joined by "/"
-      when they disagree.
+  species_mlsa1, species_mlsa2, species_ref
+      hsp65-only species calls of the Sanger data (optional cross-checks; empty
+      if the file is missing or the isolate has no hsp65 read / call is NA):
+      species_mlsa1  nearest_species, mlsa-kansasii main2 (all reference genomes)
+      species_mlsa2  nearest_species, main2_excluded (3 Korean genomes removed)
+      species_ref    closest_species, main3 reference alignment, of the isolate's
+                     representative hsp65 read (representative_reads.tsv);
+                     only if main3 status is "ok" (else empty)
   TNR_MLSA
       TNR(s) of the representative Sanger reads (representative_reads.tsv) of
       that isolate that differ from the row's TNR. Several -> comma-joined.
@@ -38,6 +42,13 @@ def warn(msg):
 
 def read_tsv(path, sep="\t"):
     return pd.read_csv(path, sep=sep, dtype=str, keep_default_na=False)
+
+
+def hsp65_calls(path):
+    """Return {probennummer: nearest_species} for the hsp65 rows of an isolate_classification.tsv."""
+    sc = read_tsv(path)
+    sc = sc[sc["locus"] == "hsp65"]
+    return dict(zip(sc["probennummer"], sc["nearest_species"]))
 
 
 def tnr_mlsa(link, reads_path):
@@ -78,8 +89,12 @@ def main():
                          "default: <data/mkan329_short>/id_map.tsv if present")
     ap.add_argument("--reads", type=Path,
                     default=K / "output/mlsa/main2_sanger_differentiation/representative_reads.tsv")
-    ap.add_argument("--sanger-class", type=Path,
+    ap.add_argument("--mlsa1", type=Path,
                     default=K / "output/mlsa/main2_sanger_differentiation/isolate_classification.tsv")
+    ap.add_argument("--mlsa2", type=Path,
+                    default=K / "output/mlsa/main2_sanger_differentiation_excluded/isolate_classification.tsv")
+    ap.add_argument("--refalign", type=Path,
+                    default=K / "output/mlsa/main3_reference_alignment/reference_alignment.tsv")
     ap.add_argument("--copy-to", type=Path, default=K / "output",
                     help="directory to also copy the output to")
     args = ap.parse_args()
@@ -89,7 +104,8 @@ def main():
 
     link = read_tsv(link_path, ",")
     res = link.copy()
-    for c in ("species", "gtdb_ani", "gtdb_af", "gtdb_reference", "species_sanger", "TNR_MLSA"):
+    for c in ("species", "gtdb_ani", "gtdb_af", "gtdb_reference",
+              "species_mlsa1", "species_mlsa2", "species_ref", "TNR_MLSA"):
         res[c] = ""
 
     # --- GTDB species from the pipeline run ---
@@ -119,18 +135,33 @@ def main():
     else:
         warn(f"{args.quality} not found; species columns left empty")
 
-    # --- Sanger species cross-check ---
-    if args.sanger_class.exists():
-        sc = read_tsv(args.sanger_class)
-        sc = sc[sc["locus"].str.contains("hsp65|16S", regex=True)]
-        calls = {}
-        for pnr, sp in zip(sc["probennummer"], sc["nearest_species"]):
-            calls.setdefault(pnr, [])
-            if sp not in calls[pnr]:
-                calls[pnr].append(sp)
-        res["species_sanger"] = res["PROBENNUMMER"].map(lambda p: "/".join(calls.get(p, [])))
+    # --- hsp65 species calls: main2 (mlsa1), main2_excluded (mlsa2) ---
+    for col, path in (("species_mlsa1", args.mlsa1), ("species_mlsa2", args.mlsa2)):
+        if path.exists():
+            calls = hsp65_calls(path)
+            res[col] = res["PROBENNUMMER"].map(lambda p: calls.get(p, ""))
+        else:
+            warn(f"{path} not found; {col} left empty")
+
+    # --- species_ref: main3 call for the representative hsp65 read ---
+    if args.refalign.exists() and args.reads.exists():
+        reads = read_tsv(args.reads)
+        reads = reads[reads["locus"] == "hsp65"]
+        rep = dict(zip(reads["probennummer"], reads["read"]))
+        ra = read_tsv(args.refalign)
+        closest = {}
+        for name, sp, st in zip(ra["read"], ra["closest_species"], ra["status"]):
+            if st != "ok":  # ambiguous / divergent / no_hit: no reliable call
+                sp = ""
+            closest[name] = sp
+            closest.setdefault(Path(name).stem, sp)
+        missing = [p for p, r in rep.items() if r not in closest and Path(r).stem not in closest]
+        if missing:
+            warn(f"{len(missing)} representative hsp65 reads not in {args.refalign.name}: {missing[:5]}...")
+        res["species_ref"] = res["PROBENNUMMER"].map(
+            lambda p: closest.get(rep.get(p, ""), closest.get(Path(rep.get(p, "")).stem, "")) if p in rep else "")
     else:
-        warn(f"{args.sanger_class} not found; species_sanger left empty")
+        warn(f"{args.refalign} or {args.reads} not found; species_ref left empty")
 
     # --- TNR_MLSA ---
     if args.reads.exists():
@@ -140,7 +171,9 @@ def main():
 
     res.to_csv(out, index=False)
     print(f"wrote {out} ({len(res)} rows): {(res['species'] != '').sum()} with species, "
-          f"{(res['TNR_MLSA'] != '').sum()} with TNR_MLSA")
+          f"{(res['TNR_MLSA'] != '').sum()} with TNR_MLSA, "
+          f"{(res['species_mlsa1'] != '').sum()}/{(res['species_mlsa2'] != '').sum()}/"
+          f"{(res['species_ref'] != '').sum()} with species_mlsa1/mlsa2/ref")
     args.copy_to.mkdir(parents=True, exist_ok=True)
     shutil.copy2(out, args.copy_to / out.name)
     print(f"copied to {args.copy_to / out.name}")
