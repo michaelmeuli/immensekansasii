@@ -15,7 +15,7 @@ relative to `/shares/sander.imm.uzh/MM/kansasii/` (`K`) unless absolute.
 | `data/lit/gtdb/gtdb232/` | GTDB r232 metadata (downloaded if missing) |
 | `data/gtdb_genomes/` | genomes downloaded from NCBI, plus symlink dirs for runs |
 | `data/illumina/Mkan329/reads/kansasii/` | delivered paired-end fastq `Mkan329-NNN_r1/_r2.fastq.gz` (lower case; 131 of 183 isolates so far) |
-| `data/illumina/Mkan329/batches/<batch>/` | per-batch input from `mkan329_batches.sh`: `<NR>_R1/_R2.fastq.gz` symlinks + `id_map.tsv` |
+| `data/illumina/Mkan329/batches/<batch>/` | per-batch input from `mkan329_batches.sh`: `Mkan329-NNN_R1/_R2.fastq.gz` symlinks + `id_map.tsv` |
 | `runs/<run_name>/` | working dir of a pipeline run (contains large, temporary `work/`) |
 | `output/<run_name>/` | end results of a run (no `work/`); downloaded to local `kansasii_C` |
 | `output/lit/gtdb/gtdb232/` | accession lists, type strains, iTOL files |
@@ -121,10 +121,15 @@ batch first. (The old single-run block in `run.sh` is untested and superseded by
      real tree)
    - `batches/all/`: every isolate with a complete pair (final run)
 
-   Each batch dir is flat: `<NR>_R1.fastq.gz` / `<NR>_R2.fastq.gz` symlinks (sample id =
-   `NR`; **upper-case `_R1/_R2`**, because the `{R1,R2,1,2}` glob in `main.nf` is
-   case-sensitive and would not find the delivered lower-case names) plus `id_map.tsv`
-   (`NR`, `PROBENNUMMER`, original paths). Isolates without a complete pair are skipped
+   Each batch dir is flat: `Mkan329-NNN_R1.fastq.gz` / `Mkan329-NNN_R2.fastq.gz` symlinks
+   (sample id = `PROBENNUMMER`; **upper-case `_R1/_R2`**, because the `{R1,R2,1,2}` glob in
+   `main.nf` is case-sensitive and would not find the delivered lower-case names) plus
+   `id_map.tsv` (`NR`, `PROBENNUMMER`, original paths). **Do not use the bare `NR` as sample
+   id** (as the old `run.sh` block did): `checkm.nf` runs `grep ${sample_id}` on the CheckM
+   log, a bare number matches nearly every line (timestamps), which garbles
+   `<run>_quality.tsv` from `checkm_completeness` on, and `evaluate_QC.py` then crashes in
+   `merge_summaries` (found in the first pilot, 2026-10-03). Proper fix would be anchoring
+   that grep in `checkm.nf`. Isolates without a complete pair are skipped
    with a warning; after the next delivery rerun the script **before** submitting (batch
    membership can shift; old `bNN` dirs are removed). It only builds links and prints the
    commands below, it submits nothing.
@@ -173,12 +178,16 @@ batch first. (The old single-run block in `run.sh` is untested and superseded by
      --quality output/mkan329/mkan329_transfer_result/mkan329_quality.tsv \
      --id-map data/illumina/Mkan329/batches/all/id_map.tsv
    ```
-   (its default `--id-map` is still the old `data/mkan329_short/id_map.tsv`, so pass it).
+   (its default `--id-map` is still the old `data/mkan329_short/id_map.tsv`, so pass it;
+   the quality table's `Sample` is `Mkan329-NNN`, which it matches via `PROBENNUMMER`).
 5. **iTOL labels** for the sample tree:
    `bash scripts/generate_itol_species_labels.sh -m samples -p mkan329_` writes
    `mkan329_itol_species_labels.txt` (`Species [Mkan329-NNN]`) and
    `mkan329_itol_species_colorstrip.txt` and a copy of the tree to `output/iTOL/mkan329/`.
    Copy them to your computer and load them into iTOL as described in section 2a.
+
+   **Needs adapting:** `generate_itol_species_labels.sh -m samples` still uses `NR` as the
+   tree tip id; tips are now `Mkan329-NNN` (`PROBENNUMMER`), so the labels would not match.
 
    **Not yet tested:** that `-resume` really reuses the finished samples across batches
    with different input sets, and steps 4-5 on the `all` output.
@@ -216,7 +225,8 @@ and links the `.ab1` files whose path contains one of the 10-digit TNRs;
 `screening_map_results.py` reads `screening_map_link.csv` (never modifies it) and writes
 `data/imm/screening_map_results.csv` (copy in `output/`): all link columns plus
 - `species`, `gtdb_ani`, `gtdb_af`, `gtdb_reference`: GTDB-Tk call from the run's `quality.tsv`
-- `species_sanger`: `nearest_species` from `isolate_classification.tsv` (mlsa)
+- `species_mlsa1`, `species_mlsa2`: hsp65 `nearest_species` from `isolate_classification.tsv` of mlsa main2 and main2_excluded
+- `species_ref`: `closest_species` of main3 `reference_alignment.tsv` for the representative hsp65 read (empty until main3 is run)
 - `TNR_MLSA`: TNR(s) of the representative Sanger reads (`representative_reads.tsv`)
   that differ from the row's `TNR`. Currently only Mkan329-183 (`2023500268`).
 

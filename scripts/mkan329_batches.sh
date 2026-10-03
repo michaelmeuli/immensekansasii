@@ -11,11 +11,14 @@
 #                                  never ends up in the real tree)
 #   <batches_dir>/all/             every sample with a complete pair
 #
-# Each batch dir is flat, as scripts/run.sh does for mkan329: symlinks
-# <NR>_R1.fastq.gz / <NR>_R2.fastq.gz (the sample id is NR) + id_map.tsv
+# Each batch dir is flat: symlinks <PROBENNUMMER>_R1.fastq.gz /
+# <PROBENNUMMER>_R2.fastq.gz (the sample id is Mkan329-NNN) + id_map.tsv
 # (NR, PROBENNUMMER, original paths). The delivered files are named
 # Mkan329-NNN_r1.fastq.gz (lower case); the links get the upper-case _R1/_R2
-# that main.nf's {R1,R2,1,2} glob needs. Samples without a complete pair
+# that main.nf's {R1,R2,1,2} glob needs. Do NOT use the bare NR as sample id
+# (scripts/run.sh's old short ids): checkm.nf does `grep ${sample_id}` on the
+# CheckM log, a bare number matches almost every line (timestamps) and
+# garbles <run>_quality.tsv (evaluate_QC.py then crashes). Samples without a complete pair
 # (not delivered yet) are skipped with a warning, so rerunning this script
 # after the next delivery just fills in the gaps (batches are rebuilt from
 # scratch each time, so membership can shift -- only rerun it before submitting).
@@ -79,8 +82,8 @@ start_batch() {  # $1 = name
 }
 
 add_sample() {  # $1 = NR, $2 = PROBENNUMMER, $3 = r1, $4 = r2  (to the current batch)
-  ln -sfn "$3" "$batch_dir/${1}_R1.fastq.gz"
-  ln -sfn "$4" "$batch_dir/${1}_R2.fastq.gz"
+  ln -sfn "$3" "$batch_dir/${2}_R1.fastq.gz"
+  ln -sfn "$4" "$batch_dir/${2}_R2.fastq.gz"
   printf '%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$4" >> "$batch_dir/id_map.tsv"
   COUNT[$cur]=$(( COUNT[$cur] + 1 ))
   n_in_batch=$(( n_in_batch + 1 ))
