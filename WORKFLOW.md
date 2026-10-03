@@ -177,16 +177,15 @@ batch first. (The old single-run block in `run.sh` is untested and superseded by
         -i /shares/sander.imm.uzh/MM/kansasii/data/illumina/Mkan329/batches/test
    ```
    Real run, one batch after another (wait until `squeue -u $USER` shows no more
-   `job_mkan329_*` / `nf-*` jobs before submitting the next one): `b01`, `b02`, `b03`,
+   `job_mkan329_*` / `nf-*` jobs before submitting the next one); `run_IMMENSE.sh` only submits the controller job and returns at once, so a loop over several batches would start them all in parallel in the same dir: `b01`, `b02`, `b03`,
    then `all`:
    ```bash
    mkdir -p /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/mkan329 /shares/sander.imm.uzh/MM/kansasii/runs/mkan329
    cd /shares/sander.imm.uzh/MM/kansasii/runs/mkan329
-   for b in b01; do   # then b02, then b03, then all -- one at a time
-     bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_mkan329_$b -t fq_PE -r mkan329 \
-          -x "--kansasii_snippy_db /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/mkan329" \
-          -i /shares/sander.imm.uzh/MM/kansasii/data/illumina/Mkan329/batches/$b
-   done
+   b=b01    # then b02, b03, all: change it and rerun only after the previous one has finished
+   bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_mkan329_$b -t fq_PE -r mkan329 \
+        -x "--kansasii_snippy_db /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/mkan329" \
+        -i /shares/sander.imm.uzh/MM/kansasii/data/illumina/Mkan329/batches/$b
    ```
    After `all` has finished and been checked, copy the end results and delete `work/`:
    ```bash
