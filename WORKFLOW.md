@@ -2,8 +2,10 @@
 
 How the project-specific scripts around the IMMENSE pipeline fit together
 (the pipeline itself is described in `README.md`). This replaces the README of
-the former `kansasii-lit` repo. Everything runs on the s3it cluster; paths are
-relative to `/shares/sander.imm.uzh/MM/kansasii/` (`K`) unless absolute.
+the former `kansasii-lit` repo. Everything runs on the s3it cluster. Paths in the
+tables and text are relative to `/shares/sander.imm.uzh/MM/kansasii/` (`K`) unless
+absolute; **code blocks use full paths** and can be pasted as they are (only
+`<placeholders>` need filling in).
 
 ## Directory layout
 
@@ -37,7 +39,7 @@ Scripts (`repos/immensekansasii/scripts/`):
 ```bash
 srun --pty -n 1 -c 6 --time=01:00:00 --mem=16G bash -l   # compute node
 conda activate env_immense                                # provides the NCBI `datasets` CLI
-bash repos/immensekansasii/scripts/gtdb_mycobacteria_genomes.sh
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/gtdb_mycobacteria_genomes.sh
 ```
 
 - Reads `data/lit/gtdb/gtdb232/bac120_metadata_r232.tsv`.
@@ -64,14 +66,16 @@ Rules for every run:
 - `run_IMMENSE.sh` only submits a SLURM job. When it has finished and been checked, rsync
   the end results (without `work/`) to `output/<run_name>/` and delete `work/`.
 - `--kansasii_snippy_db <dir>` is required (one db dir per run under
-  `software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/`).
+  `/shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/`) and the
+  dir must exist before the run (`mkdir -p`).
 
 ```bash
-mkdir -p runs/<run_name> && cd runs/<run_name>
-bash repos/immensekansasii/run_IMMENSE.sh -j <job_name> -t <input_type> -r <run_name> \
-     -x "--kansasii_snippy_db <dir>" -i <input_dir>
+mkdir -p /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/<db_name> /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>
+cd /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j <job_name> -t <input_type> -r <run_name> \
+     -x "--kansasii_snippy_db /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/<db_name>" -i <input_dir>
 rsync -a --exclude work --exclude .nextflow --exclude '*_transfer_result/genomes/' \
-     runs/<run_name>/ output/<run_name>/
+     /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>/ /shares/sander.imm.uzh/MM/kansasii/output/<run_name>/
 ```
 
 ### 2a. `kansasii_complex_gtdb_representatives` (reference tree, `-t fasta`)
@@ -85,7 +89,7 @@ pipeline on that directory. The sample id is the fasta file stem, so tree tips a
 iTOL annotation for this tree (upload the `.treefile` to iTOL, drag the files onto it):
 
 ```bash
-bash repos/immensekansasii/scripts/generate_itol_species_labels.sh
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/generate_itol_species_labels.sh
 ```
 
 Writes `itol_species_labels.txt` (`Species [accession]`) and `itol_species_colorstrip.txt`
@@ -112,9 +116,12 @@ Input: the delivered paired-end fastq in `data/illumina/Mkan329/reads/kansasii/`
 without 100 and 108; 134-183 not delivered yet). The run goes in batches, a small test
 batch first. (The old single-run block in `run.sh` is untested and superseded by this.)
 
-1. **Batches.** `bash repos/immensekansasii/scripts/mkan329_batches.sh` (no conda env;
-   options `-r reads_dir -m link_csv -o batches_dir -t test_size -b batch_size`) writes,
-   in NR order (first column of `screening_map_link.csv`):
+1. **Batches.** (no conda env; options `-r reads_dir -m link_csv -o batches_dir -t test_size
+   -b batch_size`)
+   ```bash
+   bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/mkan329_batches.sh
+   ```
+   writes, in NR order (first column of `screening_map_link.csv`):
    - `batches/test/`: the first 3 isolates (pilot)
    - `batches/b01 ... bNN/`: 45 isolates each (`b01` starts at NR 1 again, so the pilot
      isolates are re-run there: ~2% extra compute, and the pilot db stays out of the
@@ -144,8 +151,10 @@ batch first. (The old single-run block in `run.sh` is untested and superseded by
    ```
 2. **One run dir, one run id, one snippy db.** `--kansasii_snippy_db` is required
    (`main.nf` stops without it). `b01..bNN` and `all` all run in `runs/mkan329/` with
-   `-r mkan329` and `--kansasii_snippy_db <databases>/kansasii_complex/mkan329`
-   (`<databases>` = `/shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases`).
+   `-r mkan329` and `--kansasii_snippy_db /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/mkan329`
+   (full path in the commands below).
+   **Create the db dir first** (`mkdir -p`): the snippy step bind-mounts it into the container
+   and fails with "container creation failed ... mount" if it does not exist yet.
    Per-sample results (`assembly/results/<NR>/`) and the snippy db accumulate, and
    `-resume` (always on, `bin/submit_to_cluster.sh`) reuses finished samples. The run-level
    tables (`mkan329_transfer_result/mkan329_quality.tsv`, ...) and the tree
@@ -156,33 +165,48 @@ batch first. (The old single-run block in `run.sh` is untested and superseded by
    one after another** (wait until a batch has finished), not in parallel.
 3. **Pilot first.** The `test` batch has its own run dir (`runs/mkan329_test/`), run id
    (`mkan329_test`) and db (`mkan329_test`), so it can not touch the real run. Check it
-   (all 3 isolates finish, species call and gyrA plausible), only then start `b01`. The
-   script prints one command per batch with absolute paths:
+   (all 3 isolates finish, species call and gyrA plausible, `mkan329_test_quality.tsv`
+   sane), only then start `b01`. The script prints these commands too. If a run dies,
+   resubmit the **same** command from the same dir: `-resume` reuses finished tasks.
    ```bash
    # pilot
-   mkdir -p runs/mkan329_test && cd runs/mkan329_test \
-     && bash repos/immensekansasii/run_IMMENSE.sh -j job_mkan329_test -t fq_PE -r mkan329_test \
-          -x "--kansasii_snippy_db <databases>/kansasii_complex/mkan329_test" \
-          -i data/illumina/Mkan329/batches/test
-   # real run, one after another: b01, b02, b03, then all
-   mkdir -p runs/mkan329 && cd runs/mkan329 \
-     && bash repos/immensekansasii/run_IMMENSE.sh -j job_mkan329_b01 -t fq_PE -r mkan329 \
-          -x "--kansasii_snippy_db <databases>/kansasii_complex/mkan329" \
-          -i data/illumina/Mkan329/batches/b01
+   mkdir -p /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/mkan329_test /shares/sander.imm.uzh/MM/kansasii/runs/mkan329_test
+   cd /shares/sander.imm.uzh/MM/kansasii/runs/mkan329_test
+   bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_mkan329_test -t fq_PE -r mkan329_test \
+        -x "--kansasii_snippy_db /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/mkan329_test" \
+        -i /shares/sander.imm.uzh/MM/kansasii/data/illumina/Mkan329/batches/test
    ```
-   After `all` has finished and been checked, rsync `runs/mkan329/` to `output/mkan329/` as
-   in the rules above (and delete `work/`).
+   Real run, one batch after another (wait until `squeue -u $USER` shows no more
+   `job_mkan329_*` / `nf-*` jobs before submitting the next one): `b01`, `b02`, `b03`,
+   then `all`:
+   ```bash
+   mkdir -p /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/mkan329 /shares/sander.imm.uzh/MM/kansasii/runs/mkan329
+   cd /shares/sander.imm.uzh/MM/kansasii/runs/mkan329
+   for b in b01; do   # then b02, then b03, then all -- one at a time
+     bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_mkan329_$b -t fq_PE -r mkan329 \
+          -x "--kansasii_snippy_db /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/mkan329" \
+          -i /shares/sander.imm.uzh/MM/kansasii/data/illumina/Mkan329/batches/$b
+   done
+   ```
+   After `all` has finished and been checked, copy the end results and delete `work/`:
+   ```bash
+   rsync -a --exclude work --exclude .nextflow --exclude '*_transfer_result/genomes/' \
+        /shares/sander.imm.uzh/MM/kansasii/runs/mkan329/ /shares/sander.imm.uzh/MM/kansasii/output/mkan329/
+   rm -rf /shares/sander.imm.uzh/MM/kansasii/runs/mkan329/work
+   ```
 4. **Results table** (`conda activate kansasii_mic`), from the final `all` run:
    ```bash
-   python repos/immensekansasii/scripts/screening_map_results.py \
-     --quality output/mkan329/mkan329_transfer_result/mkan329_quality.tsv \
-     --id-map data/illumina/Mkan329/batches/all/id_map.tsv
+   python /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/screening_map_results.py \
+     --quality /shares/sander.imm.uzh/MM/kansasii/output/mkan329/mkan329_transfer_result/mkan329_quality.tsv \
+     --id-map /shares/sander.imm.uzh/MM/kansasii/data/illumina/Mkan329/batches/all/id_map.tsv
    ```
    (its default `--id-map` is still the old `data/mkan329_short/id_map.tsv`, so pass it;
    the quality table's `Sample` is `Mkan329-NNN`, which it matches via `PROBENNUMMER`).
 5. **iTOL labels** for the sample tree:
-   `bash scripts/generate_itol_species_labels.sh -m samples -p mkan329_` writes
-   `mkan329_itol_species_labels.txt` (`Species [Mkan329-NNN]`) and
+   ```bash
+   bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/generate_itol_species_labels.sh -m samples -p mkan329_
+   ```
+   writes `mkan329_itol_species_labels.txt` (`Species [Mkan329-NNN]`) and
    `mkan329_itol_species_colorstrip.txt` and a copy of the tree to `output/iTOL/mkan329/`.
    Copy them to your computer and load them into iTOL as described in section 2a.
 
@@ -204,7 +228,7 @@ Sources in `data/imm/`: `screening_map_project.csv`, `screening_map_strains.csv`
 
 ```bash
 conda activate kansasii_mic
-python repos/immensekansasii/scripts/screening_map_link.py [--indir DIR] [--out FILE] [--copy-to DIR]
+python /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/screening_map_link.py [--indir DIR] [--out FILE] [--copy-to DIR]
 ```
 
 Writes `data/imm/screening_map_link.csv` (copy in `output/`): one row per isolate,

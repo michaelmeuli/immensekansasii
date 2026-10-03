@@ -32,6 +32,10 @@
 # another (Nextflow allows one run per dir), and finish with "all", which
 # rebuilds those tables and the tree over every sample.
 #
+# The snippy db dir must exist before the run (kansasii_phylo.nf bind-mounts it
+# into the container; a missing dir = "container creation failed ... mount"),
+# hence the mkdir -p in the printed commands.
+#
 # This script only builds the links and prints the commands; it submits nothing.
 #
 # Usage: mkan329_batches.sh [-r reads_dir] [-m link_csv] [-o batches_dir]
@@ -137,7 +141,7 @@ echo "# submit b01..bNN one after another (wait for each to finish), then all."
 for b in "${order[@]}"; do
   if [ "$b" = test ]; then run="mkan329_test"; else run="mkan329"; fi
   db="$DB_ROOT/$run"
-  echo "mkdir -p $BASE/runs/$run \\"
+  echo "mkdir -p $db $BASE/runs/$run \\"
   echo "  && cd $BASE/runs/$run \\"
   echo "  && bash $RUN_IMMENSE -j job_mkan329_$b -t fq_PE -r $run \\"
   echo "       -x \"--kansasii_snippy_db $db\" -i $BATCHES_DIR/$b"

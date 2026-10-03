@@ -167,13 +167,28 @@ finished and been checked, copy its end results to
 `/shares/sander.imm.uzh/MM/kansasii/output/<run_name>/` and delete `work/`.
 
 ```bash
-mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>
+mkdir -p /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/<db_name> /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>
 cd /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>
-bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j <job_name> -t <input_type> -r <run_name> -i <input_dir>
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j <job_name> -t <input_type> -r <run_name> \
+     -x "--kansasii_snippy_db /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/<db_name>" -i <input_dir>
 
 # after the run: collect results (without work/) in output/
-rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>/ /shares/sander.imm.uzh/MM/kansasii/output/<run_name>/
+rsync -a --exclude work --exclude .nextflow --exclude '*_transfer_result/genomes/' \
+     /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>/ /shares/sander.imm.uzh/MM/kansasii/output/<run_name>/
 ```
+
+On the `kansasii` branch `--kansasii_snippy_db <dir>` is **required** (`main.nf` stops
+without it, or pass `--skip_kansasii_phylo true`). `kansasii_phylo.nf` copies every sample
+into that dir and runs `snippy-core` over all of it, so use one db dir per run, and create
+it before the run (it is bind-mounted into the container; a missing dir gives
+`container creation failed ... mount`). Runs with the same `-r <run_name>` in the same run
+dir can be repeated and resume (`-resume` is always on), but run-level tables and the tree
+only cover the samples of the latest invocation.
+
+Real Illumina isolates (Mkan329) are run in batches (test batch, `b01..bNN`, final `all`
+run) with `scripts/mkan329_batches.sh`, see **`WORKFLOW.md`** section 2b for the full,
+copy-pasteable commands. Use `Mkan329-NNN` as sample id for fastq input, never a bare
+number: `checkm.nf` does `grep ${sample_id}` on the CheckM log.
 
 # Detailed running IMMense on S3IT (UZH SLURM cluster)
 
