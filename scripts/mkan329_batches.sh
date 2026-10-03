@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 #
-# Split the Mkan329 paired-end reads into a small "test" batch plus fixed-size
-# batches, in NR order (first column of screening_map_link.csv), and print the
-# run_IMMENSE.sh command for each.
+# Split the Mkan329 paired-end reads into a small "test" batch, fixed-size
+# batches and one "all" batch, in NR order (first column of
+# screening_map_link.csv), and print the run_IMMENSE.sh command for each.
 #
-#   <batches_dir>/test/            first -t samples by NR
-#   <batches_dir>/b01, b02, ...    -b samples each, by NR (starts at the first
-#                                  sample again, so the test samples are
-#                                  re-run in b01 -- cheap, and the test keeps
-#                                  its own snippy db)
+#   <batches_dir>/test/            first -t samples by NR (pilot, own run dir + snippy db)
+#   <batches_dir>/b01, b02, ...    -b samples each, by NR (b01 starts at the first
+#                                  sample again, so the pilot samples are re-run
+#                                  there: ~2% extra compute, and the pilot db
+#                                  never ends up in the real tree)
+#   <batches_dir>/all/             every sample with a complete pair
 #
 # Each batch dir is flat, as scripts/run.sh does for mkan329: symlinks
 # <NR>_R1.fastq.gz / <NR>_R2.fastq.gz (the sample id is NR) + id_map.tsv
@@ -16,14 +17,17 @@
 # Mkan329-NNN_r1.fastq.gz (lower case); the links get the upper-case _R1/_R2
 # that main.nf's {R1,R2,1,2} glob needs. Samples without a complete pair
 # (not delivered yet) are skipped with a warning, so rerunning this script
-# after the next delivery just fills in the gaps (a batch is rebuilt from
-# scratch each time, so batch membership can shift -- only rerun it before
-# submitting).
+# after the next delivery just fills in the gaps (batches are rebuilt from
+# scratch each time, so membership can shift -- only rerun it before submitting).
 #
-# Snippy dbs: kansasii_phylo.nf copies every sample into --kansasii_snippy_db
-# and runs snippy-core over the whole dir, so the test batch gets its own
-# (mkan329_test) and all real batches share one (mkan329): the tree from the
-# last batch to finish covers all of them.
+# One run dir for the real run: b01..bNN and all go through the same
+# runs/mkan329/ with the same run id (mkan329) and snippy db (mkan329). Per-
+# sample results (assembly/results/<NR>/) and the snippy db accumulate, and
+# -resume (bin/submit_to_cluster.sh) reuses the finished samples, but
+# mkan329_quality.tsv and the other tables in mkan329_transfer_result/ only
+# cover the samples of the latest invocation. So: run the batches one after
+# another (Nextflow allows one run per dir), and finish with "all", which
+# rebuilds those tables and the tree over every sample.
 #
 # This script only builds the links and prints the commands; it submits nothing.
 #
@@ -37,7 +41,7 @@ READS_DIR="$BASE/data/illumina/Mkan329/reads/kansasii"
 LINK_CSV="$BASE/data/imm/screening_map_link.csv"
 BATCHES_DIR="$BASE/data/illumina/Mkan329/batches"
 TEST_SIZE=3
-BATCH_SIZE=30
+BATCH_SIZE=45
 RUN_IMMENSE="$BASE/repos/immensekansasii/run_IMMENSE.sh"
 DB_ROOT="/shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex"
 
@@ -97,6 +101,7 @@ echo "${#samples[@]} samples with a complete pair" >&2
 
 # Pass 2: test batch = first TEST_SIZE, then consecutive batches over all
 mkdir -p "$BATCHES_DIR"
+rm -rf "$BATCHES_DIR"/b[0-9][0-9]   # stale batches from an earlier -b (only symlinks + id_map.tsv)
 start_batch test
 for s in "${samples[@]:0:TEST_SIZE}"; do IFS=$'\t' read -r nr pnr r1 r2 <<< "$s"; add_sample "$nr" "$pnr" "$r1" "$r2"; done
 
@@ -111,6 +116,11 @@ for s in "${samples[@]}"; do
   add_sample "$nr" "$pnr" "$r1" "$r2"
 done
 
+# "all" batch: every sample, for the final cumulative run
+start_batch all
+for s in "${samples[@]}"; do IFS=$'\t' read -r nr pnr r1 r2 <<< "$s"; add_sample "$nr" "$pnr" "$r1" "$r2"; done
+order+=(all)
+
 # Report + commands
 echo
 for b in "${order[@]}"; do
@@ -119,12 +129,13 @@ for b in "${order[@]}"; do
   echo "$b: ${COUNT[$b]} samples (NR $first..$last)"
 done
 echo
-echo "# Commands (run each from its own runs/ dir; check the test batch before the rest):"
+echo "# Commands. test = pilot (own run dir and db). The rest share runs/mkan329:"
+echo "# submit b01..bNN one after another (wait for each to finish), then all."
 for b in "${order[@]}"; do
-  if [ "$b" = test ]; then db="$DB_ROOT/mkan329_test"; else db="$DB_ROOT/mkan329"; fi
-  run="mkan329_$b"
+  if [ "$b" = test ]; then run="mkan329_test"; else run="mkan329"; fi
+  db="$DB_ROOT/$run"
   echo "mkdir -p $BASE/runs/$run \\"
   echo "  && cd $BASE/runs/$run \\"
-  echo "  && bash $RUN_IMMENSE -j job_$run -t fq_PE -r $run \\"
+  echo "  && bash $RUN_IMMENSE -j job_mkan329_$b -t fq_PE -r $run \\"
   echo "       -x \"--kansasii_snippy_db $db\" -i $BATCHES_DIR/$b"
 done

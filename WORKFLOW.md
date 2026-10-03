@@ -115,65 +115,73 @@ batch first. (The old single-run block in `run.sh` is untested and superseded by
 1. **Batches.** `bash repos/immensekansasii/scripts/mkan329_batches.sh` (no conda env;
    options `-r reads_dir -m link_csv -o batches_dir -t test_size -b batch_size`) writes,
    in NR order (first column of `screening_map_link.csv`):
-   - `batches/test/`: the first 3 isolates
-   - `batches/b01 ... bNN/`: 30 isolates each (starts at NR 1 again, so the test isolates
-     are re-run in `b01`)
+   - `batches/test/`: the first 3 isolates (pilot)
+   - `batches/b01 ... bNN/`: 45 isolates each (`b01` starts at NR 1 again, so the pilot
+     isolates are re-run there: ~2% extra compute, and the pilot db stays out of the
+     real tree)
+   - `batches/all/`: every isolate with a complete pair (final run)
 
    Each batch dir is flat: `<NR>_R1.fastq.gz` / `<NR>_R2.fastq.gz` symlinks (sample id =
    `NR`; **upper-case `_R1/_R2`**, because the `{R1,R2,1,2}` glob in `main.nf` is
    case-sensitive and would not find the delivered lower-case names) plus `id_map.tsv`
    (`NR`, `PROBENNUMMER`, original paths). Isolates without a complete pair are skipped
    with a warning; after the next delivery rerun the script **before** submitting (batch
-   membership can shift). It only builds links and prints the commands below, it submits
-   nothing.
+   membership can shift; old `bNN` dirs are removed). It only builds links and prints the
+   commands below, it submits nothing.
 
    Output with the current 131 isolates:
    ```
    test: 3 samples (NR 1..3)
-   b01: 30 samples (NR 1..30)
-   b02: 30 samples (NR 31..60)
-   b03: 30 samples (NR 61..90)
-   b04: 30 samples (NR 91..122)
-   b05: 11 samples (NR 123..133)
+   b01: 45 samples (NR 1..45)
+   b02: 45 samples (NR 46..90)
+   b03: 41 samples (NR 91..133)
+   all: 131 samples (NR 1..133)
    ```
-2. **Snippy db.** `--kansasii_snippy_db` is required (`main.nf` stops without it).
-   `kansasii_phylo.nf` copies every sample into that dir and runs `snippy-core` over all of
-   it, so the test batch gets its own db (`.../kansasii_complex/mkan329_test`) and `b01..bNN`
-   share one (`.../kansasii_complex/mkan329`): the tree of the last batch to finish covers
-   all of them. `.../` is
-   `/shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases`.
-3. **Run the test batch first**, check it (all 3 isolates finish, species call and gyrA
-   plausible), only then the others. The script prints one command per batch, each from its
-   own `runs/mkan329_<batch>/`:
+2. **One run dir, one run id, one snippy db.** `--kansasii_snippy_db` is required
+   (`main.nf` stops without it). `b01..bNN` and `all` all run in `runs/mkan329/` with
+   `-r mkan329` and `--kansasii_snippy_db <databases>/kansasii_complex/mkan329`
+   (`<databases>` = `/shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases`).
+   Per-sample results (`assembly/results/<NR>/`) and the snippy db accumulate, and
+   `-resume` (always on, `bin/submit_to_cluster.sh`) reuses finished samples. The run-level
+   tables (`mkan329_transfer_result/mkan329_quality.tsv`, ...) and the tree
+   (`snippy-core` over the whole db) are rebuilt by every invocation from the samples of
+   *that* invocation only, so they are overwritten by the next batch. Hence the final
+   `all` run: all samples cached, it only rebuilds the cumulative tables, tree and
+   `mkan329_quality.tsv`. Only one Nextflow run is allowed per dir, so **submit the batches
+   one after another** (wait until a batch has finished), not in parallel.
+3. **Pilot first.** The `test` batch has its own run dir (`runs/mkan329_test/`), run id
+   (`mkan329_test`) and db (`mkan329_test`), so it can not touch the real run. Check it
+   (all 3 isolates finish, species call and gyrA plausible), only then start `b01`. The
+   script prints one command per batch with absolute paths:
    ```bash
+   # pilot
    mkdir -p runs/mkan329_test && cd runs/mkan329_test \
      && bash repos/immensekansasii/run_IMMENSE.sh -j job_mkan329_test -t fq_PE -r mkan329_test \
           -x "--kansasii_snippy_db <databases>/kansasii_complex/mkan329_test" \
           -i data/illumina/Mkan329/batches/test
-   # real batches (b01 ... b05), same pattern:
-   mkdir -p runs/mkan329_b01 && cd runs/mkan329_b01 \
-     && bash repos/immensekansasii/run_IMMENSE.sh -j job_mkan329_b01 -t fq_PE -r mkan329_b01 \
+   # real run, one after another: b01, b02, b03, then all
+   mkdir -p runs/mkan329 && cd runs/mkan329 \
+     && bash repos/immensekansasii/run_IMMENSE.sh -j job_mkan329_b01 -t fq_PE -r mkan329 \
           -x "--kansasii_snippy_db <databases>/kansasii_complex/mkan329" \
           -i data/illumina/Mkan329/batches/b01
    ```
-   (the script prints them with absolute paths). When a batch has finished and been
-   checked, rsync it to `output/mkan329_<batch>/` as in the rules above.
-4. **Results table** (`conda activate kansasii_mic`), per batch:
+   After `all` has finished and been checked, rsync `runs/mkan329/` to `output/mkan329/` as
+   in the rules above (and delete `work/`).
+4. **Results table** (`conda activate kansasii_mic`), from the final `all` run:
    ```bash
    python repos/immensekansasii/scripts/screening_map_results.py \
-     --quality output/mkan329_b01/mkan329_b01_transfer_result/mkan329_b01_quality.tsv \
-     --id-map data/illumina/Mkan329/batches/b01/id_map.tsv
+     --quality output/mkan329/mkan329_transfer_result/mkan329_quality.tsv \
+     --id-map data/illumina/Mkan329/batches/all/id_map.tsv
    ```
-   **Open:** `--quality` and `--id-map` each take a single file and the script writes one
-   `screening_map_results.csv`, so batches can not be combined yet (it needs a merge of the
-   `*_quality.tsv` / `id_map.tsv` files or multi-file options). Not tested.
+   (its default `--id-map` is still the old `data/mkan329_short/id_map.tsv`, so pass it).
 5. **iTOL labels** for the sample tree:
    `bash scripts/generate_itol_species_labels.sh -m samples -p mkan329_` writes
    `mkan329_itol_species_labels.txt` (`Species [Mkan329-NNN]`) and
    `mkan329_itol_species_colorstrip.txt` and a copy of the tree to `output/iTOL/mkan329/`.
-   Copy them to your computer and load them into iTOL as described in section 2a. Use the
-   tree of the last batch (covers all isolates in the shared db); not tested with the batch
-   run names.
+   Copy them to your computer and load them into iTOL as described in section 2a.
+
+   **Not yet tested:** that `-resume` really reuses the finished samples across batches
+   with different input sets, and steps 4-5 on the `all` output.
 
 Where results are: species is **not** in `assembly/results/<s>/5_typing/` (that holds
 `mlst/`, `pyMLST/`, `kansasii_snippy/`). It is in `3_quality/GTDB/<s>.tsv_gtdb_summary.tsv`
