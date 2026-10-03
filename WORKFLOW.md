@@ -14,8 +14,8 @@ relative to `/shares/sander.imm.uzh/MM/kansasii/` (`K`) unless absolute.
 | `data/imm/` | screening map sources and derived tables |
 | `data/lit/gtdb/gtdb232/` | GTDB r232 metadata (downloaded if missing) |
 | `data/gtdb_genomes/` | genomes downloaded from NCBI, plus symlink dirs for runs |
-| `data/mkan329/` | raw paired-end fastq of the Mkan329 isolates |
-| `data/mkan329_short/` | per-run input: `<NR>_R1/_R2.fastq.gz` symlinks + `id_map.tsv` |
+| `data/illumina/Mkan329/reads/kansasii/` | delivered paired-end fastq `Mkan329-NNN_r1/_r2.fastq.gz` (lower case; 131 of 183 isolates so far) |
+| `data/illumina/Mkan329/batches/<batch>/` | per-batch input from `mkan329_batches.sh`: `<NR>_R1/_R2.fastq.gz` symlinks + `id_map.tsv` |
 | `runs/<run_name>/` | working dir of a pipeline run (contains large, temporary `work/`) |
 | `output/<run_name>/` | end results of a run (no `work/`); downloaded to local `kansasii_C` |
 | `output/lit/gtdb/gtdb232/` | accession lists, type strains, iTOL files |
@@ -29,6 +29,7 @@ Scripts (`repos/immensekansasii/scripts/`):
 | `generate_itol_species_labels.sh` | none | iTOL labels and colour strips for trees |
 | `screening_map_link.py` | `kansasii_mic` | link TNR / LNR / MHK / NGS -> `screening_map_link.csv` |
 | `screening_map_results.py` | `kansasii_mic` | add species + `TNR_MLSA` -> `screening_map_results.csv` |
+| `mkan329_batches.sh` | none | split the Mkan329 reads into a test batch + NR-ordered batches, print the run commands |
 | `run.sh` | `env_immense` | the two pipeline runs below (copy blocks, not run as a whole) |
 
 ## 1. GTDB reference genomes
@@ -106,27 +107,73 @@ Getting the files into iTOL (the script only writes them on the server):
 
 ### 2b. `mkan329` (real isolates, `-t fq_PE`)
 
-Input: paired-end fastq in `data/mkan329/` (not yet run; the block in `run.sh` is untested).
+Input: the delivered paired-end fastq in `data/illumina/Mkan329/reads/kansasii/`
+(`Mkan329-NNN_r1.fastq.gz`, 68.8 GB zip from SWITCH FileSender, 131 isolates: NR 1-133
+without 100 and 108; 134-183 not delivered yet). The run goes in batches, a small test
+batch first. (The old single-run block in `run.sh` is untested and superseded by this.)
 
-1. **Short ids.** `run.sh` finds R1/R2 of each isolate by `PROBENNUMMER` (R1/R2 or 1/2
-   marker) and symlinks them as `data/mkan329_short/<NR>_R1.fastq.gz` /
-   `<NR>_R2.fastq.gz`, with `NR` = first column of `screening_map_link.csv`. Pipeline
-   sample id = `NR`; `data/mkan329_short/id_map.tsv` keeps `NR`, `PROBENNUMMER` and the
-   original paths. Renaming is cosmetic only (the pipeline also runs with
-   `Mkan329-001`). If numeric ids upset a tool, switch to `s001` (see comment in `run.sh`).
-   Isolates without a complete pair are skipped with a warning.
-2. **Run** `run_IMMENSE.sh -t fq_PE -r mkan329 ...` and rsync to `output/mkan329/`.
-3. **Results table** (`conda activate kansasii_mic`):
+1. **Batches.** `bash repos/immensekansasii/scripts/mkan329_batches.sh` (no conda env;
+   options `-r reads_dir -m link_csv -o batches_dir -t test_size -b batch_size`) writes,
+   in NR order (first column of `screening_map_link.csv`):
+   - `batches/test/`: the first 3 isolates
+   - `batches/b01 ... bNN/`: 30 isolates each (starts at NR 1 again, so the test isolates
+     are re-run in `b01`)
+
+   Each batch dir is flat: `<NR>_R1.fastq.gz` / `<NR>_R2.fastq.gz` symlinks (sample id =
+   `NR`; **upper-case `_R1/_R2`**, because the `{R1,R2,1,2}` glob in `main.nf` is
+   case-sensitive and would not find the delivered lower-case names) plus `id_map.tsv`
+   (`NR`, `PROBENNUMMER`, original paths). Isolates without a complete pair are skipped
+   with a warning; after the next delivery rerun the script **before** submitting (batch
+   membership can shift). It only builds links and prints the commands below, it submits
+   nothing.
+
+   Output with the current 131 isolates:
+   ```
+   test: 3 samples (NR 1..3)
+   b01: 30 samples (NR 1..30)
+   b02: 30 samples (NR 31..60)
+   b03: 30 samples (NR 61..90)
+   b04: 30 samples (NR 91..122)
+   b05: 11 samples (NR 123..133)
+   ```
+2. **Snippy db.** `--kansasii_snippy_db` is required (`main.nf` stops without it).
+   `kansasii_phylo.nf` copies every sample into that dir and runs `snippy-core` over all of
+   it, so the test batch gets its own db (`.../kansasii_complex/mkan329_test`) and `b01..bNN`
+   share one (`.../kansasii_complex/mkan329`): the tree of the last batch to finish covers
+   all of them. `.../` is
+   `/shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases`.
+3. **Run the test batch first**, check it (all 3 isolates finish, species call and gyrA
+   plausible), only then the others. The script prints one command per batch, each from its
+   own `runs/mkan329_<batch>/`:
+   ```bash
+   mkdir -p runs/mkan329_test && cd runs/mkan329_test \
+     && bash repos/immensekansasii/run_IMMENSE.sh -j job_mkan329_test -t fq_PE -r mkan329_test \
+          -x "--kansasii_snippy_db <databases>/kansasii_complex/mkan329_test" \
+          -i data/illumina/Mkan329/batches/test
+   # real batches (b01 ... b05), same pattern:
+   mkdir -p runs/mkan329_b01 && cd runs/mkan329_b01 \
+     && bash repos/immensekansasii/run_IMMENSE.sh -j job_mkan329_b01 -t fq_PE -r mkan329_b01 \
+          -x "--kansasii_snippy_db <databases>/kansasii_complex/mkan329" \
+          -i data/illumina/Mkan329/batches/b01
+   ```
+   (the script prints them with absolute paths). When a batch has finished and been
+   checked, rsync it to `output/mkan329_<batch>/` as in the rules above.
+4. **Results table** (`conda activate kansasii_mic`), per batch:
    ```bash
    python repos/immensekansasii/scripts/screening_map_results.py \
-     --quality output/mkan329/mkan329_transfer_result/mkan329_quality.tsv \
-     --id-map data/mkan329_short/id_map.tsv
+     --quality output/mkan329_b01/mkan329_b01_transfer_result/mkan329_b01_quality.tsv \
+     --id-map data/illumina/Mkan329/batches/b01/id_map.tsv
    ```
-4. **iTOL labels** for the sample tree:
+   **Open:** `--quality` and `--id-map` each take a single file and the script writes one
+   `screening_map_results.csv`, so batches can not be combined yet (it needs a merge of the
+   `*_quality.tsv` / `id_map.tsv` files or multi-file options). Not tested.
+5. **iTOL labels** for the sample tree:
    `bash scripts/generate_itol_species_labels.sh -m samples -p mkan329_` writes
    `mkan329_itol_species_labels.txt` (`Species [Mkan329-NNN]`) and
-   `mkan329_itol_species_colorstrip.txt` and a copy of the tree to `output/iTOL/mkan329/`. Copy them to your computer
-   and load them into iTOL as described in section 2a.
+   `mkan329_itol_species_colorstrip.txt` and a copy of the tree to `output/iTOL/mkan329/`.
+   Copy them to your computer and load them into iTOL as described in section 2a. Use the
+   tree of the last batch (covers all isolates in the shared db); not tested with the batch
+   run names.
 
 Where results are: species is **not** in `assembly/results/<s>/5_typing/` (that holds
 `mlst/`, `pyMLST/`, `kansasii_snippy/`). It is in `3_quality/GTDB/<s>.tsv_gtdb_summary.tsv`
