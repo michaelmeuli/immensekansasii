@@ -11,6 +11,12 @@ script never modifies it. Added columns:
       from the merged <run>_quality.tsv (--quality; may be stale/partial).
       <id> is the short id (NR) used as fasta name by scripts/run.sh, or
       Mkan329-NNN if not renamed; --id-map resolves it.
+  checkm_contamination, contamination_flag
+      CheckM contamination (%) from the same quality table/summary as the GTDB call;
+      contamination_flag = "contaminated" if it exceeds --max-contamination
+      (default 10), else empty (also empty if no value). Flagged isolates are
+      mixed cultures/assemblies (e.g. Mkan329-035: kansasii + ostraviense, 13 Mb),
+      so GTDB and hsp65 species calls may legitimately disagree.
   resistance_abricate
       <id>/4_resistance_virulence/01_Abricate/<id>_resistances_summary.tsv
       ("gene (identity%)", 100%-coverage hits only). Empty = no hit or no result.
@@ -127,6 +133,8 @@ def main():
                     default=K / "output/mlsa/main2_sanger_differentiation_excluded/isolate_classification.tsv")
     ap.add_argument("--refalign", type=Path,
                     default=K / "output/mlsa/main3_reference_alignment/reference_alignment.tsv")
+    ap.add_argument("--max-contamination", type=float, default=10.0,
+                    help="CheckM contamination %% above which contamination_flag is set (default 10)")
     ap.add_argument("--copy-to", type=Path, default=K / "output",
                     help="directory to also copy the output to")
     args = ap.parse_args()
@@ -137,6 +145,7 @@ def main():
     link = read_tsv(link_path, ",")
     res = link.copy()
     for c in ("species", "gtdb_ani", "gtdb_af", "gtdb_reference",
+              "checkm_contamination", "contamination_flag",
               "species_mlsa1", "species_mlsa2", "species_ref", "TNR_MLSA",
               "resistance_abricate", "resistance_amrfinder"):
         res[c] = ""
@@ -149,7 +158,8 @@ def main():
     by_nr = dict(zip(link["NR"], link["PROBENNUMMER"]))
     pnrs = set(link["PROBENNUMMER"])
     cols = {"gtdb_species": "species", "gtdb_fastani_ani": "gtdb_ani",
-            "gtdb_fastani_af": "gtdb_af", "gtdb_fastani_reference": "gtdb_reference"}
+            "gtdb_fastani_af": "gtdb_af", "gtdb_fastani_reference": "gtdb_reference",
+            "checkm_contamination": "checkm_contamination"}
     idx = res.set_index("PROBENNUMMER").index
 
     def set_gtdb(sample, row):
@@ -190,6 +200,16 @@ def main():
             warn(f"{len(unmatched)} result dirs not linked to a PROBENNUMMER: {unmatched[:5]}...")
     else:
         warn(f"{args.results_dir} not found; resistance columns left empty")
+
+    def flag(v):
+        try:
+            return "contaminated" if float(v) > args.max_contamination else ""
+        except ValueError:
+            return ""
+    res["contamination_flag"] = res["checkm_contamination"].map(flag)
+    if (res["contamination_flag"] != "").any():
+        warn("contaminated (CheckM > %g%%): %s" % (args.max_contamination, ", ".join(
+            f"{p} ({c})" for p, c, f in zip(res["PROBENNUMMER"], res["checkm_contamination"], res["contamination_flag"]) if f)))
 
     # --- hsp65 species calls: main2 (mlsa1), main2_excluded (mlsa2) ---
     for col, path in (("species_mlsa1", args.mlsa1), ("species_mlsa2", args.mlsa2)):
