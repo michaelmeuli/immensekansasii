@@ -5,7 +5,8 @@ screening_map_link.csv (built by screening_map_link.py) stays the input; this
 script never modifies it. Added columns:
 
   species, gtdb_ani, gtdb_af, gtdb_reference
-      GTDB-Tk call from the immensekansasii run. Read per sample from
+      GTDB-Tk call from the immensekansasii run (species is the epithet only,
+      e.g. "kansasii", like the species_mlsa*/species_ref columns). Read per sample from
       <results-dir>/<id>/3_quality/summary/<id>.tab (complete; preferred), else
       from the merged <run>_quality.tsv (--quality; may be stale/partial).
       <id> is the short id (NR) used as fasta name by scripts/run.sh, or
@@ -158,7 +159,10 @@ def main():
             return False
         rows = res.index[idx == pnr]
         for src, dst in cols.items():
-            res.loc[rows, dst] = row.get(src, "")
+            v = row.get(src, "")
+            if dst == "species":  # genus-less: "Mycobacterium kansasii" -> "kansasii"
+                v = v.split(" ", 1)[-1]
+            res.loc[rows, dst] = v
         return True
 
     # merged quality table first (fallback; may be partial), per-sample dirs override
