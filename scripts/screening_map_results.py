@@ -5,10 +5,17 @@ screening_map_link.csv (built by screening_map_link.py) stays the input; this
 script never modifies it. Added columns:
 
   species, gtdb_ani, gtdb_af, gtdb_reference
-      GTDB-Tk call from the immensekansasii run's <run>_quality.tsv
-      (gtdb_species, gtdb_fastani_ani/af/reference). 5_typing holds no species.
-      The quality table's Sample is the short id (NR) used as fasta name by
-      scripts/run.sh, or Mkan329-NNN if not renamed; --id-map resolves it.
+      GTDB-Tk call from the immensekansasii run. Read per sample from
+      <results-dir>/<id>/3_quality/summary/<id>.tab (complete; preferred), else
+      from the merged <run>_quality.tsv (--quality; may be stale/partial).
+      <id> is the short id (NR) used as fasta name by scripts/run.sh, or
+      Mkan329-NNN if not renamed; --id-map resolves it.
+  resistance_abricate
+      <id>/4_resistance_virulence/01_Abricate/<id>_resistances_summary.tsv
+      ("gene (identity%)", 100%-coverage hits only). Empty = no hit or no result.
+  resistance_amrfinder
+      <id>/4_resistance_virulence/02_AMRfinderplus/<id>.tsv: Element symbol(s)
+      joined by "; ", "none" if AMRFinderPlus ran without a hit, empty if no file.
   species_mlsa1, species_mlsa2, species_ref
       hsp65-only species calls of the Sanger data (optional cross-checks; empty
       if the file is missing or the isolate has no hsp65 read / call is NA):
@@ -23,7 +30,7 @@ script never modifies it. Added columns:
       Empty if all reads carry the row's TNR or the isolate has no reads.
       (Replaces the need for TNR6, e.g. 2023500268 for Mkan329-183.)
 
-Usage: python scripts/screening_map_results.py  (in immensekansasii) [--quality ...] [--id-map ...]
+Usage: python scripts/screening_map_results.py  (in immensekansasii) [--results-dir ...] [--id-map ...]
 """
 import argparse
 import shutil
@@ -49,6 +56,27 @@ def hsp65_calls(path):
     sc = read_tsv(path)
     sc = sc[sc["locus"] == "hsp65"]
     return dict(zip(sc["probennummer"], sc["nearest_species"]))
+
+
+def sample_dir_results(sdir, sid):
+    """Return (gtdb row dict or None, abricate str, amrfinder str) from one per-sample result dir."""
+    gtdb = None
+    tab = sdir / "3_quality/summary" / f"{sid}.tab"
+    if tab.exists():
+        t = read_tsv(tab)
+        if len(t):
+            gtdb = t.iloc[0].to_dict()
+    abr = ""
+    f = sdir / "4_resistance_virulence/01_Abricate" / f"{sid}_resistances_summary.tsv"
+    if f.exists():
+        r = read_tsv(f)
+        abr = "; ".join(v for v in r["Resistance"] if v and v != "NA") if "Resistance" in r else ""
+    amr = ""
+    f = sdir / "4_resistance_virulence/02_AMRfinderplus" / f"{sid}.tsv"
+    if f.exists():
+        r = read_tsv(f)
+        amr = "; ".join(r["Element symbol"]) if len(r) else "none"
+    return gtdb, abr, amr
 
 
 def tnr_mlsa(link, reads_path):
@@ -82,8 +110,11 @@ def main():
     ap.add_argument("--indir", type=Path, default=K / "data/imm")
     ap.add_argument("--link", type=Path, default=None, help="default: <indir>/screening_map_link.csv")
     ap.add_argument("--out", type=Path, default=None, help="default: <indir>/screening_map_results.csv")
+    ap.add_argument("--results-dir", type=Path, default=K / "runs/mkan329/assembly/results",
+                    help="per-sample result dirs of the immensekansasii run (<id>/3_quality, <id>/4_resistance_virulence)")
     ap.add_argument("--quality", type=Path,
-                    default=K / "output/mkan329/mkan329_transfer_result/mkan329_quality.tsv")
+                    default=K / "runs/mkan329/mkan329_transfer_result/mkan329_quality.tsv",
+                    help="merged quality table, fallback for samples without a per-sample summary")
     ap.add_argument("--id-map", type=Path, default=None,
                     help="id_map.tsv from run.sh (NR, PROBENNUMMER, original_path); "
                          "default: <data/mkan329_short>/id_map.tsv if present")
@@ -105,35 +136,56 @@ def main():
     link = read_tsv(link_path, ",")
     res = link.copy()
     for c in ("species", "gtdb_ani", "gtdb_af", "gtdb_reference",
-              "species_mlsa1", "species_mlsa2", "species_ref", "TNR_MLSA"):
+              "species_mlsa1", "species_mlsa2", "species_ref", "TNR_MLSA",
+              "resistance_abricate", "resistance_amrfinder"):
         res[c] = ""
 
-    # --- GTDB species from the pipeline run ---
+    # --- GTDB species + resistance from the pipeline run ---
+    sample_to_pnr = {}
+    if id_map_path.exists():
+        m = read_tsv(id_map_path)
+        sample_to_pnr = dict(zip(m.iloc[:, 0], m.iloc[:, 1]))
+    by_nr = dict(zip(link["NR"], link["PROBENNUMMER"]))
+    pnrs = set(link["PROBENNUMMER"])
+    cols = {"gtdb_species": "species", "gtdb_fastani_ani": "gtdb_ani",
+            "gtdb_fastani_af": "gtdb_af", "gtdb_fastani_reference": "gtdb_reference"}
+    idx = res.set_index("PROBENNUMMER").index
+
+    def set_gtdb(sample, row):
+        """Write the GTDB columns of `row` to the link row of `sample`; return False if unlinked."""
+        pnr = sample_to_pnr.get(sample) or (sample if sample in pnrs else by_nr.get(sample))
+        if pnr is None:
+            return False
+        rows = res.index[idx == pnr]
+        for src, dst in cols.items():
+            res.loc[rows, dst] = row.get(src, "")
+        return True
+
+    # merged quality table first (fallback; may be partial), per-sample dirs override
     if args.quality.exists():
-        q = read_tsv(args.quality)
-        sample_to_pnr = {}
-        if id_map_path.exists():
-            m = read_tsv(id_map_path)
-            sample_to_pnr = dict(zip(m.iloc[:, 0], m.iloc[:, 1]))
-        by_nr = dict(zip(link["NR"], link["PROBENNUMMER"]))
-        pnrs = set(link["PROBENNUMMER"])
-        cols = {"gtdb_species": "species", "gtdb_fastani_ani": "gtdb_ani",
-                "gtdb_fastani_af": "gtdb_af", "gtdb_fastani_reference": "gtdb_reference"}
-        idx = res.set_index("PROBENNUMMER").index
-        unmatched = []
-        for _, r in q.iterrows():
-            s = r["Sample"]
-            pnr = sample_to_pnr.get(s) or (s if s in pnrs else by_nr.get(s))
-            if pnr is None:
-                unmatched.append(s)
-                continue
-            rows = res.index[idx == pnr]
-            for src, dst in cols.items():
-                res.loc[rows, dst] = r.get(src, "")
+        unmatched = [r["Sample"] for _, r in read_tsv(args.quality).iterrows()
+                     if not r["Sample"].startswith("analysed_samples") and not set_gtdb(r["Sample"], r)]
         if unmatched:
             warn(f"{len(unmatched)} quality.tsv samples not linked to a PROBENNUMMER: {unmatched[:5]}...")
     else:
-        warn(f"{args.quality} not found; species columns left empty")
+        warn(f"{args.quality} not found")
+    if args.results_dir.is_dir():
+        unmatched = []
+        for sdir in sorted(d for d in args.results_dir.iterdir() if d.is_dir()):
+            gtdb, abr, amr = sample_dir_results(sdir, sdir.name)
+            pnr = sample_to_pnr.get(sdir.name) or (sdir.name if sdir.name in pnrs else by_nr.get(sdir.name))
+            if pnr is None:
+                unmatched.append(sdir.name)
+                continue
+            if gtdb:
+                set_gtdb(sdir.name, gtdb)
+            rows = res.index[idx == pnr]
+            res.loc[rows, "resistance_abricate"] = abr
+            res.loc[rows, "resistance_amrfinder"] = amr
+        if unmatched:
+            warn(f"{len(unmatched)} result dirs not linked to a PROBENNUMMER: {unmatched[:5]}...")
+    else:
+        warn(f"{args.results_dir} not found; resistance columns left empty")
 
     # --- hsp65 species calls: main2 (mlsa1), main2_excluded (mlsa2) ---
     for col, path in (("species_mlsa1", args.mlsa1), ("species_mlsa2", args.mlsa2)):
@@ -171,6 +223,8 @@ def main():
 
     res.to_csv(out, index=False)
     print(f"wrote {out} ({len(res)} rows): {(res['species'] != '').sum()} with species, "
+          f"{(res['resistance_abricate'] != '').sum()}/{(res['resistance_amrfinder'] != '').sum()} "
+          f"with resistance_abricate/amrfinder, "
           f"{(res['TNR_MLSA'] != '').sum()} with TNR_MLSA, "
           f"{(res['species_mlsa1'] != '').sum()}/{(res['species_mlsa2'] != '').sum()}/"
           f"{(res['species_ref'] != '').sum()} with species_mlsa1/mlsa2/ref")
