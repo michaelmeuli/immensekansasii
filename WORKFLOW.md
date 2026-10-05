@@ -126,7 +126,7 @@ batch first. (The old single-run block in `run.sh` is untested and superseded by
    - `batches/b01 ... bNN/`: 45 isolates each (`b01` starts at NR 1 again, so the pilot
      isolates are re-run there: ~2% extra compute, and the pilot db stays out of the
      real tree)
-   - `batches/all/`: every isolate with a complete pair (final run)
+   - `batches/all/`: every isolate with a complete pair (**not used**: it re-runs everything, see 2)
 
    Each batch dir is flat: `Mkan329-NNN_R1.fastq.gz` / `Mkan329-NNN_R2.fastq.gz` symlinks
    (sample id = `PROBENNUMMER`; **upper-case `_R1/_R2`**, because the `{R1,R2,1,2}` glob in
@@ -150,19 +150,28 @@ batch first. (The old single-run block in `run.sh` is untested and superseded by
    all: 131 samples (NR 1..133)
    ```
 2. **One run dir, one run id, one snippy db.** `--kansasii_snippy_db` is required
-   (`main.nf` stops without it). `b01..bNN` and `all` all run in `runs/mkan329/` with
+   (`main.nf` stops without it). `b01..bNN` all run in `runs/mkan329/` with
    `-r mkan329` and `--kansasii_snippy_db /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/mkan329`
    (full path in the commands below).
    **Create the db dir first** (`mkdir -p`): the snippy step bind-mounts it into the container
    and fails with "container creation failed ... mount" if it does not exist yet.
-   Per-sample results (`assembly/results/<NR>/`) and the snippy db accumulate, and
-   `-resume` (always on, `bin/submit_to_cluster.sh`) reuses finished samples. The run-level
-   tables (`mkan329_transfer_result/mkan329_quality.tsv`, ...) and the tree
-   (`snippy-core` over the whole db) are rebuilt by every invocation from the samples of
-   *that* invocation only, so they are overwritten by the next batch. Hence the final
-   `all` run: all samples cached, it only rebuilds the cumulative tables, tree and
-   `mkan329_quality.tsv`. Only one Nextflow run is allowed per dir, so **submit the batches
-   one after another** (wait until a batch has finished), not in parallel.
+   Per-sample results (`assembly/results/<NR>/`) and the snippy db accumulate across batches.
+   The tree (`snippy-core` over the whole db) therefore covers every isolate run so far: the
+   tree written by the last batch is the cumulative one. The run-level tables
+   (`mkan329_transfer_result/mkan329_quality.tsv`, `_quality_QC.csv`, resistance table,
+   multiqc) only cover the samples of *that* invocation, so each batch overwrites the
+   previous batch's tables; for a table over all isolates use `SAMPLES.md`
+   (`scripts/mkan329_samples_report.py`, built from the per-sample summary tables).
+   **Do not run a final `all` batch to get cumulative tables:** `-resume` only reuses a task
+   when its input paths are identical (the hash includes the file path), and `batches/all/`
+   has other symlink paths than `b01..b03`, so it re-ran every sample from scratch (0 cache
+   hits; cancelled after 2 min, ~2500 CPU-hours otherwise). `-resume` works for the same
+   command in the same dir (e.g. the pilot). Only one Nextflow run is allowed per dir, so
+   **submit the batches one after another** (wait until a batch has finished), not in
+   parallel. If a controller job keeps running after the log says "Goodbye" or the log
+   stops moving for hours, check `.nextflow.log` before waiting longer; its cache db can end
+   up corrupt (`Can't open cache DB ... Corruption`), then move `.nextflow` aside and start
+   fresh (everything of that run is recomputed).
 3. **Pilot first.** The `test` batch has its own run dir (`runs/mkan329_test/`), run id
    (`mkan329_test`) and db (`mkan329_test`), so it can not touch the real run. Check it
    (all 3 isolates finish, species call and gyrA plausible, `mkan329_test_quality.tsv`
@@ -177,27 +186,28 @@ batch first. (The old single-run block in `run.sh` is untested and superseded by
         -i /shares/sander.imm.uzh/MM/kansasii/data/illumina/Mkan329/batches/test
    ```
    Real run, one batch after another (wait until `squeue -u $USER` shows no more
-   `job_mkan329_*` / `nf-*` jobs before submitting the next one); `run_IMMENSE.sh` only submits the controller job and returns at once, so a loop over several batches would start them all in parallel in the same dir: `b01`, `b02`, `b03`,
-   then `all`:
+   `job_mkan329_*` / `nf-*` jobs before submitting the next one); `run_IMMENSE.sh` only submits the controller job and returns at once, so a loop over several batches would start them all in parallel in the same dir: `b01`, `b02`, `b03`:
    ```bash
    mkdir -p /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/mkan329 /shares/sander.imm.uzh/MM/kansasii/runs/mkan329
    cd /shares/sander.imm.uzh/MM/kansasii/runs/mkan329
-   b=b01    # then b02, b03, all: change it and rerun only after the previous one has finished
+   b=b01    # then b02, b03: change it and rerun only after the previous one has finished
    bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j job_mkan329_$b -t fq_PE -r mkan329 \
         -x "--kansasii_snippy_db /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/mkan329" \
         -i /shares/sander.imm.uzh/MM/kansasii/data/illumina/Mkan329/batches/$b
    ```
-   After `all` has finished and been checked, copy the end results and delete `work/`:
+   After the last batch has finished and been checked, copy the end results and delete `work/`:
    ```bash
    rsync -a --exclude work --exclude .nextflow --exclude '*_transfer_result/genomes/' \
         /shares/sander.imm.uzh/MM/kansasii/runs/mkan329/ /shares/sander.imm.uzh/MM/kansasii/output/mkan329/
    rm -rf /shares/sander.imm.uzh/MM/kansasii/runs/mkan329/work
    ```
-4. **Results table** (`conda activate kansasii_mic`), from the final `all` run:
+4. **Results table** (`conda activate kansasii_mic`). `screening_map_results.py` takes a single
+   `quality.tsv`, which now only covers the last batch (see 2), so this needs a combined table
+   first (not built yet); per batch, e.g. for `b03`:
    ```bash
    python /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/screening_map_results.py \
      --quality /shares/sander.imm.uzh/MM/kansasii/output/mkan329/mkan329_transfer_result/mkan329_quality.tsv \
-     --id-map /shares/sander.imm.uzh/MM/kansasii/data/illumina/Mkan329/batches/all/id_map.tsv
+     --id-map /shares/sander.imm.uzh/MM/kansasii/data/illumina/Mkan329/batches/b03/id_map.tsv
    ```
    (its default `--id-map` is still the old `data/mkan329_short/id_map.tsv`, so pass it;
    the quality table's `Sample` is `Mkan329-NNN`, which it matches via `PROBENNUMMER`).
@@ -212,8 +222,8 @@ batch first. (The old single-run block in `run.sh` is untested and superseded by
    **Needs adapting:** `generate_itol_species_labels.sh -m samples` still uses `NR` as the
    tree tip id; tips are now `Mkan329-NNN` (`PROBENNUMMER`), so the labels would not match.
 
-   **Not yet tested:** that `-resume` really reuses the finished samples across batches
-   with different input sets, and steps 4-5 on the `all` output.
+   **Tested:** `-resume` does not reuse finished samples across batch dirs (see 2).
+   **Not yet tested:** steps 4-5 on the batch outputs.
 
 Where results are: species is **not** in `assembly/results/<s>/5_typing/` (that holds
 `mlst/`, `pyMLST/`, `kansasii_snippy/`). It is in `3_quality/GTDB/<s>.tsv_gtdb_summary.tsv`

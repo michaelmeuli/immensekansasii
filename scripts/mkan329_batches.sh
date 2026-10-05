@@ -26,11 +26,14 @@
 # One run dir for the real run: b01..bNN and all go through the same
 # runs/mkan329/ with the same run id (mkan329) and snippy db (mkan329). Per-
 # sample results (assembly/results/<NR>/) and the snippy db accumulate, and
-# -resume (bin/submit_to_cluster.sh) reuses the finished samples, but
+# the tree (snippy-core over the whole db) cover every sample run so far, but
 # mkan329_quality.tsv and the other tables in mkan329_transfer_result/ only
-# cover the samples of the latest invocation. So: run the batches one after
-# another (Nextflow allows one run per dir), and finish with "all", which
-# rebuilds those tables and the tree over every sample.
+# cover the samples of the latest invocation. Run the batches one after
+# another (Nextflow allows one run per dir). The "all" batch is NOT a cheap
+# final run: -resume matches tasks by input *path*, "all" has other symlink
+# paths than b01.., so it recomputes every sample (tested 2026-10-05, 0 cache
+# hits). Only use it if a full recompute is wanted; for a table over all
+# samples use scripts/mkan329_samples_report.py.
 #
 # The snippy db dir must exist before the run (kansasii_phylo.nf bind-mounts it
 # into the container; a missing dir = "container creation failed ... mount"),
@@ -123,7 +126,7 @@ for s in "${samples[@]}"; do
   add_sample "$nr" "$pnr" "$r1" "$r2"
 done
 
-# "all" batch: every sample, for the final cumulative run
+# "all" batch: every sample (see header: re-runs everything, normally not used)
 start_batch all
 for s in "${samples[@]}"; do IFS=$'\t' read -r nr pnr r1 r2 <<< "$s"; add_sample "$nr" "$pnr" "$r1" "$r2"; done
 order+=(all)
@@ -137,7 +140,7 @@ for b in "${order[@]}"; do
 done
 echo
 echo "# Commands. test = pilot (own run dir and db). The rest share runs/mkan329:"
-echo "# submit b01..bNN one after another (wait for each to finish), then all."
+echo "# submit b01..bNN one after another (wait for each to finish). all = full recompute, normally skip it."
 for b in "${order[@]}"; do
   if [ "$b" = test ]; then run="mkan329_test"; else run="mkan329"; fi
   db="$DB_ROOT/$run"
