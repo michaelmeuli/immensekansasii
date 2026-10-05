@@ -37,6 +37,13 @@ script never modifies it. Added columns:
       Empty if all reads carry the row's TNR or the isolate has no reads.
       (Replaces the need for TNR6, e.g. 2023500268 for Mkan329-183.)
 
+  <ABBR>_mic, <ABBR>_modified_z, <ABBR>_clsi_category   (13 antibiotics, see MIC_ABBR)
+      Broth microdilution MIC as reported (mhk_raw, e.g. "<=1", "0.12-0.25"), the
+      per-antibiotic cohort modified z-score of log2 MIC and the CLSI category
+      (S/I/R; empty where no M. kansasii breakpoint exists: EMB, INH, STR, ETO),
+      from kansasii-mic outliers_per_antibiotic.csv (--mic-file). Empty if the
+      isolate was not tested.
+
 Usage: python scripts/screening_map_results.py  (in immensekansasii) [--results-dir ...] [--id-map ...]
 """
 import argparse
@@ -48,6 +55,17 @@ import pandas as pd
 
 K = Path("/shares/sander.imm.uzh/MM/kansasii")
 TNR_COLS_RE = r"^TNR(_NGS|[0-9]+)?$"
+
+
+# canonical antibiotic name (kansasii_mic loading.py) -> standard abbreviation
+MIC_ABBR = {
+    "Amikacin": "AMK", "Ciprofloxacin": "CIP", "Clarithromycin": "CLR",
+    "Doxycyclin": "DOX", "Ethambutol": "EMB", "Isoniazid": "INH",
+    "Linezolid": "LZD", "Moxifloxacin": "MXF", "Rifabutin": "RFB",
+    "Rifampicin": "RIF", "Streptomycin": "STR",
+    "Sulfamethoxazole/Trimethoprim": "SXT", "Ethionamid": "ETO",
+}
+MIC_FIELDS = (("mic", "mhk_raw"), ("modified_z", "modified_z"), ("clsi_category", "clsi_category"))
 
 
 def warn(msg):
@@ -133,6 +151,9 @@ def main():
                     default=K / "output/mlsa/main2_sanger_differentiation_excluded/isolate_classification.tsv")
     ap.add_argument("--refalign", type=Path,
                     default=K / "output/mlsa/main3_reference_alignment/reference_alignment.tsv")
+    ap.add_argument("--mic-file", type=Path,
+                    default=K / "output/mic/mhk/outliers_per_antibiotic.csv",
+                    help="kansasii-mic long table (PROBENNUMMER, antibiotic, mhk_raw, modified_z, clsi_category)")
     ap.add_argument("--max-contamination", type=float, default=10.0,
                     help="CheckM contamination %% above which contamination_flag is set (default 10)")
     ap.add_argument("--copy-to", type=Path, default=K / "output",
@@ -245,7 +266,29 @@ def main():
     else:
         warn(f"{args.reads} not found; TNR_MLSA left empty")
 
+    # --- per-antibiotic MIC, modified_z, clsi_category ---
+    mic_cols = [f"{a}_{f}" for a in MIC_ABBR.values() for f, _ in MIC_FIELDS]
+    for c in mic_cols:
+        res[c] = ""
+    if args.mic_file.exists():
+        mic = read_tsv(args.mic_file, ",")
+        unknown = sorted(set(mic["antibiotic"]) - set(MIC_ABBR))
+        if unknown:
+            warn(f"antibiotics without abbreviation, skipped: {unknown}")
+        mic = mic[mic["antibiotic"].isin(MIC_ABBR)]
+        row_of = {p: i for i, p in zip(res.index, res["PROBENNUMMER"])}
+        for _, r in mic.iterrows():
+            i = row_of.get(r["PROBENNUMMER"])
+            if i is None:
+                warn(f"MIC row {r['PROBENNUMMER']} not in link table")
+                continue
+            for f, src in MIC_FIELDS:
+                res.at[i, f"{MIC_ABBR[r['antibiotic']]}_{f}"] = r[src]
+    else:
+        warn(f"{args.mic_file} not found; MIC columns left empty")
+
     res.to_csv(out, index=False)
+    print(f"{(res[[f'{a}_mic' for a in MIC_ABBR.values()]] != '').any(axis=1).sum()} isolates with MIC data")
     print(f"wrote {out} ({len(res)} rows): {(res['species'] != '').sum()} with species, "
           f"{(res['resistance_abricate'] != '').sum()}/{(res['resistance_amrfinder'] != '').sum()} "
           f"with resistance_abricate/amrfinder, "
