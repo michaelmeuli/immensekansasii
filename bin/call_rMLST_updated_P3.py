@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import annotations
+
 import operator
 import subprocess
 import sys
@@ -11,7 +13,7 @@ inputOptions = sys.argv[1:]
 # usage: file1
 
 
-def main():
+def main() -> None:
 
     alleles = read_alleles(inputOptions)
 
@@ -26,9 +28,9 @@ def main():
     print(best_species, best_rST, best_score, sep='\t')
 
 
-def assign_rST(alleles, inputOptions):
+def assign_rST(alleles: list[str], inputOptions: list[str]) -> dict[str, int]:
 
-    rSTs = {}
+    rSTs: dict[str, list[str]] = {}
     input_file = [n for n in open(inputOptions[0], 'r').read().replace("\r", "").split("\n") if len(n) > 0]
     genes = input_file[0].split("\t")[1:54]
     for line in input_file:
@@ -43,7 +45,7 @@ def assign_rST(alleles, inputOptions):
         for gene, allel in zip(genes, line.split("\t")[1:54]):
             rSTs[rST].append(gene + "_" + allel)
 
-    found_allels = {}
+    found_allels: dict[str, int] = {}
 
     for rST in rSTs.keys():
         found_allels[rST] = len(list((set(alleles) - set(rSTs[rST]))))
@@ -51,12 +53,12 @@ def assign_rST(alleles, inputOptions):
     return found_allels
 
 
-def read_alleles(inputOptions):
+def read_alleles(inputOptions: list[str]) -> list[str]:
 
-    selected_alleles = []
+    selected_alleles: list[str] = []
     for blastfile in inputOptions[1:]:
-        best_alleles = {}
-        best = 0
+        best_alleles: dict[str, float] = {}
+        best = 0.0
         input_file = [n for n in open(blastfile, 'r').read().replace("\r", "").split("\n") if len(n) > 0]
 
         for line in input_file:

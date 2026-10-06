@@ -46,10 +46,13 @@ script never modifies it. Added columns:
 
 Usage: python scripts/screening_map_results.py  (in immensekansasii) [--results-dir ...] [--id-map ...]
 """
+from __future__ import annotations
+
 import argparse
 import shutil
 import sys
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -68,29 +71,29 @@ MIC_ABBR = {
 MIC_FIELDS = (("mic", "mhk_raw"), ("modified_z", "modified_z"), ("clsi_category", "clsi_category"))
 
 
-def warn(msg):
+def warn(msg: str) -> None:
     print(f"WARNING: {msg}", file=sys.stderr)
 
 
-def read_tsv(path, sep="\t"):
+def read_tsv(path: Path, sep: str = "\t") -> pd.DataFrame:
     return pd.read_csv(path, sep=sep, dtype=str, keep_default_na=False)
 
 
-def hsp65_calls(path):
+def hsp65_calls(path: Path) -> dict[str, str]:
     """Return {probennummer: nearest_species} for the hsp65 rows of an isolate_classification.tsv."""
     sc = read_tsv(path)
     sc = sc[sc["locus"] == "hsp65"]
     return dict(zip(sc["probennummer"], sc["nearest_species"]))
 
 
-def sample_dir_results(sdir, sid):
+def sample_dir_results(sdir: Path, sid: str) -> tuple[dict[str, str] | None, str, str]:
     """Return (gtdb row dict or None, abricate str, amrfinder str) from one per-sample result dir."""
-    gtdb = None
+    gtdb: dict[str, str] | None = None
     tab = sdir / "3_quality/summary" / f"{sid}.tab"
     if tab.exists():
         t = read_tsv(tab)
         if len(t):
-            gtdb = t.iloc[0].to_dict()
+            gtdb = {str(k): str(v) for k, v in t.iloc[0].to_dict().items()}
     abr = ""
     f = sdir / "4_resistance_virulence/01_Abricate" / f"{sid}_resistances_summary.tsv"
     if f.exists():
@@ -104,19 +107,19 @@ def sample_dir_results(sdir, sid):
     return gtdb, abr, amr
 
 
-def tnr_mlsa(link, reads_path):
+def tnr_mlsa(link: pd.DataFrame, reads_path: Path) -> dict[str, str]:
     """Return {PROBENNUMMER: 'tnr1,tnr2'} for read TNRs differing from row TNR."""
     reads = read_tsv(reads_path)
     # isolate_classification-style comma-joined TNRs are split defensively
-    by_pnr = {}
+    by_pnr: dict[str, set[str]] = {}
     for pnr, tnr in zip(reads["probennummer"], reads["TNR"]):
         by_pnr.setdefault(pnr, set()).update(t for t in tnr.split(",") if t)
-    out = {}
+    out: dict[str, str] = {}
     for _, r in link.iterrows():
         diff = sorted(by_pnr.get(r["PROBENNUMMER"], set()) - {r["TNR"]})
         out[r["PROBENNUMMER"]] = ",".join(diff)
     # a TNR_MLSA value already assigned to another isolate would be ambiguous
-    owner = {}
+    owner: dict[str, set[str]] = {}
     tnr_cols = [c for c in link.columns if pd.Series([c]).str.match(TNR_COLS_RE)[0]]
     for _, r in link.iterrows():
         for c in tnr_cols:
@@ -130,7 +133,7 @@ def tnr_mlsa(link, reads_path):
     return out
 
 
-def main():
+def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--indir", type=Path, default=K / "data/imm")
     ap.add_argument("--link", type=Path, default=None, help="default: <indir>/screening_map_link.csv")
@@ -172,7 +175,7 @@ def main():
         res[c] = ""
 
     # --- GTDB species + resistance from the pipeline run ---
-    sample_to_pnr = {}
+    sample_to_pnr: dict[str, str] = {}
     if id_map_path.exists():
         m = read_tsv(id_map_path)
         sample_to_pnr = dict(zip(m.iloc[:, 0], m.iloc[:, 1]))
@@ -183,7 +186,7 @@ def main():
             "checkm_contamination": "checkm_contamination"}
     idx = res.set_index("PROBENNUMMER").index
 
-    def set_gtdb(sample, row):
+    def set_gtdb(sample: str, row: pd.Series[Any] | dict[str, str]) -> bool:
         """Write the GTDB columns of `row` to the link row of `sample`; return False if unlinked."""
         pnr = sample_to_pnr.get(sample) or (sample if sample in pnrs else by_nr.get(sample))
         if pnr is None:
@@ -222,7 +225,7 @@ def main():
     else:
         warn(f"{args.results_dir} not found; resistance columns left empty")
 
-    def flag(v):
+    def flag(v: str) -> str:
         try:
             return "contaminated" if float(v) > args.max_contamination else ""
         except ValueError:
@@ -246,7 +249,7 @@ def main():
         reads = reads[reads["locus"] == "hsp65"]
         rep = dict(zip(reads["probennummer"], reads["read"]))
         ra = read_tsv(args.refalign)
-        closest = {}
+        closest: dict[str, str] = {}
         for name, sp, st in zip(ra["read"], ra["closest_species"], ra["status"]):
             if st != "ok":  # ambiguous / divergent / no_hit: no reliable call
                 sp = ""

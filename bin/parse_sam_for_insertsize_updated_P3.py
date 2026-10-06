@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import annotations
+
 # import numpy as np
 import subprocess
 import sys
@@ -11,7 +13,7 @@ inputOptions = sys.argv[1:]
 # usage: file1
 
 
-def main():
+def main() -> None:
 
     read_name = ""
 

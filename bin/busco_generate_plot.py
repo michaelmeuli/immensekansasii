@@ -24,6 +24,8 @@ Licensed under the MIT license. See LICENSE.md file.
 
 """
 
+from __future__ import annotations
+
 import os
 import sys
 import time
@@ -31,6 +33,7 @@ import traceback
 import argparse
 import subprocess
 import glob
+from typing import Any
 from shutil import which
 from argparse import RawTextHelpFormatter
 import logging
@@ -43,6 +46,9 @@ _r_file = "busco_figure.R"
 
 # to avoid running R
 _no_r = False
+
+#: which short summaries to use (set from the command line)
+_run_type = "[generic|specific]*"
 
 #: Get an instance of _logger for keeping track of events
 _logger = BuscoLogger.get_logger(__name__)
@@ -154,7 +160,7 @@ RCODE = (
 )
 
 
-def _check_wd():
+def _check_wd() -> None:
     """
     This function checks that the working directory exists with write permission
     :raises SystemExit: if the folder is absent or the user has no write permission
@@ -167,7 +173,7 @@ def _check_wd():
         raise SystemExit()
 
 
-def _write_r_code(data):
+def _write_r_code(data: dict[str, list[Any]]) -> None:
     """
     This function write the R code in its own file
     :param data: the data loaded from the run folders used to generate the R file
@@ -183,7 +189,7 @@ def _write_r_code(data):
     )
 
 
-def _run_r_code():
+def _run_r_code() -> None:
     """
     This function runs the R code after it was generated
     It first checks that ggplot2 related libraries are present
@@ -196,6 +202,7 @@ def _run_r_code():
         stderr=subprocess.PIPE,
         stdout=subprocess.PIPE,
     )
+    assert ggplot2.stderr is not None and ggplot2.stdout is not None
     ggplot2_out = ggplot2.stderr.readlines() + ggplot2.stdout.readlines()
     if "Error" in str(ggplot2_out):
         _logger.warning(
@@ -211,6 +218,7 @@ def _run_r_code():
         stdout=subprocess.PIPE,
     )
 
+    assert grid.stderr is not None and grid.stdout is not None
     grid_out = grid.stderr.readlines() + grid.stdout.readlines()
     if "Error" in str(grid_out):
         _logger.warning(
@@ -220,7 +228,7 @@ def _run_r_code():
         need_to_exit = True
 
     if need_to_exit:
-        return None  # do not run the code, but no need to stop the execution
+        return  # do not run the code, but no need to stop the execution
 
     # run R
     if which("Rscript") is not None:
@@ -238,7 +246,7 @@ def _run_r_code():
         raise SystemExit()
 
 
-def _set_args():
+def _set_args() -> None:
     """
     This function sets the parameters provided by the user
     """
@@ -305,12 +313,12 @@ def _set_args():
         _run_type = args["run_type"]
 
 
-def _load_data():
+def _load_data() -> dict[str, list[Any]]:
     """
 
     :return:
     """
-    data = {"species": [], "values": [], "percentages": [], "species_tmp": []}
+    data: dict[str, list[Any]] = {"species": [], "values": [], "percentages": [], "species_tmp": []}
     datasets = set([])
     for f in glob.glob("%s/short_summary.%s.*.*.txt" % (_plot_dir, _run_type)):
         try:
@@ -358,7 +366,7 @@ def _load_data():
     return data
 
 
-def main():
+def main() -> None:
     """
     This function produces a figure with all BUSCO runs present in the current folder
     """

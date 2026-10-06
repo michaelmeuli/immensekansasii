@@ -11,11 +11,14 @@ Links are made via
   - DATEOFBIRTH as fallback (reopened cases get a new LNR/TNR)
 Afterwards the result is compared with screening_map.csv.
 """
+from __future__ import annotations
+
 import argparse
 import re
 import shutil
 import sys
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -23,17 +26,17 @@ TNR_RE = re.compile(r"(?<!\d)(20\d{8})(?!\d)")
 LNR_RE = re.compile(r"(?<!\d)(\d{7,8})(?!\d)")
 
 
-def warn(msg):
+def warn(msg: str) -> None:
     print(f"WARNING: {msg}", file=sys.stderr)
 
 
-def read(path, encoding="utf-8"):
+def read(path: Path, encoding: str = "utf-8") -> pd.DataFrame:
     df = pd.read_csv(path, dtype=str, encoding=encoding, keep_default_na=False)
     df.columns = [c.strip() for c in df.columns]
     return df.drop(columns=[c for c in df.columns if c == "" or c.startswith("Unnamed")])
 
 
-def load(indir):
+def load(indir: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     project = read(indir / "screening_map_project.csv")
     project = project[project["NR"] != ""].reset_index(drop=True)
     strains = read(indir / "screening_map_strains.csv", encoding="latin-1")
@@ -47,14 +50,14 @@ def load(indir):
     return project, strains, ast, ngs, old
 
 
-def parse_beschreibung(text, lnr):
+def parse_beschreibung(text: str, lnr: str) -> tuple[list[str], list[str]]:
     """Return (follow-up TNRs, LNR2 candidates) found in BESCHREIBUNG."""
     tnrs = TNR_RE.findall(text)
     lnrs = [n for n in LNR_RE.findall(text) if n != lnr]
     return tnrs, lnrs
 
 
-def find_mhk(tnr, s, ast):
+def find_mhk(tnr: str, s: pd.Series[str], ast: pd.DataFrame) -> tuple[str | None, pd.Series[str] | None]:
     """Pick the AST TNR (MHK) for a project TNR by priority tiers; return (MHK, AST row) or (None, None)."""
     besch_tnrs, besch_lnrs = parse_beschreibung(s["BESCHREIBUNG"], s["LNR"])
     other = ast["TNR"] != tnr
@@ -79,9 +82,9 @@ def find_mhk(tnr, s, ast):
     return None, None
 
 
-def build(project, strains, ast, ngs):
+def build(project: pd.DataFrame, strains: pd.DataFrame, ast: pd.DataFrame, ngs: pd.DataFrame) -> pd.DataFrame:
     S = strains.set_index("TNR")
-    rows = []
+    rows: list[dict[str, Any]] = []
     for _, p in project.iterrows():
         r = {"NR": p["NR"], "PROBENNUMMER": p["PROBENNUMMER"], "LNR": "", "LNR2": "",
              "TNR": p["TNR"], "TNR_NGS": "", "extra": [], "NGS": "", "MHK": "", "LABEL": p["LABEL"]}
@@ -134,7 +137,7 @@ def build(project, strains, ast, ngs):
     return pd.DataFrame(rows)[cols]
 
 
-def compare(link, old):
+def compare(link: pd.DataFrame, old: pd.DataFrame) -> None:
     print("\n=== Comparison with screening_map.csv ===")
     m = old.merge(link, on="NR", how="outer", suffixes=("_old", ""), indicator=True)
     only = m[m["_merge"] != "both"]
@@ -156,7 +159,7 @@ def compare(link, old):
             print(added[["NR", "TNR", col]].to_string(index=False))
 
 
-def main():
+def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--indir", type=Path, default=Path("/shares/sander.imm.uzh/MM/kansasii/data/imm"))
     ap.add_argument("--out", type=Path, default=None, help="default: <indir>/screening_map_link.csv")

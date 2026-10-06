@@ -1,0 +1,11 @@
+# Type-checking config only (this is a Nextflow pipeline, not a Python package).
+# Run: mypy   (from the repo root, in an env with mypy + pandas-stubs + scipy-stubs)
+[tool.mypy]
+strict = true
+python_version = "3.11"
+files = ["bin", "scripts"]
+untyped_calls_exclude = ["Bio"]
+
+[[tool.mypy.overrides]]
+module = ["adjustText", "statsmodels.*", "busco.*"]
+ignore_missing_imports = true

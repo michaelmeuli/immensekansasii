@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
+from __future__ import annotations
+
 import csv
 import pandas as pd
 import argparse
 import os
+from typing import Any
 
 # To run:
 # evaluate_QC.py --qcfile xxxxx_quality.tsv --rulesfile path/to/aquamis-style/rules.csv
@@ -16,7 +19,7 @@ synonyms = {
     'Contig_count':'# contigs (>= 0 bp)'
 }
 
-def parse_busco_data(busco_str):
+def parse_busco_data(busco_str: object) -> tuple[float, float]:
     """
     Parse the BUSCO string to extract single-copy and duplicated BUSCO percentages.
 
@@ -40,7 +43,7 @@ def parse_busco_data(busco_str):
         print(f"Error parsing BUSCO data: {e} - Skipped")
         return 0.0, 0.0  # Default return on failure
 
-def add_busco_columns(df):
+def add_busco_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
     Add 'busco_single' and 'busco_duplicates' columns to the DataFrame based on 'Complete_BUSCOs'.
 
@@ -55,7 +58,7 @@ def add_busco_columns(df):
     df[['busco_single', 'busco_duplicates']] = df['Complete_BUSCOs'].apply(parse_busco_data).apply(pd.Series)
     return df
 
-def load_strain_data(file_path):
+def load_strain_data(file_path: str) -> pd.DataFrame | None:
     """
     Load strain data from a TSV file into a DataFrame.
 
@@ -76,13 +79,13 @@ def load_strain_data(file_path):
         print(f"An error occurred while loading the data: {e}")
         return None
 
-def translate_parameter_name(param):
+def translate_parameter_name(param: str) -> str:
     """Translates parameter names to their canonical form based on predefined synonyms."""
     return synonyms.get(param, param)
 
-def parse_ranges(ranges_str):
+def parse_ranges(ranges_str: str) -> list[tuple[float, float]]:
     """Parses a string containing multiple range specifications."""
-    range_list = []
+    range_list: list[tuple[float, float]] = []
     # Split the input string by commas to process multiple ranges
     for part in ranges_str.split(','):
         part = part.strip()
@@ -107,9 +110,9 @@ def parse_ranges(ranges_str):
                 range_list.append((0.0, float(left)))
     return range_list
 
-def load_rules(filename):
+def load_rules(filename: str) -> dict[str, dict[str, dict[str, list[tuple[float, float]]]]]:
     """Loads rules from a CSV file into a dictionary."""
-    rules = {}
+    rules: dict[str, dict[str, dict[str, list[tuple[float, float]]]]] = {}
     with open(filename, mode='r') as file:
         reader = csv.DictReader(file)
         for row in reader:
@@ -123,7 +126,7 @@ def load_rules(filename):
             rules[taxon][parameter] = {'PASS': pass_ranges, 'WARNING': warning_ranges, 'FAIL': fail_ranges}
     return rules
 
-def evaluate_parameter(value, rules):
+def evaluate_parameter(value: Any, rules: dict[str, list[tuple[float, float]]]) -> str:
     """Evaluate a single parameter value against rules."""
     if value == "skipped":
         return "Undefined"
@@ -137,11 +140,11 @@ def evaluate_parameter(value, rules):
                 return result
     return "Undefined"  # If no rules matched
 
-def evaluate_row(row, all_rules):
+def evaluate_row(row: pd.Series[Any], all_rules: dict[str, dict[str, list[tuple[float, float]]]]) -> dict[str, Any]:
     """Evaluates a single row of parameters against given rules."""
-    row_results = {}
+    row_results: dict[str, Any] = {}
     for param, value in row.items():
-        canonical_param = translate_parameter_name(param)  # Translate to canonical name if synonymous
+        canonical_param = translate_parameter_name(str(param))  # Translate to canonical name if synonymous
         rules_for_param = all_rules.get(canonical_param, {})
 
         # Determine the evaluation status for this parameter
@@ -158,16 +161,18 @@ def evaluate_row(row, all_rules):
     
     return row_results
 
-def evaluate_strain(strain_datafile, rules_file):
+def evaluate_strain(strain_datafile: str, rules_file: str) -> pd.DataFrame:
     """Evaluates all parameters of a strain based on the rules for its genus and species, including universal rules."""
     
     # Load data and rules
     parameters = load_strain_data(strain_datafile)
+    if parameters is None:
+        raise RuntimeError(f"could not load strain data from {strain_datafile}")
     print(parameters)
     rules = load_rules(rules_file)
 
     # Initialize empty list to store results for each row
-    all_results = []
+    all_results: list[dict[str, Any]] = []
 
     # Iterate over each row in parameters DataFrame
     for index, row in parameters.iterrows():
@@ -199,7 +204,7 @@ def evaluate_strain(strain_datafile, rules_file):
 
     return results
 
-def main():
+def main() -> None:
     """Specify quality results file, rules file and species"""
     
     ## Arguments

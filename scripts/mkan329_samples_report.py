@@ -13,12 +13,15 @@ in QC_bacteria/rules.csv fails the total length of every kansasii isolate).
 Usage: python3 scripts/mkan329_samples_report.py [--results DIR] [--link CSV] [--out FILE]
 Standard library only, no conda env needed.
 """
+from __future__ import annotations
+
 import argparse
 import csv
 import datetime
 import glob
 import os
 from collections import Counter
+from typing import TypedDict
 
 K = "/shares/sander.imm.uzh/MM/kansasii"
 COMPLEX = {"kansasii", "persicum", "pseudokansasii", "innocens", "attenuatum", "ostraviense", "gastri"}
@@ -35,24 +38,35 @@ MAX_CONTIGS = 600
 MIN_DEPTH = 50.0
 
 
-def num(x):
+class SampleInfo(TypedDict):
+    sp: str
+    ep: str
+    control: bool
+    flags: list[str]
+    label: str
+    tnr: str
+
+
+def num(x: str | None) -> float | None:
+    if x is None:
+        return None
     try:
         return float(x)
-    except (TypeError, ValueError):
+    except ValueError:
         return None
 
 
-def epithet(species):
+def epithet(species: str) -> str:
     return species.replace("_", " ").split()[-1].lower() if species else ""
 
 
-def read_tab(path):
+def read_tab(path: str) -> dict[str, str]:
     with open(path) as fh:
         rows = list(csv.reader(fh, delimiter="\t"))
     return {k: v.strip() for k, v in zip(rows[0], rows[1])}
 
 
-def main():
+def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--results", default=f"{K}/runs/mkan329/assembly/results")
     ap.add_argument("--link", default=f"{K}/data/imm/screening_map_link.csv")
@@ -60,23 +74,23 @@ def main():
     args = ap.parse_args()
 
     with open(args.link) as fh:
-        link = {r["PROBENNUMMER"]: r for r in csv.DictReader(fh)}
-    samples = {}
+        link: dict[str, dict[str, str]] = {r["PROBENNUMMER"]: r for r in csv.DictReader(fh)}
+    samples: dict[str, dict[str, str]] = {}
     for f in sorted(glob.glob(f"{args.results}/Mkan329-*/3_quality/summary/Mkan329-*.tab")):
         r = read_tab(f)
         samples[r["Sample"]] = r
 
-    def nr(sid):
+    def nr(sid: str) -> int:
         return int(link[sid]["NR"]) if sid in link else 10**6
 
     order = sorted(samples, key=nr)
-    info = {}
+    info: dict[str, SampleInfo] = {}
     for sid in order:
         r, l = samples[sid], link.get(sid, {})
         sp = r["gtdb_species"].replace("Mycobacterium ", "M. ")
         ep = epithet(r["gtdb_species"])
         control = bool(l.get("LABEL"))
-        flags = []
+        flags: list[str] = []
         if (num(r["checkm_contamination"]) or 0) > MAX_CONTAM:
             flags.append("contamination")
         if (num(r["MetaPhlAn4_purity"]) or 100) < MIN_PURITY:
@@ -92,27 +106,30 @@ def main():
             flags.append("fragmented")
         if (num(r["Depth_mean"]) or 999) < MIN_DEPTH:
             flags.append("low depth")
-        info[sid] = dict(sp=sp, ep=ep, control=control, flags=flags, label=l.get("LABEL", ""), tnr=l.get("TNR", ""))
+        info[sid] = SampleInfo(sp=sp, ep=ep, control=control, flags=flags, label=l.get("LABEL", ""), tnr=l.get("TNR", ""))
 
     isolates = [s for s in order if not info[s]["control"]]
     controls = [s for s in order if info[s]["control"]]
     delivered = set(link)
     missing = sorted((int(link[p]["NR"]), p) for p in delivered - set(samples))
 
-    def ranges(nums):
-        out, start, prev = [], None, None
+    def ranges(nums: list[int]) -> str:
+        out: list[tuple[int, int]] = []
+        start: int | None = None
+        prev: int | None = None
         for n in nums:
             if start is None:
                 start = prev = n
-            elif n == prev + 1:
+            elif prev is not None and n == prev + 1:
                 prev = n
             else:
+                assert start is not None and prev is not None
                 out.append((start, prev)); start = prev = n
-        if start is not None:
+        if start is not None and prev is not None:
             out.append((start, prev))
         return ", ".join(str(a) if a == b else f"{a}-{b}" for a, b in out)
 
-    L = []
+    L: list[str] = []
     w = L.append
     w("# Mkan329 samples report\n")
     w(f"Generated {datetime.date.today()} by `scripts/mkan329_samples_report.py` from the per-sample")
@@ -146,8 +163,9 @@ def main():
     w("| NR | Sample | Species (GTDB) | Flags | CheckM contam. % | MetaPhlAn4 (purity %) | Length Mb | Contigs |\n|---|---|---|---|---|---|---|---|")
     for sid in flagged:
         r, i = samples[sid], info[sid]
+        purity = num(r["MetaPhlAn4_purity"])
         w(f"| {link[sid]['NR']} | {sid} | {i['sp']} | {', '.join(i['flags'])} | {r['checkm_contamination']} | "
-          f"{r['MetaPhlAn4_species'].replace('_', ' ')} ({num(r['MetaPhlAn4_purity']) and round(num(r['MetaPhlAn4_purity']), 1)}) | "
+          f"{r['MetaPhlAn4_species'].replace('_', ' ')} ({purity and round(purity, 1)}) | "
           f"{float(r['Total_length']) / 1e6:.2f} | {r['Contig_count']} |")
     w("")
     w(f"Thresholds: CheckM contamination > {MAX_CONTAM:g} %, MetaPhlAn4 purity < {MIN_PURITY:g} %, "
