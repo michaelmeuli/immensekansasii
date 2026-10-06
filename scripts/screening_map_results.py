@@ -48,6 +48,7 @@ Usage: python scripts/screening_map_results.py  (in immensekansasii) [--results-
 """
 from __future__ import annotations
 
+import os
 import argparse
 import shutil
 import sys
@@ -56,7 +57,7 @@ from typing import Any
 
 import pandas as pd
 
-K = Path("/shares/sander.imm.uzh/MM/kansasii")
+K = Path(os.environ.get("KANSASII_ROOT", "/shares/sander.imm.uzh/MM/kansasii"))
 TNR_COLS_RE = r"^TNR(_NGS|[0-9]+)?$"
 
 

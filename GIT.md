@@ -18,3 +18,21 @@ git config core.fileMode false
 This tells git to ignore permission-only changes in this repo (it's a local,
 repo-only setting — it does not affect the remote or other clones). After
 running it, `git status` should come back clean.
+
+## Windows checkout
+
+- `.gitattributes` forces LF line endings, so a Windows checkout (even with
+  `core.autocrlf=true`) keeps scripts runnable. Recommended: `git config core.autocrlf false`
+  and `git config core.longpaths true`.
+- Scripts default to the cluster root `/shares/sander.imm.uzh/MM/kansasii`; set the
+  `KANSASII_ROOT` environment variable to point elsewhere (e.g. a mapped drive).
+- Nextflow, Singularity and sbatch steps only run on the cluster (or WSL).
+
+## Windows checkout
+
+- `.gitattributes` forces LF line endings, so a Windows checkout (even with
+  `core.autocrlf=true`) keeps scripts runnable. Recommended: `git config core.autocrlf false`
+  and `git config core.longpaths true`.
+- Scripts default to the cluster root `/shares/sander.imm.uzh/MM/kansasii`; set the
+  `KANSASII_ROOT` environment variable to point elsewhere (e.g. a mapped drive).
+- Nextflow, Singularity and sbatch steps only run on the cluster (or WSL).

@@ -23,7 +23,7 @@ import os
 from collections import Counter
 from typing import TypedDict
 
-K = "/shares/sander.imm.uzh/MM/kansasii"
+K = os.environ.get("KANSASII_ROOT", "/shares/sander.imm.uzh/MM/kansasii")
 COMPLEX = {"kansasii", "persicum", "pseudokansasii", "innocens", "attenuatum", "ostraviense", "gastri"}
 # GTDB merged M. ulcerans into M. marinum; MetaPhlAn writes Mycobacteroides_abscessus
 ALIAS = {"ulcerans": "marinum"}
@@ -61,7 +61,7 @@ def epithet(species: str) -> str:
 
 
 def read_tab(path: str) -> dict[str, str]:
-    with open(path) as fh:
+    with open(path, encoding="utf-8") as fh:
         rows = list(csv.reader(fh, delimiter="\t"))
     return {k: v.strip() for k, v in zip(rows[0], rows[1])}
 
@@ -73,7 +73,7 @@ def main() -> None:
     ap.add_argument("--out", default=f"{K}/repos/immensekansasii/SAMPLES.md")
     args = ap.parse_args()
 
-    with open(args.link) as fh:
+    with open(args.link, encoding="utf-8") as fh:
         link: dict[str, dict[str, str]] = {r["PROBENNUMMER"]: r for r in csv.DictReader(fh)}
     samples: dict[str, dict[str, str]] = {}
     for f in sorted(glob.glob(f"{args.results}/Mkan329-*/3_quality/summary/Mkan329-*.tab")):
@@ -196,7 +196,7 @@ def main() -> None:
     w("- A mixed culture or contamination makes the GTDB call unreliable; check the flagged isolates before using"
       " their species or SNP tree position.")
 
-    with open(args.out, "w") as fh:
+    with open(args.out, "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(L) + "\n")
     print(f"wrote {args.out}: {len(samples)} samples, {len(flagged)} flagged, {len(missing)} without results")
 
