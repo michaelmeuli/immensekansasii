@@ -22,8 +22,7 @@
 #            built in immensekansasii/scripts/gtdb_mycobacteria_genomes.sh; the
 #            suffix avoids a collision with GTDB-Tk's own reference ids).
 #            Species come from GTDB metadata (bac120_metadata_r232.tsv).
-#   samples  real isolates. Tips are the short ids (NR column) used as fasta
-#            names by scripts/run.sh; species come from screening_map_results.csv
+#   samples  real isolates. Tips are the PROBENNUMMER ids (Mkan329-NNN); species come from screening_map_results.csv
 #            (written by immensekansasii/scripts/screening_map_results.py).
 #            Display text is "Species [Mkan329-NNN]".
 #
@@ -79,6 +78,16 @@ if [ "$MODE" = gtdb ] && [ "${ACCESSIONS_FILE#/}" = "$ACCESSIONS_FILE" ] && [ ! 
 fi
 mkdir -p "$OUT_DIR"
 
+# tree location: output/<run>, then runs/<run>, then output-old/<run> (archived runs)
+TREE_DIR=
+for base in output runs output-old; do
+  if [ -d "$K/$base/$RUN/${RUN}_transfer_result/kansasii_phylogeny" ]; then
+    TREE_DIR=$K/$base/$RUN/${RUN}_transfer_result/kansasii_phylogeny
+    break
+  fi
+done
+TREEFILE=$TREE_DIR/kansasii_complex_tree.treefile
+
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 JOINED="$TMP/joined.tsv"   # tip_id <TAB> display_id <TAB> species
@@ -102,17 +111,27 @@ if [ "$MODE" = gtdb ]; then
     awk -F'\t' -v OFS='\t' '{print $2, $1, $3}' > "$JOINED"
   n_in=$(grep -c . "$ACCESSIONS_FILE" || true)
 else
-  # NR (tip id), PROBENNUMMER (display id), species. Species: GTDB species from
-  # screening_map_results.csv; reference strains (no genome result) fall back to LABEL.
-  python3 - "$RESULTS_CSV" > "$JOINED" <<'PY'
-import csv, sys
+  # PROBENNUMMER (tip id = display id, e.g. Mkan329-001), species. Species: GTDB
+  # species from screening_map_results.csv; reference strains (no genome result)
+  # fall back to LABEL. Only isolates that are tips of the tree are kept
+  # (the csv also lists isolates not sequenced/delivered yet).
+  python3 - "$RESULTS_CSV" "$TREEFILE" > "$JOINED" <<'PY'
+import csv, re, sys
+tips = set(re.findall(r"[(,]([^(),:]+):", open(sys.argv[2]).read()))
 for r in csv.DictReader(open(sys.argv[1], newline="", encoding="utf-8")):
     sp = r.get("species") or r.get("LABEL") or ""
-    if not r["NR"] or not sp:
+    tid = r["PROBENNUMMER"]
+    if tid not in tips or not sp:
         continue
-    print("\t".join([r["NR"], r["PROBENNUMMER"], sp]))
+    print("\t".join([tid, tid, sp]))
 PY
-  n_in=$(python3 -c "import csv,sys; print(sum(1 for _ in csv.DictReader(open(sys.argv[1], newline='', encoding='utf-8'))))" "$RESULTS_CSV")
+  n_in=$(python3 -c "import re,sys; print(len(re.findall(r'[(,]([^(),:]+):', open(sys.argv[1]).read())))" "$TREEFILE")
+fi
+
+# the snippy reference genome is a tip of every tree but has no species row
+if [ -f "$TREEFILE" ] && grep -q '[(,]Reference:' "$TREEFILE"; then
+  printf 'Reference\treference\tReference genome\n' >> "$JOINED"
+  n_in=$((n_in + 1))
 fi
 
 n_joined=$(grep -c . "$JOINED" || true)
@@ -149,6 +168,7 @@ fi
       base = $3
       sub(/ \(.*/, "", base)             # drop "(ATCC ...)" from reference LABELs
       sub(/^M\. /, "Mycobacterium ", base)
+      if (base !~ / /) base = "Mycobacterium " base   # samples mode: bare epithet ("kansasii")
       sub(/_[A-Z]$/, "", base)
       if (base ~ /^Mycobacterium (kansasii|persicum|pseudokansasii|innocens|attenuatum|ostraviense|gastri)$/) {
         color = "#4daf4a"; group = "M. kansasii complex"
@@ -165,7 +185,6 @@ fi
     }' "$JOINED"
 } > "$OUT_DIR/${PREFIX}itol_species_colorstrip.txt"
 
-TREE_DIR=$K/output/$RUN/${RUN}_transfer_result/kansasii_phylogeny
 cp -v "$TREE_DIR"/kansasii_complex_tree.treefile "$TREE_DIR"/kansasii_complex_tree.iqtree "$OUT_DIR/" ||
   echo "WARNING: no tree files copied from $TREE_DIR" >&2
 

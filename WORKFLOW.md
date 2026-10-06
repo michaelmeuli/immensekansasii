@@ -219,8 +219,15 @@ batch first. (The old single-run block in `run.sh` is untested and superseded by
    `mkan329_itol_species_colorstrip.txt` and a copy of the tree to `output/iTOL/mkan329/`.
    Copy them to your computer and load them into iTOL as described in section 2a.
 
-   **Needs adapting:** `generate_itol_species_labels.sh -m samples` still uses `NR` as the
-   tree tip id; tips are now `Mkan329-NNN` (`PROBENNUMMER`), so the labels would not match.
+   In `samples` mode the script uses `PROBENNUMMER` (`Mkan329-NNN`) as the tree tip id and
+   species from `data/imm/screening_map_results.csv`. It keeps only isolates that are tips of the
+   tree (the csv also lists undelivered isolates), reads the tree from `output/<run>/` or, if
+   that is missing, `runs/<run>/`, and adds the snippy `Reference` tip as "Reference genome"
+   (grey). Bare species epithets (`kansasii`) get a `Mycobacterium ` prefix for the colour strip.
+
+   **Tested:** on the current `runs/mkan329` tree (131 isolates + `Reference` = 132 tips):
+   126 kansasii complex, 1 avium, 1 tuberculosis, 4 other. Re-run it after the tree is rebuilt
+   with the remaining isolates.
 
    **Tested:** `-resume` does not reuse finished samples across batch dirs (see 2).
    **Not yet tested:** steps 4-5 on the batch outputs.
