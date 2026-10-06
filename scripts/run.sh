@@ -15,7 +15,7 @@
 # scripts/generate_itol_species_labels.sh for turning those into iTOL
 # species-name annotations after upload (its default accessions file is this
 # same kansasii_complex list; -a selects another one).
-ACCESSIONS_FILE="/shares/sander.imm.uzh/MM/kansasii/output/lit/gtdb/gtdb232/kansasii_complex_gtdb_representative_accessions_renamed.txt"
+ACCESSIONS_FILE="/shares/sander.imm.uzh/MM/kansasii/data/lit/gtdb/gtdb232/kansasii_complex_gtdb_representative_accessions_renamed.txt"
 GENOME_DATA_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data"
 SELECTED_DIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae/kansasii_complex_gtdb_representatives"
 SNIPPY_DB_DIR="/shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/kansasii_complex_gtdb_representatives"
@@ -85,7 +85,7 @@ rsync -a --exclude work --exclude .nextflow --exclude '*_transfer_result/genomes
 # screening map (writes data/imm/screening_map_results.csv, copy in output)
 # and generate iTOL labels for the tree tips (short ids -> "Species [Mkan329-NNN]").
 python /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/screening_map_results.py \
-  --quality /shares/sander.imm.uzh/MM/kansasii/output/mkan329/mkan329_transfer_result/mkan329_quality.tsv \
+  --quality /shares/sander.imm.uzh/MM/kansasii/runs/mkan329/mkan329_transfer_result/mkan329_quality.tsv \
   --id-map "$INPUT_DIR/id_map.tsv"
 bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/generate_itol_species_labels.sh -m samples -p mkan329_
 

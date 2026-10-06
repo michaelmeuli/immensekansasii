@@ -14,14 +14,18 @@ absolute; **code blocks use full paths** and can be pasted as they are (only
 | `repos/immensekansasii` | this repo: pipeline + project scripts in `scripts/` |
 | `repos/mlsa-kansasii` | MLSA / Sanger differentiation (reads `data/imm/screening_map_link.csv`) |
 | `data/imm/` | screening map sources and derived tables |
-| `data/lit/gtdb/gtdb232/` | GTDB r232 metadata (downloaded if missing) |
+| `data/lit/gtdb/gtdb232/` | GTDB r232 metadata (downloaded if missing), accession lists, type strains |
 | `data/gtdb_genomes/` | genomes downloaded from NCBI, plus symlink dirs for runs |
 | `data/illumina/Mkan329/reads/kansasii/` | delivered paired-end fastq `Mkan329-NNN_r1/_r2.fastq.gz` (lower case; 131 of 183 isolates so far) |
 | `data/illumina/Mkan329/batches/<batch>/` | per-batch input from `mkan329_batches.sh`: `Mkan329-NNN_R1/_R2.fastq.gz` symlinks + `id_map.tsv` |
 | `runs/<run_name>/` | working dir of a pipeline run (contains large, temporary `work/`) |
 | `output/<run_name>/` | end results of a run (no `work/`); downloaded to local `kansasii_C` |
-| `output/lit/gtdb/gtdb232/` | accession lists, type strains, iTOL files |
+| `output/lit/gtdb/gtdb232/` | convenience copy of the accession lists and type strains |
+| `output/iTOL/<run_name>/` | iTOL tree + annotation files per run |
 | `output/mlsa/` | MLSA outputs |
+
+**Rule:** scripts read only from `data/` and `runs/`. `output/` only receives copies made by
+the scripts (results, iTOL files, lists) for convenience and download.
 
 Scripts (`repos/immensekansasii/scripts/`):
 
@@ -45,7 +49,7 @@ bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/gtdb_mycob
 - Reads `data/lit/gtdb/gtdb232/bac120_metadata_r232.tsv`.
 - Downloads all Mycobacteriaceae genomes to
   `data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data/` (existing ones are skipped).
-- Writes to `output/lit/gtdb/gtdb232/`:
+- Writes to `data/lit/gtdb/gtdb232/` (and copies to `output/lit/gtdb/gtdb232/`):
   - `mycobacterium_relevant_species_representative_accessions_renamed.txt`:
     20 GTDB representatives of the kansasii complex, MTBC, MAC and *M. simiae*
   - `kansasii_complex_gtdb_representative_accessions_renamed.txt`: the 7 kansasii-complex
@@ -86,28 +90,7 @@ pipeline on that directory. The sample id is the fasta file stem, so tree tips a
 `GCF_xxx_query` (plus a `Reference` tip). `kansasii_phylo.nf` writes
 `<run>_transfer_result/kansasii_phylogeny/kansasii_complex_tree.treefile`.
 
-iTOL annotation for this tree (upload the `.treefile` to iTOL, drag the files onto it):
-
-```bash
-bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/generate_itol_species_labels.sh
-```
-
-Writes `itol_species_labels.txt` (`Species [accession]`) and `itol_species_colorstrip.txt`
-(kansasii complex / MTBC / MAC / *M. simiae* complex / other) to
-`output/iTOL/kansasii_complex_gtdb_representatives/`, together with a copy of the run's
-`.treefile` and `.iqtree`. `-a` selects another accessions file (e.g. the 20-genome list),
-`-n` another run name.
-
-Getting the files into iTOL (the script only writes them on the server):
-
-1. Copy to your computer, run from your laptop (not on the server):
-   ```bash
-   scp "<user>@<server-hostname>:/shares/sander.imm.uzh/MM/kansasii/output/iTOL/kansasii_complex_gtdb_representatives/*" ~/Downloads/
-   ```
-   For the mkan329 tree use `output/iTOL/mkan329/*` instead. A GUI
-   client (WinSCP, Cyberduck, MobaXterm) works too. The `.treefile` is in the same directory for the GTDB tree.
-2. At <https://itol.embl.de> upload the `.treefile`, open the tree, then drag
-   `*_itol_species_labels.txt` and `*_itol_species_colorstrip.txt` onto the tree view.
+iTOL files for this tree: see section 2c (default mode, no arguments).
 
 ### 2b. `mkan329` (real isolates, `-t fq_PE`)
 
@@ -217,12 +200,11 @@ batch first. (The old single-run block in `run.sh` is untested and superseded by
    ```
    writes `mkan329_itol_species_labels.txt` (`Species [Mkan329-NNN]`) and
    `mkan329_itol_species_colorstrip.txt` and a copy of the tree to `output/iTOL/mkan329/`.
-   Copy them to your computer and load them into iTOL as described in section 2a.
+   Copy them to your computer and load them into iTOL as described in section 2c.
 
    In `samples` mode the script uses `PROBENNUMMER` (`Mkan329-NNN`) as the tree tip id and
    species from `data/imm/screening_map_results.csv`. It keeps only isolates that are tips of the
-   tree (the csv also lists undelivered isolates), reads the tree from `output/<run>/` or, if
-   that is missing, `runs/<run>/`, and adds the snippy `Reference` tip as "Reference genome"
+   tree (the csv also lists undelivered isolates), reads the tree from `runs/<run>/`, and adds the snippy `Reference` tip as "Reference genome"
    (grey). Bare species epithets (`kansasii`) get a `Mycobacterium ` prefix for the colour strip.
 
    **Tested:** on the current `runs/mkan329` tree (131 isolates + `Reference` = 132 tips):
@@ -236,6 +218,58 @@ Where results are: species is **not** in `assembly/results/<s>/5_typing/` (that 
 `mlst/`, `pyMLST/`, `kansasii_snippy/`). It is in `3_quality/GTDB/<s>.tsv_gtdb_summary.tsv`
 and in the run table `<run>_transfer_result/<run>_quality.tsv` (`gtdb_species`,
 `gtdb_fastani_*`, `rMLST_best_species`, `16S_species`, ...).
+
+### 2c. iTOL files for a run
+
+Every tree run gets its own iTOL files, made independently of the others. A run needs
+only its finished tree, `<run>_transfer_result/kansasii_phylogeny/kansasii_complex_tree.treefile`
+(read from `runs/<run>/`), plus a table mapping tip ids to species.
+`generate_itol_species_labels.sh` (no conda env) writes three files to `output/iTOL/<run>/`
+(plus a copy of the mapping input, i.e. the accessions list or `screening_map_results.csv`):
+
+| File | Content |
+|---|---|
+| `kansasii_complex_tree.treefile` (+ `.iqtree`) | copy of the run's tree; this is what you upload to iTOL |
+| `<prefix>itol_species_labels.txt` | iTOL LABELS dataset: tip text becomes `Species [id]` |
+| `<prefix>itol_species_colorstrip.txt` | iTOL DATASET_COLORSTRIP: strip per tip by complex (kansasii green, MTBC red, MAC blue, *M. simiae* purple, other grey) |
+
+The two annotation files are display overlays only; the tree and its tip ids are unchanged.
+The snippy `Reference` tip of each tree is labelled "Reference genome" (grey).
+
+| Run type | Command | Tip ids | Species from |
+|---|---|---|---|
+| GTDB reference genomes (default `-m gtdb`) | `generate_itol_species_labels.sh [-a ACCESSIONS] [-n RUN]` | `GCF_xxx_query` from the `*_accessions_renamed.txt` file | GTDB metadata `bac120_metadata_r232.tsv` (`s__` token) |
+| real isolates (`-m samples`) | `generate_itol_species_labels.sh -m samples -p mkan329_ [-n RUN]` | `Mkan329-NNN` (`PROBENNUMMER`), only isolates that are tips of the tree | `species` column of `data/imm/screening_map_results.csv` (`LABEL` as fallback) |
+
+Defaults: `-n kansasii_complex_gtdb_representatives` (gtdb) or `mkan329` (samples); `-a` defaults
+to the 7-genome kansasii complex list, use
+`mycobacterium_relevant_species_representative_accessions_renamed.txt` for the 20-genome set,
+whose run is `runs/relevant_species_tree_run/` (copied from `output-old/` without `work/` and
+`.nextflow`, so it cannot be resumed; 21 tips = 20 genomes + `Reference`):
+```bash
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/generate_itol_species_labels.sh \
+  -a mycobacterium_relevant_species_representative_accessions_renamed.txt -n relevant_species_tree_run
+```
+`-o` output dir, `-p` file prefix.
+
+To make files for a new run: (1) finish the run, so the `.treefile` exists; (2) make sure
+every tip id is in the mapping (gtdb: accessions file, samples: `screening_map_results.csv`
+via `screening_map_results.py`); (3) run the script with `-n <run>` (plus `-m`/`-a`/`-p`);
+(4) check there is no `WARNING: n/m entries have a species`, which means some tips are unlabeled.
+Re-run after the tree is rebuilt, because the files are only valid for the tree they were made with.
+
+Current outputs: `output/iTOL/kansasii_complex_gtdb_representatives/` (8 tips),
+`output/iTOL/relevant_species_tree_run/` (21 tips), `output/iTOL/mkan329/` (132 tips).
+
+Getting the files into iTOL (the script only writes them on the server):
+
+1. Copy to your computer, run from your laptop (not on the server):
+   ```bash
+   scp "<user>@<server-hostname>:/shares/sander.imm.uzh/MM/kansasii/output/iTOL/<run>/*" ~/Downloads/
+   ```
+   A GUI client (WinSCP, Cyberduck, MobaXterm) works too.
+2. At <https://itol.embl.de> upload the `.treefile`, open the tree, then drag
+   `*itol_species_labels.txt` and `*itol_species_colorstrip.txt` onto the tree view.
 
 ## 3. Screening map
 

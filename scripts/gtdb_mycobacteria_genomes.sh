@@ -13,7 +13,9 @@ if [ ! -f "$METADATA" ]; then
   (cd "$DATA_DIR" && wget https://data.gtdb.aau.ecogenomic.org/releases/release232/232.0/bac120_metadata_r232.tsv.gz && gunzip bac120_metadata_r232.tsv.gz)
 fi
 
-cd "$OUT_DIR"
+# the lists are written to DATA_DIR (read by run.sh and generate_itol_species_labels.sh);
+# OUT_DIR only gets a convenience copy at the end
+cd "$DATA_DIR"
 
 # SPECIES_PATTERN='s__Mycobacterium (kansasii|persicum|pseudokansasii|innocens|attenuatum|ostraviense|gastri)'
 # grep -E "$SPECIES_PATTERN" "$METADATA" > kansasii_complex_rows_metadata.tsv
@@ -192,4 +194,8 @@ download_species
 awk -F'\t' -v OFS='\t' -v dir="$OUTDIR/ncbi_dataset/data" \
   'NR==1 {print; next} {acc=substr($1,4); if (system("test -d \"" dir "/" acc "\"") != 0) print}' \
   mycobacteriaceae_selected_columns.tsv > not_downloaded_genomes.tsv
-echo "-- $(($(wc -l < not_downloaded_genomes.tsv) - 1)) genome(s) not available, see $OUT_DIR/not_downloaded_genomes.tsv --"
+echo "-- $(($(wc -l < not_downloaded_genomes.tsv) - 1)) genome(s) not available, see $DATA_DIR/not_downloaded_genomes.tsv --"
+
+# convenience copy of the lists to output/
+find . -maxdepth 1 -type f \( -name '*.txt' -o -name '*.tsv' \) ! -name 'bac120_*' -exec cp -u {} "$OUT_DIR"/ \;
+echo "-- copied lists to $OUT_DIR --"

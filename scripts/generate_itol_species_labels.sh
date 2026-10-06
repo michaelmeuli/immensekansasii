@@ -30,22 +30,23 @@
 #                                              [-r RESULTS_CSV] [-n RUN] [-o OUT_DIR] [-p PREFIX]
 #   -m  mode (default gtdb)
 #   -a  gtdb mode: accessions file name/path (default
-#       kansasii_complex_gtdb_representative_accessions_renamed.txt in output/lit/gtdb/gtdb232; use
+#       kansasii_complex_gtdb_representative_accessions_renamed.txt in data/lit/gtdb/gtdb232; use
 #       mycobacterium_relevant_species_representative_accessions_renamed.txt for the 20-genome set)
 #   -r  samples mode: screening_map_results.csv (default data/imm/screening_map_results.csv)
 #   -n  pipeline run name (default kansasii_complex_gtdb_representatives in gtdb mode,
-#       mkan329 in samples mode); the tree files are copied from output/<run>/<run>_transfer_result/kansasii_phylogeny/
+#       mkan329 in samples mode); the tree files are read from runs/<run>/<run>_transfer_result/kansasii_phylogeny/
 #   -o  output dir (default output/iTOL/<run>)
 #   -p  output file prefix, e.g. "mkan329_" (default none)
 # Writes: <prefix>itol_species_labels.txt, <prefix>itol_species_colorstrip.txt in OUT_DIR
-# (also copies the run's .treefile/.iqtree there, so OUT_DIR is all of iTOL's input)
+# (also copies the run's .treefile/.iqtree and the mapping input there, so OUT_DIR is all of iTOL's
+# input). Reads only data/ and runs/ (never output/); output/ only receives copies.
 
 set -euo pipefail
 
 K=/shares/sander.imm.uzh/MM/kansasii
 DATA_DIR=$K/data/lit/gtdb/gtdb232
 METADATA="$DATA_DIR/bac120_metadata_r232.tsv"
-ACC_DIR=$K/output/lit/gtdb/gtdb232   # accessions files
+ACC_DIR=$DATA_DIR   # accessions files
 
 MODE=gtdb
 ACCESSIONS_FILE="kansasii_complex_gtdb_representative_accessions_renamed.txt"
@@ -78,15 +79,10 @@ if [ "$MODE" = gtdb ] && [ "${ACCESSIONS_FILE#/}" = "$ACCESSIONS_FILE" ] && [ ! 
 fi
 mkdir -p "$OUT_DIR"
 
-# tree location: output/<run>, then runs/<run>, then output-old/<run> (archived runs)
-TREE_DIR=
-for base in output runs output-old; do
-  if [ -d "$K/$base/$RUN/${RUN}_transfer_result/kansasii_phylogeny" ]; then
-    TREE_DIR=$K/$base/$RUN/${RUN}_transfer_result/kansasii_phylogeny
-    break
-  fi
-done
+# the tree is read from the run dir (never from output/); output/ only receives copies
+TREE_DIR=$K/runs/$RUN/${RUN}_transfer_result/kansasii_phylogeny
 TREEFILE=$TREE_DIR/kansasii_complex_tree.treefile
+[ -f "$TREEFILE" ] || { echo "ERROR: no tree at $TREEFILE" >&2; exit 1; }
 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
@@ -131,7 +127,7 @@ fi
 # the snippy reference genome is a tip of every tree but has no species row
 if [ -f "$TREEFILE" ] && grep -q '[(,]Reference:' "$TREEFILE"; then
   printf 'Reference\treference\tReference genome\n' >> "$JOINED"
-  n_in=$((n_in + 1))
+  [ "$MODE" = gtdb ] && n_in=$((n_in + 1))   # samples mode counts it already (n_in = tree tips)
 fi
 
 n_joined=$(grep -c . "$JOINED" || true)
@@ -185,7 +181,8 @@ fi
     }' "$JOINED"
 } > "$OUT_DIR/${PREFIX}itol_species_colorstrip.txt"
 
-cp -v "$TREE_DIR"/kansasii_complex_tree.treefile "$TREE_DIR"/kansasii_complex_tree.iqtree "$OUT_DIR/" ||
-  echo "WARNING: no tree files copied from $TREE_DIR" >&2
+cp -v "$TREE_DIR"/kansasii_complex_tree.treefile "$TREE_DIR"/kansasii_complex_tree.iqtree "$OUT_DIR/"
+# the mapping input the labels were built from
+if [ "$MODE" = gtdb ]; then cp -v "$ACCESSIONS_FILE" "$OUT_DIR/"; else cp -v "$RESULTS_CSV" "$OUT_DIR/"; fi
 
 echo "Wrote ${PREFIX}itol_species_labels.txt and ${PREFIX}itol_species_colorstrip.txt to $OUT_DIR ($n_joined tips, mode $MODE)"
