@@ -231,7 +231,7 @@ only its finished tree, `<run>_transfer_result/kansasii_phylogeny/kansasii_compl
 |---|---|
 | `kansasii_complex_tree.treefile` (+ `.iqtree`) | copy of the run's tree; this is what you upload to iTOL |
 | `<prefix>itol_species_labels.txt` | iTOL LABELS dataset: tip text becomes `Species [id]` |
-| `<prefix>itol_species_colorstrip.txt` | iTOL DATASET_COLORSTRIP: strip per tip by complex (kansasii green, MTBC red, MAC blue, *M. simiae* purple, other grey) |
+| `<prefix>itol_species_colorstrip.txt` | iTOL DATASET_COLORSTRIP: strip per tip by complex (kansasii green; samples mode colors each kansasii-complex species separately, MTBC red, MAC blue, *M. simiae* purple, other grey) |
 
 The two annotation files are display overlays only; the tree and its tip ids are unchanged.
 The snippy `Reference` tip of each tree is labelled "Reference genome" (grey).

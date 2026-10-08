@@ -154,11 +154,23 @@ fi
   echo -e "DATASET_LABEL\tSpecies complex"
   echo -e "COLOR\t#000000"
   echo -e "LEGEND_TITLE\tSpecies complex"
-  echo -e "LEGEND_SHAPES\t1\t1\t1\t1"
-  echo -e "LEGEND_COLORS\t#4daf4a\t#e41a1c\t#377eb8\t#984ea3"
-  echo -e "LEGEND_LABELS\tM. kansasii complex\tM. tuberculosis complex\tM. avium complex\tM. simiae complex"
+  if [ "$MODE" = samples ]; then
+    # samples mode: each kansasii-complex species gets its own color
+    echo -e "LEGEND_SHAPES\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1"
+    echo -e "LEGEND_COLORS\t#4daf4a\t#ff7f00\t#a65628\t#f781bf\t#ffd92f\t#00bcd4\t#1b9e77\t#e41a1c\t#377eb8\t#984ea3\t#999999"
+    echo -e "LEGEND_LABELS\tM. kansasii\tM. persicum\tM. pseudokansasii\tM. innocens\tM. attenuatum\tM. ostraviense\tM. gastri\tM. tuberculosis complex\tM. avium complex\tM. simiae complex\tother"
+  else
+    echo -e "LEGEND_SHAPES\t1\t1\t1\t1"
+    echo -e "LEGEND_COLORS\t#4daf4a\t#e41a1c\t#377eb8\t#984ea3"
+    echo -e "LEGEND_LABELS\tM. kansasii complex\tM. tuberculosis complex\tM. avium complex\tM. simiae complex"
+  fi
   echo "DATA"
-  awk -F'\t' -v OFS='\t' '
+  awk -F'\t' -v OFS='\t' -v mode="$MODE" '
+    BEGIN {
+      sc["kansasii"] = "#4daf4a"; sc["persicum"] = "#ff7f00"; sc["pseudokansasii"] = "#a65628"
+      sc["innocens"] = "#f781bf"; sc["attenuatum"] = "#ffd92f"; sc["ostraviense"] = "#00bcd4"
+      sc["gastri"] = "#1b9e77"
+    }
     {
       id = $1
       base = $3
@@ -168,6 +180,10 @@ fi
       sub(/_[A-Z]$/, "", base)
       if (base ~ /^Mycobacterium (kansasii|persicum|pseudokansasii|innocens|attenuatum|ostraviense|gastri)$/) {
         color = "#4daf4a"; group = "M. kansasii complex"
+        if (mode == "samples") {
+          sp = base; sub(/^Mycobacterium /, "", sp)
+          color = sc[sp]; group = "M. " sp
+        }
       } else if (base ~ /^Mycobacterium tuberculosis/) {
         color = "#e41a1c"; group = "M. tuberculosis complex"
       } else if (base ~ /^Mycobacterium (avium|intracellulare|colombiense|arosiense|marseillense|vulneris)$/) {
