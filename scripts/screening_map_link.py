@@ -9,7 +9,8 @@ NGS ids come from screening_map_ngs_jc.csv (reads in kansasii_jc, numeric ids) a
 screening_map_ngs_mm.csv (reads in kansasii, Mkan329-NNN). Each source keeps its own
 TNR_xx / NGS_xx column pair so an NGS id stays traceable to the TNR it was sequenced under.
 TNR_MHK is the TNR the MHK (AST order) was made under (the strains TNR whose LNR is the order's
-AUFTRAGSNUMMER); empty if that LNR is not in strains (then LNR2 holds it).
+AUFTRAGSNUMMER). If that LNR is not in strains (case reopened only for the MHK: new LNR, same TNR)
+it is the project TNR when BESCHREIBUNG names the follow-up order, else empty (LNR2 holds the LNR).
 Links are made via
   - LNR (strains) == AUFTRAGSNUMMER (ast)
   - numbers hidden in BESCHREIBUNG (follow-up LNR2 / TNR, e.g. "Resi unter: 3386016 / tbm-2026311083")
@@ -89,17 +90,21 @@ def find_mhk(tnr: str, s: pd.Series[str], ast: pd.DataFrame) -> tuple[str | None
     return None, None
 
 
-def mhk_tnr(tnr: str, arow: pd.Series[str] | None, lnr_tnrs: dict[str, list[str]]) -> str:
+def mhk_tnr(tnr: str, s: pd.Series[str], arow: pd.Series[str] | None, lnr_tnrs: dict[str, list[str]]) -> str:
     """TNR the AST order was made under: the strains TNR whose LNR is the order's AUFTRAGSNUMMER.
 
-    Empty if the order's LNR is not in strains (follow-up LNR, see LNR2). Prefers the project TNR if
-    several strains rows share the LNR.
+    If that LNR is not in strains (a case reopened only for the MHK gets a new LNR but keeps its TNR,
+    see LNR2), the project TNR is returned when BESCHREIBUNG names the follow-up order (its LNR or its
+    TNR). Empty otherwise (order found by DOB + date only). Prefers the project TNR if several strains
+    rows share the LNR.
     """
     if arow is None:
         return ""
     cands = lnr_tnrs.get(arow["AUFTRAGSNUMMER"], [])
     if not cands:
-        return ""
+        besch_tnrs, besch_lnrs = parse_beschreibung(s["BESCHREIBUNG"], s["LNR"])
+        named = arow["AUFTRAGSNUMMER"] in besch_lnrs or arow["TNR"] in besch_tnrs
+        return tnr if named else ""
     if tnr in cands:
         return tnr
     if len(cands) > 1:
@@ -126,7 +131,7 @@ def build(project: pd.DataFrame, strains: pd.DataFrame, ast: pd.DataFrame,
             mhk, arow = find_mhk(p["TNR"], s, ast)
             if mhk:
                 r["MHK"] = mhk
-                r["TNR_MHK"] = mhk_tnr(p["TNR"], arow, lnr_tnrs)
+                r["TNR_MHK"] = mhk_tnr(p["TNR"], s, arow, lnr_tnrs)
             if arow is not None and arow["AUFTRAGSNUMMER"] != s["LNR"]:
                 r["LNR2"] = arow["AUFTRAGSNUMMER"]
             else:

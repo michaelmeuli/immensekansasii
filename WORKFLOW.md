@@ -297,8 +297,10 @@ key `PROBENNUMMER` (`Mkan329-NNN`), with `LNR`, `LNR2`, `TNR`, `TNR_JC`/`NGS_JC`
 be re-opened under a new TNR; their number follows the isolate with the most (Mkan329-183).
 `TNR_MHK` is the TNR the `MHK` (AST order) was made under: the strains TNR whose `LNR` equals
 the order's `AUFTRAGSNUMMER`. It differs from `TNR` when the AST was done on a follow-up culture (e.g.
-Mkan329-056: `TNR` 2022500332, `TNR_MHK` 2022500349). It is empty when that LNR is not in the
-strains table (follow-up orders, see `LNR2`).
+Mkan329-056: `TNR` 2022500332, `TNR_MHK` 2022500349). If the order's LNR is not in the strains
+table (case reopened only for the MHK: new LNR, same TNR, see `LNR2`), `TNR_MHK` is the isolate's
+own `TNR` when BESCHREIBUNG names the follow-up order (its LNR or TNR), else empty (order found by
+DOB + date only: NR 28, 47, 71, 162).
 It also prints a comparison with the old `screening_map.csv`.
 
 **`mlsa-kansasii` is a consumer** and reads only the TNR columns and `PROBENNUMMER`:
