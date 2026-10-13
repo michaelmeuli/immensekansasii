@@ -8,6 +8,8 @@ Sources of truth: screening_map_project.csv and screening_map_strains.csv (agree
 NGS ids come from screening_map_ngs_jc.csv (reads in kansasii_jc, numeric ids) and
 screening_map_ngs_mm.csv (reads in kansasii, Mkan329-NNN). Each source keeps its own
 TNR_xx / NGS_xx column pair so an NGS id stays traceable to the TNR it was sequenced under.
+TNR_MHK is the TNR the MHK (AST order) was made under (the strains TNR whose LNR is the order's
+AUFTRAGSNUMMER); empty if that LNR is not in strains (then LNR2 holds it).
 Links are made via
   - LNR (strains) == AUFTRAGSNUMMER (ast)
   - numbers hidden in BESCHREIBUNG (follow-up LNR2 / TNR, e.g. "Resi unter: 3386016 / tbm-2026311083")
@@ -87,13 +89,32 @@ def find_mhk(tnr: str, s: pd.Series[str], ast: pd.DataFrame) -> tuple[str | None
     return None, None
 
 
+def mhk_tnr(tnr: str, arow: pd.Series[str] | None, lnr_tnrs: dict[str, list[str]]) -> str:
+    """TNR the AST order was made under: the strains TNR whose LNR is the order's AUFTRAGSNUMMER.
+
+    Empty if the order's LNR is not in strains (follow-up LNR, see LNR2). Prefers the project TNR if
+    several strains rows share the LNR.
+    """
+    if arow is None:
+        return ""
+    cands = lnr_tnrs.get(arow["AUFTRAGSNUMMER"], [])
+    if not cands:
+        return ""
+    if tnr in cands:
+        return tnr
+    if len(cands) > 1:
+        warn(f"TNR {tnr}: AST LNR {arow['AUFTRAGSNUMMER']} has several strains TNR {sorted(cands)}; using {min(cands)}")
+    return min(cands)
+
+
 def build(project: pd.DataFrame, strains: pd.DataFrame, ast: pd.DataFrame,
           ngs_sources: dict[str, pd.DataFrame]) -> pd.DataFrame:
     S = strains.set_index("TNR")
+    lnr_tnrs = strains.groupby("LNR")["TNR"].apply(list).to_dict()
     rows: list[dict[str, Any]] = []
     for _, p in project.iterrows():
         r = {"NR": p["NR"], "PROBENNUMMER": p["PROBENNUMMER"], "LNR": "", "LNR2": "",
-             "TNR": p["TNR"], "extra": [], "MHK": "", "LABEL": p["LABEL"]}
+             "TNR": p["TNR"], "extra": [], "TNR_MHK": "", "MHK": "", "LABEL": p["LABEL"]}
         for src in ngs_sources:
             r[f"TNR_{src}"] = ""
             r[f"NGS_{src}"] = ""
@@ -105,6 +126,7 @@ def build(project: pd.DataFrame, strains: pd.DataFrame, ast: pd.DataFrame,
             mhk, arow = find_mhk(p["TNR"], s, ast)
             if mhk:
                 r["MHK"] = mhk
+                r["TNR_MHK"] = mhk_tnr(p["TNR"], arow, lnr_tnrs)
             if arow is not None and arow["AUFTRAGSNUMMER"] != s["LNR"]:
                 r["LNR2"] = arow["AUFTRAGSNUMMER"]
             else:
@@ -148,7 +170,7 @@ def build(project: pd.DataFrame, strains: pd.DataFrame, ast: pd.DataFrame,
         for i, c in enumerate(extra_cols):
             r[c] = extra[i] if i < len(extra) else ""
     ngs_cols = [c for src in ngs_sources for c in (f"TNR_{src}", f"NGS_{src}")]
-    cols = ["NR", "PROBENNUMMER", "LNR", "LNR2", "TNR", *ngs_cols, *extra_cols, "MHK", "LABEL"]
+    cols = ["NR", "PROBENNUMMER", "LNR", "LNR2", "TNR", *ngs_cols, *extra_cols, "TNR_MHK", "MHK", "LABEL"]
     return pd.DataFrame(rows)[cols]
 
 

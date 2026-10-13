@@ -293,8 +293,12 @@ python /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/screenin
 
 Writes `data/imm/screening_map_link.csv` (copy in `output/`): one row per isolate,
 key `PROBENNUMMER` (`Mkan329-NNN`), with `LNR`, `LNR2`, `TNR`, `TNR_JC`/`NGS_JC`, `TNR_MM`/`NGS_MM`, `TNR3..`,
-`MHK`, `LABEL` (reference strains, NR 126-133). Extra TNR columns exist because a case can
+`TNR_MHK`, `MHK`, `LABEL` (reference strains, NR 126-133). Extra TNR columns exist because a case can
 be re-opened under a new TNR; their number follows the isolate with the most (Mkan329-183).
+`TNR_MHK` is the TNR the `MHK` (AST order) was made under: the strains TNR whose `LNR` equals
+the order's `AUFTRAGSNUMMER`. It differs from `TNR` when the AST was done on a follow-up culture (e.g.
+Mkan329-056: `TNR` 2022500332, `TNR_MHK` 2022500349). It is empty when that LNR is not in the
+strains table (follow-up orders, see `LNR2`).
 It also prints a comparison with the old `screening_map.csv`.
 
 **`mlsa-kansasii` is a consumer** and reads only the TNR columns and `PROBENNUMMER`:
