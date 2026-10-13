@@ -36,6 +36,7 @@ Scripts (`repos/immensekansasii/scripts/`):
 | `screening_map_link.py` | `kansasii_mic` | link TNR / LNR / MHK / NGS -> `screening_map_link.csv` |
 | `screening_map_results.py` | `kansasii_mic` | add species + `TNR_MLSA` -> `screening_map_results.csv` |
 | `mkan329_batches.sh` | none | split the Mkan329 reads into a test batch + NR-ordered batches, print the run commands |
+| `mkan329_batch_jc.sh` | none | build `batches/b05` from the jc reads (`reads/kansasii_jc`, named by NGS TNR) via `NGS_JC` in `screening_map_link.csv`, skipping Mkan329-009/056 |
 | `run.sh` | `env_immense` | the two pipeline runs below (copy blocks, not run as a whole) |
 
 ## 1. GTDB reference genomes
@@ -123,6 +124,14 @@ batch first. (The old single-run block in `run.sh` is untested and superseded by
    with a warning; after the next delivery rerun the script **before** submitting (batch
    membership can shift; old `bNN` dirs are removed). It only builds links and prints the
    commands below, it submits nothing.
+
+   **jc batch (`b05`).** The reads in `reads/kansasii_jc` are named by NGS TNR, so
+   `mkan329_batches.sh` does not see them. `scripts/mkan329_batch_jc.sh` (options
+   `-r reads_dir -m link_csv -c ngs_column -o batch_dir -x "ids to skip"`) links them under
+   `Mkan329-NNN` using the `NGS_JC` column of `screening_map_link.csv` into `batches/b05`
+   and prints the run command. Mkan329-009 and -056 are skipped by default: they are already
+   in b01/b02 and the same id with other reads would clash in `runs/mkan329`. Rerun it after
+   `mkan329_batches.sh`, which removes all `bNN` dirs.
 
    Output with the current 131 isolates:
    ```
