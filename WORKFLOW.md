@@ -274,7 +274,8 @@ Getting the files into iTOL (the script only writes them on the server):
 ## 3. Screening map
 
 Sources in `data/imm/`: `screening_map_project.csv`, `screening_map_strains.csv`
-(latin-1), `screening_map_ast.csv`, `screening_map_ngs_jc.csv`, old `screening_map.csv`.
+(latin-1), `screening_map_ast.csv`, `screening_map_ngs_jc.csv` (reads in `reads/kansasii_jc`),
+`screening_map_ngs_mm.csv` (reads in `reads/kansasii`), old `screening_map.csv` (comparison only).
 
 ```bash
 conda activate kansasii_mic
@@ -282,13 +283,13 @@ python /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/screenin
 ```
 
 Writes `data/imm/screening_map_link.csv` (copy in `output/`): one row per isolate,
-key `PROBENNUMMER` (`Mkan329-NNN`), with `LNR`, `LNR2`, `TNR`, `TNR_NGS`, `TNR3..`, `NGS`,
+key `PROBENNUMMER` (`Mkan329-NNN`), with `LNR`, `LNR2`, `TNR`, `TNR_JC`/`NGS_JC`, `TNR_MM`/`NGS_MM`, `TNR3..`,
 `MHK`, `LABEL` (reference strains, NR 126-133). Extra TNR columns exist because a case can
 be re-opened under a new TNR; their number follows the isolate with the most (Mkan329-183).
 It also prints a comparison with the old `screening_map.csv`.
 
 **`mlsa-kansasii` is a consumer** and reads only the TNR columns and `PROBENNUMMER`:
-`scripts/link_sanger_kansasii.sh` selects the columns by regex `^TNR(_NGS|[0-9]+)?$`
+`scripts/link_sanger_kansasii.sh` selects the columns by regex `^TNR(_JC|_MM|[0-9]+)?$`
 and links the `.ab1` files whose path contains one of the 10-digit TNRs;
 `main2_sanger_differentiation/run_sanger_differentiation.py` maps every TNR to its
 `PROBENNUMMER` and pools reads per isolate. `mlsa/__init__.py` has the hand-maintained

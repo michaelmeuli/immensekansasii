@@ -5,6 +5,9 @@ Usage (conda activate kansasii_mic):
     python screening_map_link.py [--indir DIR] [--out FILE] [--copy-to DIR]
 
 Sources of truth: screening_map_project.csv and screening_map_strains.csv (agree on TNR).
+NGS ids come from screening_map_ngs_jc.csv (reads in kansasii_jc, numeric ids) and
+screening_map_ngs_mm.csv (reads in kansasii, Mkan329-NNN). Each source keeps its own
+TNR_xx / NGS_xx column pair so an NGS id stays traceable to the TNR it was sequenced under.
 Links are made via
   - LNR (strains) == AUFTRAGSNUMMER (ast)
   - numbers hidden in BESCHREIBUNG (follow-up LNR2 / TNR, e.g. "Resi unter: 3386016 / tbm-2026311083")
@@ -37,18 +40,19 @@ def read(path: Path, encoding: str = "utf-8") -> pd.DataFrame:
     return df.drop(columns=[c for c in df.columns if c == "" or c.startswith("Unnamed")])
 
 
-def load(indir: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def load(indir: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     project = read(indir / "screening_map_project.csv")
     project = project[project["NR"] != ""].reset_index(drop=True)
     strains = read(indir / "screening_map_strains.csv", encoding="latin-1")
     ast = read(indir / "screening_map_ast.csv").drop_duplicates().reset_index(drop=True)
-    ngs = read(indir / "screening_map_ngs_jc.csv").drop_duplicates().reset_index(drop=True)
+    ngs_jc = read(indir / "screening_map_ngs_jc.csv").drop_duplicates().reset_index(drop=True)
+    ngs_mm = read(indir / "screening_map_ngs_mm.csv").drop_duplicates().reset_index(drop=True)
     old = read(indir / "screening_map.csv")
 
     assert strains["TNR"].is_unique, "TNR not unique in strains"
     missing = set(project["TNR"]) - set(strains["TNR"]) - {""}
     assert not missing, f"project TNR missing in strains: {missing}"
-    return project, strains, ast, ngs, old
+    return project, strains, ast, ngs_jc, ngs_mm, old
 
 
 def parse_beschreibung(text: str, lnr: str) -> tuple[list[str], list[str]]:
@@ -83,12 +87,16 @@ def find_mhk(tnr: str, s: pd.Series[str], ast: pd.DataFrame) -> tuple[str | None
     return None, None
 
 
-def build(project: pd.DataFrame, strains: pd.DataFrame, ast: pd.DataFrame, ngs: pd.DataFrame) -> pd.DataFrame:
+def build(project: pd.DataFrame, strains: pd.DataFrame, ast: pd.DataFrame,
+          ngs_sources: dict[str, pd.DataFrame]) -> pd.DataFrame:
     S = strains.set_index("TNR")
     rows: list[dict[str, Any]] = []
     for _, p in project.iterrows():
         r = {"NR": p["NR"], "PROBENNUMMER": p["PROBENNUMMER"], "LNR": "", "LNR2": "",
-             "TNR": p["TNR"], "TNR_NGS": "", "extra": [], "NGS": "", "MHK": "", "LABEL": p["LABEL"]}
+             "TNR": p["TNR"], "extra": [], "MHK": "", "LABEL": p["LABEL"]}
+        for src in ngs_sources:
+            r[f"TNR_{src}"] = ""
+            r[f"NGS_{src}"] = ""
         if p["TNR"]:
             s = S.loc[p["TNR"]]
             s = s.copy()
@@ -106,27 +114,32 @@ def build(project: pd.DataFrame, strains: pd.DataFrame, ast: pd.DataFrame, ngs: 
         rows.append(r)
 
     by_tnr = {r["TNR"]: r for r in rows if r["TNR"]}
-    for _, n in ngs.iterrows():
-        t, nt = n["TNR"], n["NGS TNR"]
-        if t in by_tnr:
-            target = by_tnr[t]
-        else:
-            # NGS TNR not in project: resolve via DATEOFBIRTH in strains
-            if t not in S.index or not S.loc[t, "DATEOFBIRTH"]:
-                warn(f"NGS TNR {t} ({nt}): not in project and no DATEOFBIRTH in strains; unresolved")
-                continue
-            dob = S.loc[t, "DATEOFBIRTH"]
-            cands = strains.loc[strains["DATEOFBIRTH"] == dob, "TNR"].tolist()
-            hits = [c for c in cands if c in by_tnr]
-            if len(hits) != 1:
-                warn(f"NGS TNR {t} ({nt}): DOB {dob} gives project TNR {hits}; unresolved")
-                continue
-            target = by_tnr[hits[0]]
-            target["TNR_NGS"] = t
-            target["extra"] = [c for c in cands if c not in (t, hits[0])]
-        if target["NGS"] and target["NGS"] != nt:
-            warn(f"TNR {target['TNR']}: NGS conflict {target['NGS']} vs {nt}")
-        target["NGS"] = nt
+    by_probe = {r["PROBENNUMMER"]: r for r in rows}
+    for src, ngs in ngs_sources.items():
+        for _, n in ngs.iterrows():
+            t, nt = n["TNR"], n["NGS TNR"]
+            if t in by_tnr:
+                target = by_tnr[t]
+            elif t == "" and nt in by_probe:
+                # no TNR (reference strains): NGS TNR is the PROBENNUMMER
+                target = by_probe[nt]
+            else:
+                # NGS TNR not in project: resolve via DATEOFBIRTH in strains
+                if t not in S.index or not S.loc[t, "DATEOFBIRTH"]:
+                    warn(f"{src}: NGS TNR {t} ({nt}): not in project and no DATEOFBIRTH in strains; unresolved")
+                    continue
+                dob = S.loc[t, "DATEOFBIRTH"]
+                cands = strains.loc[strains["DATEOFBIRTH"] == dob, "TNR"].tolist()
+                hits = [c for c in cands if c in by_tnr]
+                if len(hits) != 1:
+                    warn(f"{src}: NGS TNR {t} ({nt}): DOB {dob} gives project TNR {hits}; unresolved")
+                    continue
+                target = by_tnr[hits[0]]
+                target["extra"] += [c for c in cands if c not in (t, hits[0]) and c not in target["extra"]]
+            if target[f"NGS_{src}"] and target[f"NGS_{src}"] != nt:
+                warn(f"TNR {target['TNR']}: NGS_{src} conflict {target[f'NGS_{src}']} vs {nt}")
+            target[f"TNR_{src}"] = t
+            target[f"NGS_{src}"] = nt
 
     n_extra = max(1, max(len(r["extra"]) for r in rows))
     extra_cols = [f"TNR{i + 3}" for i in range(n_extra)]
@@ -134,13 +147,14 @@ def build(project: pd.DataFrame, strains: pd.DataFrame, ast: pd.DataFrame, ngs: 
         extra = r.pop("extra")
         for i, c in enumerate(extra_cols):
             r[c] = extra[i] if i < len(extra) else ""
-    cols = ["NR", "PROBENNUMMER", "LNR", "LNR2", "TNR", "TNR_NGS", *extra_cols, "NGS", "MHK", "LABEL"]
+    ngs_cols = [c for src in ngs_sources for c in (f"TNR_{src}", f"NGS_{src}")]
+    cols = ["NR", "PROBENNUMMER", "LNR", "LNR2", "TNR", *ngs_cols, *extra_cols, "MHK", "LABEL"]
     return pd.DataFrame(rows)[cols]
 
 
 def compare(link: pd.DataFrame, old: pd.DataFrame) -> None:
     print("\n=== Comparison with screening_map.csv ===")
-    m = old.merge(link, on="NR", how="outer", suffixes=("_old", ""), indicator=True)
+    m = old.rename(columns={"NGS": "NGS_old"}).merge(link, on="NR", how="outer", suffixes=("_old", ""), indicator=True)
     only = m[m["_merge"] != "both"]
     print(f"rows: old {len(old)}, new {len(link)}, unmatched NR: {len(only)}")
     for col in ["PROBENNUMMER", "TNR", "LABEL"]:
@@ -148,6 +162,10 @@ def compare(link: pd.DataFrame, old: pd.DataFrame) -> None:
         print(f"{col}: {'identical' if diff.empty else f'{len(diff)} differences'}")
         if not diff.empty:
             print(diff[["NR", f"{col}_old", col]].to_string(index=False))
+    # old NGS is a single column: keep the new value only if it equals one of NGS_JC / NGS_MM
+    m["NGS"] = m["NGS_JC"].where(m["NGS_JC"] != "", m["NGS_MM"])
+    in_new = (m["NGS_old"] == m["NGS_JC"]) | (m["NGS_old"] == m["NGS_MM"])
+    m.loc[(m["NGS_old"] != "") & in_new, "NGS"] = m["NGS_old"]
     for col in ["MHK", "NGS"]:
         both = m[m["_merge"] == "both"]
         conflict = both[(both[f"{col}_old"] != "") & (both[f"{col}_old"] != both[col])]
@@ -169,8 +187,8 @@ def main() -> None:
     args = ap.parse_args()
     out = args.out or args.indir / "screening_map_link.csv"
 
-    project, strains, ast, ngs, old = load(args.indir)
-    link = build(project, strains, ast, ngs)
+    project, strains, ast, ngs_jc, ngs_mm, old = load(args.indir)
+    link = build(project, strains, ast, {"JC": ngs_jc, "MM": ngs_mm})
     link.to_csv(out, index=False)
     print(f"wrote {out} ({len(link)} rows)")
     args.copy_to.mkdir(parents=True, exist_ok=True)

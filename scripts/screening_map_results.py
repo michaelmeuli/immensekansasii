@@ -58,7 +58,7 @@ from typing import Any
 import pandas as pd
 
 K = Path(os.environ.get("KANSASII_ROOT", "/shares/sander.imm.uzh/MM/kansasii"))
-TNR_COLS_RE = r"^TNR(_NGS|[0-9]+)?$"
+TNR_COLS_RE = r"^TNR(_JC|_MM|[0-9]+)?$"
 
 
 # canonical antibiotic name (kansasii_mic loading.py) -> standard abbreviation
