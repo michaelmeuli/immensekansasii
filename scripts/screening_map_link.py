@@ -10,7 +10,10 @@ screening_map_ngs_mm.csv (reads in kansasii, Mkan329-NNN). Each source keeps its
 TNR_xx / NGS_xx column pair so an NGS id stays traceable to the TNR it was sequenced under.
 TNR_MHK is the TNR the MHK (AST order) was made under (the strains TNR whose LNR is the order's
 AUFTRAGSNUMMER). If that LNR is not in strains (case reopened only for the MHK: new LNR, same TNR)
-it is the project TNR when BESCHREIBUNG names the follow-up order, else empty (LNR2 holds the LNR).
+it is the project TNR when BESCHREIBUNG names the follow-up order or the row was verified by hand
+in the LIS (LIS_VERIFIED_OWN_TNR), else empty (LNR2 holds the LNR).
+MHK_TNR_DIFFERS = "yes" when TNR_MHK is another TNR than TNR: the MHK belongs to a different culture
+than the one sequenced under TNR and must not be used for this isolate (see WORKFLOW.md).
 Links are made via
   - LNR (strains) == AUFTRAGSNUMMER (ast)
   - numbers hidden in BESCHREIBUNG (follow-up LNR2 / TNR, e.g. "Resi unter: 3386016 / tbm-2026311083")
@@ -28,6 +31,11 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
+# Rows whose follow-up AST order was matched by DOB + received date only (no reference in BESCHREIBUNG).
+# Checked by hand in the LIS (M/LAB): after the file was closed the missing information was added
+# as "Bleistift", so the order was made under the isolate's own TNR (TNR_MHK = TNR).
+LIS_VERIFIED_OWN_TNR = frozenset({"Mkan329-028", "Mkan329-047", "Mkan329-071", "Mkan329-162"})
 
 TNR_RE = re.compile(r"(?<!\d)(20\d{8})(?!\d)")
 LNR_RE = re.compile(r"(?<!\d)(\d{7,8})(?!\d)")
@@ -119,7 +127,7 @@ def build(project: pd.DataFrame, strains: pd.DataFrame, ast: pd.DataFrame,
     rows: list[dict[str, Any]] = []
     for _, p in project.iterrows():
         r = {"NR": p["NR"], "PROBENNUMMER": p["PROBENNUMMER"], "LNR": "", "LNR2": "",
-             "TNR": p["TNR"], "extra": [], "TNR_MHK": "", "MHK": "", "LABEL": p["LABEL"]}
+             "TNR": p["TNR"], "extra": [], "TNR_MHK": "", "MHK": "", "MHK_TNR_DIFFERS": "", "LABEL": p["LABEL"]}
         for src in ngs_sources:
             r[f"TNR_{src}"] = ""
             r[f"NGS_{src}"] = ""
@@ -132,6 +140,10 @@ def build(project: pd.DataFrame, strains: pd.DataFrame, ast: pd.DataFrame,
             if mhk:
                 r["MHK"] = mhk
                 r["TNR_MHK"] = mhk_tnr(p["TNR"], s, arow, lnr_tnrs)
+                if not r["TNR_MHK"] and p["PROBENNUMMER"] in LIS_VERIFIED_OWN_TNR:
+                    r["TNR_MHK"] = p["TNR"]
+                if r["TNR_MHK"] and r["TNR_MHK"] != p["TNR"]:
+                    r["MHK_TNR_DIFFERS"] = "yes"
             if arow is not None and arow["AUFTRAGSNUMMER"] != s["LNR"]:
                 r["LNR2"] = arow["AUFTRAGSNUMMER"]
             else:
@@ -175,7 +187,7 @@ def build(project: pd.DataFrame, strains: pd.DataFrame, ast: pd.DataFrame,
         for i, c in enumerate(extra_cols):
             r[c] = extra[i] if i < len(extra) else ""
     ngs_cols = [c for src in ngs_sources for c in (f"TNR_{src}", f"NGS_{src}")]
-    cols = ["NR", "PROBENNUMMER", "LNR", "LNR2", "TNR", *ngs_cols, *extra_cols, "TNR_MHK", "MHK", "LABEL"]
+    cols = ["NR", "PROBENNUMMER", "LNR", "LNR2", "TNR", *ngs_cols, *extra_cols, "TNR_MHK", "MHK", "MHK_TNR_DIFFERS", "LABEL"]
     return pd.DataFrame(rows)[cols]
 
 

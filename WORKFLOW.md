@@ -293,14 +293,25 @@ python /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/screenin
 
 Writes `data/imm/screening_map_link.csv` (copy in `output/`): one row per isolate,
 key `PROBENNUMMER` (`Mkan329-NNN`), with `LNR`, `LNR2`, `TNR`, `TNR_JC`/`NGS_JC`, `TNR_MM`/`NGS_MM`, `TNR3..`,
-`TNR_MHK`, `MHK`, `LABEL` (reference strains, NR 126-133). Extra TNR columns exist because a case can
+`TNR_MHK`, `MHK`, `MHK_TNR_DIFFERS`, `LABEL` (reference strains, NR 126-133). Extra TNR columns exist because a case can
 be re-opened under a new TNR; their number follows the isolate with the most (Mkan329-183).
 `TNR_MHK` is the TNR the `MHK` (AST order) was made under: the strains TNR whose `LNR` equals
 the order's `AUFTRAGSNUMMER`. It differs from `TNR` when the AST was done on a follow-up culture (e.g.
 Mkan329-056: `TNR` 2022500332, `TNR_MHK` 2022500349). If the order's LNR is not in the strains
 table (case reopened only for the MHK: new LNR, same TNR, see `LNR2`), `TNR_MHK` is the isolate's
-own `TNR` when BESCHREIBUNG names the follow-up order (its LNR or TNR), else empty (order found by
-DOB + date only: NR 28, 47, 71, 162).
+own `TNR` when BESCHREIBUNG names the follow-up order (its LNR or TNR), else empty. Four rows
+(Mkan329-028, -047, -071, -162) have neither a BESCHREIBUNG reference nor the LNR in strains; their
+order was matched by DOB + received date only. They were checked by hand in the LIS (M/LAB): after
+the file was closed the missing information was added as "Bleistift", so the order was made under the
+isolate's own TNR. This is hard-coded as `LIS_VERIFIED_OWN_TNR` in `screening_map_link.py`
+(`TNR_MHK` = `TNR`); add further rows there only after such a manual check.
+
+`MHK_TNR_DIFFERS` is `yes` when `TNR_MHK` is another TNR than `TNR`: the MHK belongs to a different
+culture than the one sequenced under `TNR` and **must not be used for this isolate**. Currently only
+Mkan329-056: MHK 2023311034 was made on culture 2022500349 (`TNR_JC`, NGS 2023187866), which was
+contaminated; that culture was resequenced and its reads are not used (b05 skips Mkan329-056). The
+sequenced reads of Mkan329-056 (`NGS_MM`) are from 2022500332. `kansasii-mic` skips the `MHK`-column
+match for flagged rows, so its 13 MIC rows are no longer attributed to Mkan329-056.
 It also prints a comparison with the old `screening_map.csv`.
 
 **`mlsa-kansasii` is a consumer** and reads only the TNR columns and `PROBENNUMMER`:
