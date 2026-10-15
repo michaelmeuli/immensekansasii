@@ -13,7 +13,7 @@ AUFTRAGSNUMMER). If that LNR is not in strains (case reopened only for the MHK: 
 it is the project TNR when BESCHREIBUNG names the follow-up order or the row was verified by hand
 in the LIS (LIS_VERIFIED_OWN_TNR), else empty (LNR2 holds the LNR).
 MHK_TNR_DIFFERS = "yes" when TNR_MHK is another TNR than TNR: the MHK belongs to a different culture
-than the one sequenced under TNR and must not be used for this isolate (see WORKFLOW.md).
+than the one sequenced under TNR. Informational flag; consumers decide whether to use that MHK (see WORKFLOW.md).
 Links are made via
   - LNR (strains) == AUFTRAGSNUMMER (ast)
   - numbers hidden in BESCHREIBUNG (follow-up LNR2 / TNR, e.g. "Resi unter: 3386016 / tbm-2026311083")

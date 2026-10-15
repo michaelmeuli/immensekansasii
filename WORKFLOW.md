@@ -307,11 +307,12 @@ isolate's own TNR. This is hard-coded as `LIS_VERIFIED_OWN_TNR` in `screening_ma
 (`TNR_MHK` = `TNR`); add further rows there only after such a manual check.
 
 `MHK_TNR_DIFFERS` is `yes` when `TNR_MHK` is another TNR than `TNR`: the MHK belongs to a different
-culture than the one sequenced under `TNR` and **must not be used for this isolate**. Currently only
+culture than the one sequenced under `TNR`. Currently only
 Mkan329-056: MHK 2023311034 was made on culture 2022500349 (`TNR_JC`, NGS 2023187866), which was
 contaminated; that culture was resequenced and its reads are not used (b05 skips Mkan329-056). The
-sequenced reads of Mkan329-056 (`NGS_MM`) are from 2022500332. `kansasii-mic` skips the `MHK`-column
-match for flagged rows, so its 13 MIC rows are no longer attributed to Mkan329-056.
+sequenced reads of Mkan329-056 (`NGS_MM`) are from 2022500332. The flag is informational: `kansasii-mic`
+still matches the 13 MIC rows of Mkan329-056 via the `MHK` column (decision: include them). A consumer that
+needs a strict MIC/sequence pairing can drop rows with `MHK_TNR_DIFFERS = yes`.
 It also prints a comparison with the old `screening_map.csv`.
 
 **`mlsa-kansasii` is a consumer** and reads only the TNR columns and `PROBENNUMMER`:
