@@ -1,24 +1,40 @@
 # Mkan329 samples report
 
-Generated 2026-10-05 by `scripts/mkan329_samples_report.py` from the per-sample
+Generated 2026-10-15 by `scripts/mkan329_samples_report.py` from the per-sample
 summary tables in `/shares/sander.imm.uzh/MM/kansasii/runs/mkan329/assembly/results/` and `data/imm/screening_map_link.csv`. Regenerate it after
 every run or delivery; do not edit by hand.
 
 ## Coverage
 
-- Screening map: 183 isolates (NR 1-183); **131 have results** (123 clinical isolates + 8 reference strains).
-- Without results (52): NR 100, 108, 134-183 (not delivered yet, or no complete read pair).
+- Screening map: 186 isolates (NR 1-186); **186 have results** (178 clinical isolates + 8 reference strains).
+- All screening-map isolates have results.
 
 ## Species (GTDB-Tk, clinical isolates)
 
 | Species | Isolates |
 |---|---|
-| M. kansasii | 84 |
-| M. persicum | 23 |
-| M. pseudokansasii | 13 |
+| M. kansasii | 124 |
+| M. persicum | 30 |
+| M. pseudokansasii | 19 |
 | M. attenuatum | 2 |
 | M. innocens | 1 |
-| **Total** | **123** |
+| M. ostraviense | 1 |
+| M. avium | 1 |
+| **Total** | **178** |
+
+## Sequence types (mlst, scheme mycobacteria_2 = 8 ribosomal-protein genes)
+
+| Species (GTDB) | Isolates | ST (isolates) |
+|---|---|---|
+| M. kansasii | 124 | ST38 (75), no ST (23), ST609 (10), ST635 (8), ST106 (7), ST814 (1) |
+| M. persicum | 30 | ST418 (23), no ST (7) |
+| M. pseudokansasii | 19 | ST222 (19) |
+| M. attenuatum | 2 | ST743 (2) |
+| M. innocens | 1 | no ST (1) |
+| M. ostraviense | 1 | ST570 (1) |
+| M. avium | 1 | ST218 (1) |
+
+`no ST` = no complete allele match of the 8 genes (mlst assigns no type).
 
 ## Reference strains (controls)
 
@@ -48,6 +64,32 @@ Heuristic flags of this report (thresholds below), not the pipeline QC.
 | 55 | Mkan329-055 | M. persicum | fragmented | 2.47 | Mycobacterium persicum (100.0) | 5.89 | 1904 |
 | 106 | Mkan329-106 | M. kansasii | contamination, fragmented | 20.44 | Mycobacterium kansasii (100.0) | 7.40 | 909 |
 | 113 | Mkan329-113 | M. persicum | contamination, low purity, weak GTDB match, genome size, fragmented, low depth | 61.40 | Mycobacterium persicum (72.0) | 10.98 | 7473 |
+| 134 | Mkan329-134 | M. kansasii | low depth | 0.61 | Mycobacterium kansasii (100.0) | 6.43 | 278 |
+| 135 | Mkan329-135 | M. kansasii | low depth | 0.45 | Mycobacterium kansasii (100.0) | 6.54 | 255 |
+| 136 | Mkan329-136 | M. persicum | low depth | 0.68 | Mycobacterium persicum (100.0) | 6.26 | 273 |
+| 138 | Mkan329-138 | M. persicum | low depth | 0.83 | Mycobacterium persicum (100.0) | 6.22 | 288 |
+| 139 | Mkan329-139 | M. persicum | low depth | 0.68 | Mycobacterium persicum (100.0) | 6.19 | 273 |
+| 141 | Mkan329-141 | M. kansasii | low depth | 0.45 | Mycobacterium kansasii (100.0) | 6.75 | 296 |
+| 144 | Mkan329-144 | M. kansasii | low depth | 0.30 | Mycobacterium kansasii (100.0) | 6.36 | 249 |
+| 145 | Mkan329-145 | M. kansasii | low depth | 0.15 | Mycobacterium kansasii (100.0) | 6.36 | 287 |
+| 146 | Mkan329-146 | M. kansasii | low depth | 0.30 | Mycobacterium kansasii (100.0) | 6.47 | 170 |
+| 150 | Mkan329-150 | M. kansasii | low depth | 0.15 | Mycobacterium kansasii (100.0) | 6.55 | 313 |
+| 154 | Mkan329-154 | M. kansasii | low depth | 0.15 | Mycobacterium kansasii (100.0) | 6.30 | 275 |
+| 157 | Mkan329-157 | M. kansasii | low depth | 0.30 | Mycobacterium kansasii (100.0) | 6.50 | 276 |
+| 159 | Mkan329-159 | M. kansasii | low depth | 0.15 | Mycobacterium kansasii (100.0) | 6.50 | 270 |
+| 160 | Mkan329-160 | M. kansasii | low depth | 0.15 | Mycobacterium kansasii (100.0) | 6.43 | 236 |
+| 162 | Mkan329-162 | M. pseudokansasii | low depth | 0.00 | Mycobacterium pseudokansasii (100.0) | 6.15 | 357 |
+| 163 | Mkan329-163 | M. persicum | low depth | 0.68 | Mycobacterium persicum (100.0) | 6.16 | 281 |
+| 165 | Mkan329-165 | M. kansasii | low depth | 0.15 | Mycobacterium kansasii (100.0) | 6.46 | 114 |
+| 166 | Mkan329-166 | M. pseudokansasii | low depth | 0.15 | Mycobacterium pseudokansasii (100.0) | 6.12 | 295 |
+| 167 | Mkan329-167 | M. kansasii | low depth | 0.61 | Mycobacterium kansasii (100.0) | 6.43 | 251 |
+| 170 | Mkan329-170 | M. pseudokansasii | low depth | 0.15 | Mycobacterium pseudokansasii (100.0) | 6.27 | 326 |
+| 171 | Mkan329-171 | M. pseudokansasii | low depth | 0.00 | Mycobacterium pseudokansasii (100.0) | 6.13 | 327 |
+| 172 | Mkan329-172 | M. kansasii | low depth | 0.38 | Mycobacterium kansasii (100.0) | 6.52 | 301 |
+| 174 | Mkan329-174 | M. kansasii | low depth | 0.15 | Mycobacterium kansasii (100.0) | 6.32 | 287 |
+| 175 | Mkan329-175 | M. pseudokansasii | low depth | 0.15 | Mycobacterium pseudokansasii (100.0) | 6.26 | 331 |
+| 179 | Mkan329-179 | M. kansasii | low depth | 0.15 | Mycobacterium kansasii (100.0) | 6.36 | 262 |
+| 184 | Mkan329-184 | M. avium | low purity | 0.32 | Mycobacterium avium (95.0) | 5.14 | 219 |
 
 Thresholds: CheckM contamination > 5 %, MetaPhlAn4 purity < 95 %, MetaPhlAn4 species differs from GTDB, GTDB alignment fraction < 0.9 or ANI < 98, kansasii-complex genome outside 5.5-7.5 Mb, more than 600 contigs, mean depth < 50x.
 
@@ -154,6 +196,7 @@ Thresholds: CheckM contamination > 5 %, MetaPhlAn4 purity < 95 %, MetaPhlAn4 spe
 | 97 | Mkan329-097 | 2016500198 | M. kansasii | 99.45 | 0.957 | M. kansasii | - | 6.52 | 262 | 173 | 68 | 100.00/0.15 |  |
 | 98 | Mkan329-098 | 2016500191 | M. kansasii | 99.26 | 0.968 | M. kansasii | 38 | 6.25 | 251 | 126 | 62 | 96.82/0.15 |  |
 | 99 | Mkan329-099 | 2016500180 | M. persicum | 99.78 | 0.97 | M. persicum | 418 | 6.22 | 238 | 112 | 53 | 99.55/0.45 |  |
+| 100 | Mkan329-100 | 2016500073 | M. kansasii | 99.64 | 0.971 | M. kansasii | 38 | 6.39 | 230 | 134 | 59 | 100.00/0.15 |  |
 | 101 | Mkan329-101 | 2016500071 | M. kansasii | 99.3 | 0.936 | M. kansasii | 38 | 6.62 | 229 | 132 | 74 | 100.00/0.15 |  |
 | 102 | Mkan329-102 | 2016500035 | M. persicum | 99.78 | 0.972 | M. persicum | 418 | 6.34 | 244 | 172 | 70 | 99.55/0.45 |  |
 | 103 | Mkan329-103 | 2016500020 | M. persicum | 99.69 | 0.967 | M. persicum | 418 | 6.15 | 209 | 139 | 81 | 100.00/0.45 |  |
@@ -161,6 +204,7 @@ Thresholds: CheckM contamination > 5 %, MetaPhlAn4 purity < 95 %, MetaPhlAn4 spe
 | 105 | Mkan329-105 | 2016337210 | M. kansasii | 99.55 | 0.965 | M. kansasii | 635 | 6.44 | 235 | 127 | 61 | 100.00/0.15 |  |
 | 106 | Mkan329-106 | 2016333922 | M. kansasii | 99.92 | 0.938 | M. kansasii | 635 | 7.40 | 909 | 54 | 57 | 97.84/20.44 | contamination, fragmented |
 | 107 | Mkan329-107 | 2015500216 | M. persicum | 99.37 | 0.949 | M. persicum | 418 | 6.34 | 203 | 121 | 73 | 100.00/0.61 |  |
+| 108 | Mkan329-108 | 2015500182 | M. kansasii | 99.26 | 0.936 | M. kansasii | 38 | 6.61 | 214 | 127 | 67 | 100.00/0.15 |  |
 | 109 | Mkan329-109 | 2015500168 | M. kansasii | 99.31 | 0.963 | M. kansasii | 38 | 6.43 | 189 | 156 | 81 | 100.00/0.15 |  |
 | 110 | Mkan329-110 | 2015500028 | M. persicum | 99.81 | 0.97 | M. persicum | 418 | 6.20 | 236 | 137 | 74 | 99.55/0.45 |  |
 | 111 | Mkan329-111 | 2015179580 | M. kansasii | 99.67 | 0.988 | M. kansasii | 38 | 6.37 | 238 | 134 | 73 | 100.00/0.15 |  |
@@ -186,6 +230,59 @@ Thresholds: CheckM contamination > 5 %, MetaPhlAn4 purity < 95 %, MetaPhlAn4 spe
 | 131 | Mkan329-131 |  | M. marinum (control) | 98.28 | 0.938 | M. marinum | 580 | 5.67 | 298 | 55 | 83 | 99.55/0.92 |  |
 | 132 | Mkan329-132 |  | M. persicum (control) | 99.97 | 0.99 | M. persicum | 418 | 6.19 | 281 | 118 | 70 | 100.00/0.45 |  |
 | 133 | Mkan329-133 |  | M. pseudokansasii (control) | 99.99 | 0.999 | M. pseudokansasii | 867 | 6.24 | 318 | 104 | 85 | 99.55/0.00 |  |
+| 134 | Mkan329-134 | 2019342194 | M. kansasii | 99.21 | 0.964 | M. kansasii | 38 | 6.43 | 278 | 56 | 43 | 100.00/0.61 | low depth |
+| 135 | Mkan329-135 | 2019500003 | M. kansasii | 99.4 | 0.946 | M. kansasii | 38 | 6.54 | 255 | 60 | 39 | 100.00/0.45 | low depth |
+| 136 | Mkan329-136 | 2019500150 | M. persicum | 99.6 | 0.965 | M. persicum | - | 6.26 | 273 | 52 | 42 | 99.55/0.68 | low depth |
+| 137 | Mkan329-137 | 2019500219 | M. kansasii | 99.46 | 0.957 | M. kansasii | - | 6.68 | 275 | 124 | 147 | 100.00/0.15 |  |
+| 138 | Mkan329-138 | 2019500222 | M. persicum | 99.78 | 0.971 | M. persicum | 418 | 6.22 | 288 | 56 | 43 | 99.55/0.83 | low depth |
+| 139 | Mkan329-139 | 2019500223 | M. persicum | 99.6 | 0.957 | M. persicum | - | 6.19 | 273 | 50 | 49 | 99.55/0.68 | low depth |
+| 140 | Mkan329-140 | 2019500268 | M. kansasii | 99.25 | 0.968 | M. kansasii | 38 | 6.37 | 282 | 63 | 51 | 100.00/0.15 |  |
+| 141 | Mkan329-141 | 2019500293 | M. kansasii | 99.76 | 0.951 | M. kansasii | 38 | 6.75 | 296 | 58 | 41 | 100.00/0.45 | low depth |
+| 142 | Mkan329-142 | 2019500308 | M. kansasii | 99.99 | 0.999 | M. kansasii | 106 | 6.46 | 302 | 69 | 53 | 99.85/0.15 |  |
+| 143 | Mkan329-143 | 2019500326 | M. kansasii | 99.99 | 0.999 | M. kansasii | 106 | 6.44 | 307 | 71 | 51 | 99.55/0.30 |  |
+| 144 | Mkan329-144 | 2019500438 | M. kansasii | 99.26 | 0.968 | M. kansasii | 38 | 6.36 | 249 | 59 | 41 | 100.00/0.30 | low depth |
+| 145 | Mkan329-145 | 2020333184 | M. kansasii | 99.85 | 0.985 | M. kansasii | 609 | 6.36 | 287 | 63 | 47 | 99.24/0.15 | low depth |
+| 146 | Mkan329-146 | 2020333518 | M. kansasii | 99.34 | 0.953 | M. kansasii | 38 | 6.47 | 170 | 77 | 37 | 100.00/0.30 | low depth |
+| 147 | Mkan329-147 | 2020334094 | M. kansasii | 99.63 | 0.98 | M. kansasii | 38 | 6.34 | 232 | 209 | 158 | 100.00/0.15 |  |
+| 148 | Mkan329-148 | 2020334511 | M. persicum | 99.76 | 0.971 | M. persicum | 418 | 6.18 | 297 | 53 | 52 | 99.55/0.83 |  |
+| 149 | Mkan329-149 | 2020336136 | M. kansasii | 99.55 | 0.979 | M. kansasii | 38 | 6.36 | 265 | 64 | 57 | 100.00/0.30 |  |
+| 150 | Mkan329-150 | 2020338949 | M. kansasii | 99.06 | 0.937 | M. kansasii | 609 | 6.55 | 313 | 67 | 49 | 99.85/0.15 | low depth |
+| 151 | Mkan329-151 | 2020500189 | M. kansasii | 99.57 | 0.948 | M. kansasii | - | 6.59 | 289 | 71 | 52 | 100.00/0.30 |  |
+| 152 | Mkan329-152 | 2020500266 | M. kansasii | 99.98 | 0.971 | M. kansasii | 38 | 6.52 | 288 | 62 | 53 | 100.00/0.15 |  |
+| 153 | Mkan329-153 | 2020500270 | M. kansasii | 99.3 | 0.956 | M. kansasii | 38 | 6.49 | 270 | 69 | 58 | 100.00/0.30 |  |
+| 154 | Mkan329-154 | 2020500282 | M. kansasii | 99.01 | 0.961 | M. kansasii | 635 | 6.30 | 275 | 64 | 48 | 99.77/0.15 | low depth |
+| 155 | Mkan329-155 | 2020500304 | M. kansasii | 99.37 | 0.975 | M. kansasii | - | 6.38 | 268 | 127 | 56 | 100.00/0.15 |  |
+| 156 | Mkan329-156 | 2020500319 | M. kansasii | 99.38 | 0.973 | M. kansasii | - | 6.39 | 245 | 146 | 168 | 100.00/0.15 |  |
+| 157 | Mkan329-157 | 2021335700 | M. kansasii | 99.4 | 0.956 | M. kansasii | 38 | 6.50 | 276 | 65 | 45 | 100.00/0.30 | low depth |
+| 158 | Mkan329-158 | 2021336602 | M. persicum | 99.71 | 0.964 | M. persicum | 418 | 6.20 | 215 | 178 | 90 | 100.00/0.45 |  |
+| 159 | Mkan329-159 | 2021337197 | M. kansasii | 99.12 | 0.945 | M. kansasii | 609 | 6.50 | 270 | 70 | 46 | 100.00/0.15 | low depth |
+| 160 | Mkan329-160 | 2021337257 | M. kansasii | 99.51 | 0.965 | M. kansasii | 635 | 6.43 | 236 | 66 | 47 | 99.85/0.15 | low depth |
+| 161 | Mkan329-161 | 2021337910 | M. kansasii | 99.98 | 0.989 | M. kansasii | 38 | 6.39 | 290 | 67 | 51 | 99.85/0.15 |  |
+| 162 | Mkan329-162 | 2021340979 | M. pseudokansasii | 99.85 | 0.979 | M. pseudokansasii | 222 | 6.15 | 357 | 50 | 43 | 99.55/0.00 | low depth |
+| 163 | Mkan329-163 | 2021500032 | M. persicum | 99.76 | 0.965 | M. persicum | 418 | 6.16 | 281 | 51 | 44 | 100.00/0.68 | low depth |
+| 164 | Mkan329-164 | 2021500270 | M. pseudokansasii | 99.84 | 0.961 | M. pseudokansasii | 222 | 6.26 | 313 | 50 | 56 | 99.55/0.00 |  |
+| 165 | Mkan329-165 | 2021500316 | M. kansasii | 99.52 | 0.965 | M. kansasii | 38 | 6.46 | 114 | 122 | 39 | 100.00/0.15 | low depth |
+| 166 | Mkan329-166 | 2022337683 | M. pseudokansasii | 99.85 | 0.979 | M. pseudokansasii | 222 | 6.12 | 295 | 50 | 46 | 99.32/0.15 | low depth |
+| 167 | Mkan329-167 | 2022339287 | M. kansasii | 99.26 | 0.961 | M. kansasii | 38 | 6.43 | 251 | 120 | 40 | 100.00/0.61 | low depth |
+| 168 | Mkan329-168 | 2022339370 | M. kansasii | 99.21 | 0.961 | M. kansasii | 38 | 6.38 | 228 | 144 | 118 | 97.73/0.45 |  |
+| 169 | Mkan329-169 | 2022339545 | M. kansasii | 99.46 | 0.959 | M. kansasii | 38 | 6.45 | 240 | 134 | 383 | 100.00/0.00 |  |
+| 170 | Mkan329-170 | 2022340094 | M. pseudokansasii | 99.88 | 0.96 | M. pseudokansasii | 222 | 6.27 | 326 | 55 | 44 | 99.55/0.15 | low depth |
+| 171 | Mkan329-171 | 2022340933 | M. pseudokansasii | 99.85 | 0.979 | M. pseudokansasii | 222 | 6.13 | 327 | 50 | 46 | 99.55/0.00 | low depth |
+| 172 | Mkan329-172 | 2022341658 | M. kansasii | 98.83 | 0.939 | M. kansasii | 609 | 6.52 | 301 | 71 | 47 | 99.70/0.38 | low depth |
+| 173 | Mkan329-173 | 2022500101 | M. kansasii | 99.6 | 0.981 | M. kansasii | 38 | 6.36 | 270 | 63 | 53 | 100.00/0.30 |  |
+| 174 | Mkan329-174 | 2022500160 | M. kansasii | 99.99 | 0.997 | M. kansasii | 38 | 6.32 | 287 | 64 | 46 | 99.55/0.15 | low depth |
+| 175 | Mkan329-175 | 2022500162 | M. pseudokansasii | 99.84 | 0.975 | M. pseudokansasii | 222 | 6.26 | 331 | 49 | 50 | 99.55/0.15 | low depth |
+| 176 | Mkan329-176 | 2022500191 | M. kansasii | 99.64 | 0.973 | M. kansasii | 38 | 6.40 | 189 | 156 | 106 | 100.00/0.15 |  |
+| 177 | Mkan329-177 | 2022500196 | M. kansasii | 99.98 | 0.984 | M. kansasii | 38 | 6.43 | 292 | 66 | 55 | 100.00/0.30 |  |
+| 178 | Mkan329-178 | 2022500199 | M. kansasii | 99.61 | 0.974 | M. kansasii | 38 | 6.38 | 229 | 68 | 57 | 100.00/0.15 |  |
+| 179 | Mkan329-179 | 2022500219 | M. kansasii | 99.34 | 0.962 | M. kansasii | 609 | 6.36 | 262 | 62 | 48 | 99.85/0.15 | low depth |
+| 180 | Mkan329-180 | 2022500260 | M. kansasii | 99.98 | 0.958 | M. kansasii | 38 | 6.65 | 269 | 123 | 123 | 100.00/0.15 |  |
+| 181 | Mkan329-181 | 2022500313 | M. ostraviense | 99.54 | 0.959 | M. ostraviense | 570 | 6.19 | 347 | 56 | 63 | 100.00/0.61 |  |
+| 182 | Mkan329-182 | 2023500209 | M. kansasii | 99.99 | 0.979 | M. kansasii | 38 | 6.44 | 271 | 64 | 55 | 100.00/0.30 |  |
+| 183 | Mkan329-183 | 2025500027 | M. kansasii | 99.99 | 0.993 | M. kansasii | - | 6.36 | 234 | 123 | 124 | 100.00/0.15 |  |
+| 184 | Mkan329-184 | 2022500204 | M. avium | 99.1 | 0.926 | M. avium | 218 | 5.14 | 219 | 49 | 56 | 99.55/0.32 | low purity |
+| 185 | Mkan329-185 | 2022335425 | M. kansasii | 99.49 | 0.963 | M. kansasii | 38 | 6.49 | 249 | 145 | 163 | 100.00/0.15 |  |
+| 186 | Mkan329-186 | 2020500010 | M. persicum | 99.76 | 0.965 | M. persicum | 418 | 6.24 | 271 | 65 | 61 | 99.55/0.68 |  |
 
 ## Caveats
 

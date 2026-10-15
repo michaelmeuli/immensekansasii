@@ -16,7 +16,7 @@ absolute; **code blocks use full paths** and can be pasted as they are (only
 | `data/imm/` | screening map sources and derived tables |
 | `data/lit/gtdb/gtdb232/` | GTDB r232 metadata (downloaded if missing), accession lists, type strains |
 | `data/gtdb_genomes/` | genomes downloaded from NCBI, plus symlink dirs for runs |
-| `data/illumina/Mkan329/reads/kansasii/` | delivered paired-end fastq `Mkan329-NNN_r1/_r2.fastq.gz` (lower case; 131 of 183 isolates so far) |
+| `data/illumina/Mkan329/reads/kansasii/` | delivered paired-end fastq `Mkan329-NNN_r1/_r2.fastq.gz` (lower case; 133 isolates, NR 1-133; NR 134-186 are in `reads/kansasii_jc`) |
 | `data/illumina/Mkan329/batches/<batch>/` | per-batch input from `mkan329_batches.sh`: `Mkan329-NNN_R1/_R2.fastq.gz` symlinks + `id_map.tsv` |
 | `runs/<run_name>/` | working dir of a pipeline run (contains large, temporary `work/`) |
 | `output/<run_name>/` | end results of a run (no `work/`); downloaded to local `kansasii_C` |
@@ -36,7 +36,7 @@ Scripts (`repos/immensekansasii/scripts/`):
 | `screening_map_link.py` | `kansasii_mic` | link TNR / LNR / MHK / NGS -> `screening_map_link.csv` |
 | `screening_map_results.py` | `kansasii_mic` | add species + `TNR_MLSA` -> `screening_map_results.csv` |
 | `mkan329_batches.sh` | none | split the Mkan329 reads into a test batch + NR-ordered batches, print the run commands |
-| `mkan329_batch_jc.sh` | none | build `batches/b05` from the jc reads (`reads/kansasii_jc`, named by NGS TNR) via `NGS_JC` in `screening_map_link.csv`, skipping Mkan329-009/056 |
+| `mkan329_batch_jc.sh` | none | build `batches/b05` (53 jc isolates, NR 134-186) and `b06` (resequenced `Mkan329-056-jc`, `-009-jc`, run id `mkan329_jc`) from the jc reads (`reads/kansasii_jc`, named by NGS TNR) via `NGS_JC` in `screening_map_link.csv` |
 | `run.sh` | `env_immense` | the two pipeline runs below (copy blocks, not run as a whole) |
 
 ## 1. GTDB reference genomes
@@ -96,9 +96,9 @@ iTOL files for this tree: see section 2c (default mode, no arguments).
 ### 2b. `mkan329` (real isolates, `-t fq_PE`)
 
 Input: the delivered paired-end fastq in `data/illumina/Mkan329/reads/kansasii/`
-(`Mkan329-NNN_r1.fastq.gz`, 68.8 GB zip from SWITCH FileSender, 131 isolates: NR 1-133
-without 100 and 108; 134-183 not delivered yet). The run goes in batches, a small test
-batch first. (The old single-run block in `run.sh` is untested and superseded by this.)
+(`Mkan329-NNN_r1.fastq.gz`, 68.8 GB zip from SWITCH FileSender, 133 isolates: NR 1-133)
+and, for NR 134-186, the jc reads in `reads/kansasii_jc` (see the jc batch below). The run goes in
+batches, a small test batch first. (The old single-run block in `run.sh` is untested and superseded by this.)
 
 1. **Batches.** (no conda env; options `-r reads_dir -m link_csv -o batches_dir -t test_size
    -b batch_size`)
@@ -127,19 +127,26 @@ batch first. (The old single-run block in `run.sh` is untested and superseded by
 
    **jc batch (`b05`).** The reads in `reads/kansasii_jc` are named by NGS TNR, so
    `mkan329_batches.sh` does not see them. `scripts/mkan329_batch_jc.sh` (options
-   `-r reads_dir -m link_csv -c ngs_column -o batch_dir -x "ids to skip"`) links them under
-   `Mkan329-NNN` using the `NGS_JC` column of `screening_map_link.csv` into `batches/b05`
+   `-r reads_dir -m link_csv -c ngs_column -o batch_dir -x "ids to skip" -I "ids to keep" -s id_suffix -R run_id`)
+   links them under `Mkan329-NNN` using the `NGS_JC` column of `screening_map_link.csv` into `batches/b05`
    and prints the run command. Mkan329-009 and -056 are skipped by default: they are already
    in b01/b02 and the same id with other reads would clash in `runs/mkan329`. Rerun it after
    `mkan329_batches.sh`, which removes all `bNN` dirs.
 
-   Output with the current 131 isolates:
+   **Resequenced samples (`b06`).** `-I "Mkan329-056 Mkan329-009" -x "" -s -jc -R mkan329_jc -o .../batches/b06`
+   builds `Mkan329-056-jc` (NGS 2023187866) and `Mkan329-009-jc` (2023187902) and runs them in their
+   own run `runs/mkan329_jc` (own snippy db), so they stay out of the shared `runs/mkan329` tree and
+   its iTOL files. Results: 056-jc is a clean *M. kansasii* ST38 (CheckM 0.61 %, MetaPhlAn4 purity
+   99.1 %, 39x); 009-jc is *M. persicum* (ST `-`).
+
+   Output with the 133 delivered mm isolates plus the jc batch:
    ```
    test: 3 samples (NR 1..3)
    b01: 45 samples (NR 1..45)
    b02: 45 samples (NR 46..90)
-   b03: 41 samples (NR 91..133)
-   all: 131 samples (NR 1..133)
+   b03: 41 samples (NR 91..133, without 100 and 108 of the first delivery)
+   b04:  2 samples (NR 100, 108; delivered later)
+   b05: 53 samples (NR 134..186, jc reads; `mkan329_batch_jc.sh`)
    ```
 2. **One run dir, one run id, one snippy db.** `--kansasii_snippy_db` is required
    (`main.nf` stops without it). `b01..bNN` all run in `runs/mkan329/` with
@@ -216,9 +223,10 @@ batch first. (The old single-run block in `run.sh` is untested and superseded by
    tree (the csv also lists undelivered isolates), reads the tree from `runs/<run>/`, and adds the snippy `Reference` tip as "Reference genome"
    (grey). Bare species epithets (`kansasii`) get a `Mycobacterium ` prefix for the colour strip.
 
-   **Tested:** on the current `runs/mkan329` tree (131 isolates + `Reference` = 132 tips):
-   126 kansasii complex, 1 avium, 1 tuberculosis, 4 other. Re-run it after the tree is rebuilt
-   with the remaining isolates.
+   **Tested:** on the current `runs/mkan329` tree (186 isolates + `Reference` = 187 tips, all labeled):
+   180 kansasii complex (125 kansasii, 31 persicum, 20 pseudokansasii, 2 attenuatum, 1 innocens,
+   1 ostraviense), 2 avium, 1 tuberculosis, 3 other (abscessus, xenopi, marinum). Re-run it after the
+   tree is rebuilt.
 
    **Tested:** `-resume` does not reuse finished samples across batch dirs (see 2).
    **Not yet tested:** steps 4-5 on the batch outputs.
@@ -295,7 +303,7 @@ python /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/screenin
 Writes `data/imm/screening_map_link.csv` (copy in `output/`): one row per isolate,
 key `PROBENNUMMER` (`Mkan329-NNN`), with `LNR`, `LNR2`, `TNR`, `TNR_JC`/`NGS_JC`, `TNR_MM`/`NGS_MM`, `TNR3..`,
 `TNR_MHK`, `MHK`, `MHK_TNR_DIFFERS`, `MIC_JC`, `LABEL` (reference strains, NR 126-133). Extra TNR columns exist because a case can
-be re-opened under a new TNR; their number follows the isolate with the most (Mkan329-183).
+be re-opened under a new TNR; their number follows the isolate with the most (Mkan329-183, four extra).
 `TNR_MHK` is the TNR the `MHK` (AST order) was made under: the strains TNR whose `LNR` equals
 the order's `AUFTRAGSNUMMER`. It differs from `TNR` when the AST was done on a follow-up culture (e.g.
 Mkan329-056: `TNR` 2022500332, `TNR_MHK` 2022500349). If the order's LNR is not in the strains
@@ -310,7 +318,8 @@ isolate's own TNR. This is hard-coded as `LIS_VERIFIED_OWN_TNR` in `screening_ma
 `MHK_TNR_DIFFERS` is `yes` when `TNR_MHK` is another TNR than `TNR`: the MHK belongs to a different
 culture than the one sequenced under `TNR`. Currently only
 Mkan329-056: MHK 2023311034 was made on culture 2022500349 (`TNR_JC`, NGS 2023187866), which was
-contaminated; that culture was resequenced and its reads are not used (b05 skips Mkan329-056). The
+suspected to be contaminated; it was resequenced (`Mkan329-056-jc`, b06, run `mkan329_jc`) and the new
+reads are clean, but they are not part of the shared `runs/mkan329` tree (b05 skips Mkan329-056). The
 sequenced reads of Mkan329-056 (`NGS_MM`) are from 2022500332. The flag is informational: `kansasii-mic`
 still matches the 13 MIC rows of Mkan329-056 via the `MHK` column (decision: include them). A consumer that
 needs a strict MIC/sequence pairing can drop rows with `MHK_TNR_DIFFERS = yes`.

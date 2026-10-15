@@ -138,14 +138,29 @@ def main() -> None:
     w("## Coverage\n")
     w(f"- Screening map: {len(link)} isolates (NR 1-{max(int(r['NR']) for r in link.values())}); "
       f"**{len(samples)} have results** ({len(isolates)} clinical isolates + {len(controls)} reference strains).")
-    w(f"- Without results ({len(missing)}): NR {ranges([n for n, _ in missing])}"
-      " (not delivered yet, or no complete read pair).\n")
+    if missing:
+        w(f"- Without results ({len(missing)}): NR {ranges([n for n, _ in missing])}"
+          " (not delivered yet, or no complete read pair).\n")
+    else:
+        w("- All screening-map isolates have results.\n")
 
     w("## Species (GTDB-Tk, clinical isolates)\n")
     w("| Species | Isolates |\n|---|---|")
     for s, n in Counter(info[i]["sp"] for i in isolates).most_common():
         w(f"| {s} | {n} |")
     w(f"| **Total** | **{len(isolates)}** |\n")
+
+    w("## Sequence types (mlst, scheme mycobacteria_2 = 8 ribosomal-protein genes)\n")
+    by_sp: dict[str, Counter[str]] = {}
+    for i in isolates:
+        by_sp.setdefault(info[i]["sp"], Counter())[samples[i]["MLST_sequence_type"] or "-"] += 1
+    w("| Species (GTDB) | Isolates | ST (isolates) |\n|---|---|---|")
+    for sp_, c in sorted(by_sp.items(), key=lambda kv: -sum(kv[1].values())):
+        sts = ", ".join(f"{'ST' + t if t != '-' else 'no ST'} ({n})"
+                        for t, n in sorted(c.items(), key=lambda kv: (-kv[1], kv[0])))
+        w(f"| {sp_} | {sum(c.values())} | {sts} |")
+    w("")
+    w("`no ST` = no complete allele match of the 8 genes (mlst assigns no type).\n")
 
     w("## Reference strains (controls)\n")
     w("| NR | Sample | Expected (screening map) | GTDB-Tk | ANI | Result |\n|---|---|---|---|---|---|")
