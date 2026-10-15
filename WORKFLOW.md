@@ -285,7 +285,7 @@ Getting the files into iTOL (the script only writes them on the server):
 Sources in `data/imm/`: `screening_map_project.csv`, `screening_map_strains.csv`
 (latin-1), `screening_map_ast.csv`, `screening_map_ngs_jc.csv` (reads in `reads/kansasii_jc`),
 `screening_map_ngs_mm.csv` (reads in `reads/kansasii`), `screening_map_ast_jc.csv` (wide MIC table of the
-jc isolates, only used for the `MIC_JC` flag here), old `screening_map.csv` (comparison only).
+jc isolates, `NR_JC` = its row number; only used for `MIC_JC`/`MHK` here), old `screening_map.csv` (comparison only).
 
 ```bash
 conda activate kansasii_mic
@@ -314,9 +314,11 @@ contaminated; that culture was resequenced and its reads are not used (b05 skips
 sequenced reads of Mkan329-056 (`NGS_MM`) are from 2022500332. The flag is informational: `kansasii-mic`
 still matches the 13 MIC rows of Mkan329-056 via the `MHK` column (decision: include them). A consumer that
 needs a strict MIC/sequence pairing can drop rows with `MHK_TNR_DIFFERS = yes`.
-`MIC_JC` is `yes` when one of the row's TNRs is in `screening_map_ast_jc.csv` (42 isolates, all via
-`TNR_JC`); `kansasii-mic --ast-jc` uses that table for the MHK panel only where `mic.csv` has no panel
-data for the isolate.
+`MIC_JC` is `JC_<NR_JC>` when one of the row's TNRs is in `screening_map_ast_jc.csv` (50 isolates, all via
+`TNR_JC`). `kansasii-mic --ast-jc` uses that table for the MHK panel only where `mic.csv` has no panel
+values for the isolate (37 isolates); for exactly those, `MHK` is set to the same `JC_<NR_JC>` (replacing an
+MGIT-only or empty id). The 13 isolates with panel values in `mic.csv` keep their own MHK id (mic.csv wins).
+So `MHK` is either an AST order TNR or a `JC_n`, never both.
 It also prints a comparison with the old `screening_map.csv`.
 
 **`mlsa-kansasii` is a consumer** and reads only the TNR columns and `PROBENNUMMER`:

@@ -14,8 +14,10 @@ it is the project TNR when BESCHREIBUNG names the follow-up order or the row was
 in the LIS (LIS_VERIFIED_OWN_TNR), else empty (LNR2 holds the LNR).
 MHK_TNR_DIFFERS = "yes" when TNR_MHK is another TNR than TNR: the MHK belongs to a different culture
 than the one sequenced under TNR. Informational flag; consumers decide whether to use that MHK (see WORKFLOW.md).
-MIC_JC = "yes" when one of the row's TNRs is in screening_map_ast_jc.csv (wide MIC table of the
-jc-sequenced isolates; kansasii-mic uses it only where mic.csv has no MHK-panel data).
+MIC_JC = "JC_<NR_JC>" when one of the row's TNRs is in screening_map_ast_jc.csv (wide MIC table of the
+jc-sequenced isolates, NR_JC = its row number). kansasii-mic uses that table only where mic.csv has no
+MHK-panel values; for those isolates MHK is set to the same JC_<NR_JC> (replacing an MGIT-only id), so
+MIC_JC and MHK of a row never name two different panel sources.
 Links are made via
   - LNR (strains) == AUFTRAGSNUMMER (ast)
   - numbers hidden in BESCHREIBUNG (follow-up LNR2 / TNR, e.g. "Resi unter: 3386016 / tbm-2026311083")
@@ -68,12 +70,22 @@ def load(indir: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Data
     return project, strains, ast, ngs_jc, ngs_mm, old
 
 
-def load_mic_jc_tnrs(indir: Path) -> set[str]:
-    """TNRs of screening_map_ast_jc.csv (wide jc MIC table); empty if the file is absent."""
+def load_mic_jc_tnrs(indir: Path) -> dict[str, str]:
+    """TNR -> "JC_<NR_JC>" of screening_map_ast_jc.csv (wide jc MIC table); empty if the file is absent."""
     path = indir / "screening_map_ast_jc.csv"
     if not path.exists():
+        return {}
+    df = read(path)
+    return {t: f"JC_{n}" for t, n in zip(df["TNR"], df["NR_JC"]) if t}
+
+
+def load_panel_tnrs(indir: Path) -> set[str]:
+    """TNRs with MHK-panel values (non-empty MHK column) in mic.csv; empty if the file is absent."""
+    path = indir / "mic.csv"
+    if not path.exists():
         return set()
-    return {t for t in read(path)["TNR"] if t}
+    df = pd.read_csv(path, dtype=str, keep_default_na=False)
+    return {t.strip() for t in df.loc[df["MHK"].str.strip() != "", "TNR"] if t.strip()}
 
 
 def parse_beschreibung(text: str, lnr: str) -> tuple[list[str], list[str]]:
@@ -131,7 +143,8 @@ def mhk_tnr(tnr: str, s: pd.Series[str], arow: pd.Series[str] | None, lnr_tnrs: 
 
 
 def build(project: pd.DataFrame, strains: pd.DataFrame, ast: pd.DataFrame,
-          ngs_sources: dict[str, pd.DataFrame], mic_jc_tnrs: set[str] | None = None) -> pd.DataFrame:
+          ngs_sources: dict[str, pd.DataFrame], mic_jc_tnrs: dict[str, str] | None = None,
+          panel_tnrs: set[str] | None = None) -> pd.DataFrame:
     S = strains.set_index("TNR")
     lnr_tnrs = strains.groupby("LNR")["TNR"].apply(list).to_dict()
     rows: list[dict[str, Any]] = []
@@ -193,8 +206,11 @@ def build(project: pd.DataFrame, strains: pd.DataFrame, ast: pd.DataFrame,
 
     for r in rows:
         own = {r["TNR"], *(r[f"TNR_{src}"] for src in ngs_sources), *r["extra"]} - {""}
-        if mic_jc_tnrs and own & mic_jc_tnrs:
-            r["MIC_JC"] = "yes"
+        hit = sorted(t for t in own if mic_jc_tnrs and t in mic_jc_tnrs)
+        if hit:
+            r["MIC_JC"] = mic_jc_tnrs[hit[0]]
+            if not ({r["MHK"], r["TNR_MHK"], *own} - {""}) & (panel_tnrs or set()):
+                r["MHK"] = r["MIC_JC"]  # ast_jc is the panel source of this isolate
 
     n_extra = max(1, max(len(r["extra"]) for r in rows))
     extra_cols = [f"TNR{i + 3}" for i in range(n_extra)]
@@ -243,7 +259,7 @@ def main() -> None:
     out = args.out or args.indir / "screening_map_link.csv"
 
     project, strains, ast, ngs_jc, ngs_mm, old = load(args.indir)
-    link = build(project, strains, ast, {"JC": ngs_jc, "MM": ngs_mm}, load_mic_jc_tnrs(args.indir))
+    link = build(project, strains, ast, {"JC": ngs_jc, "MM": ngs_mm}, load_mic_jc_tnrs(args.indir), load_panel_tnrs(args.indir))
     link.to_csv(out, index=False)
     print(f"wrote {out} ({len(link)} rows)")
     args.copy_to.mkdir(parents=True, exist_ok=True)
