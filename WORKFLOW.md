@@ -284,7 +284,8 @@ Getting the files into iTOL (the script only writes them on the server):
 
 Sources in `data/imm/`: `screening_map_project.csv`, `screening_map_strains.csv`
 (latin-1), `screening_map_ast.csv`, `screening_map_ngs_jc.csv` (reads in `reads/kansasii_jc`),
-`screening_map_ngs_mm.csv` (reads in `reads/kansasii`), old `screening_map.csv` (comparison only).
+`screening_map_ngs_mm.csv` (reads in `reads/kansasii`), `screening_map_ast_jc.csv` (wide MIC table of the
+jc isolates, only used for the `MIC_JC` flag here), old `screening_map.csv` (comparison only).
 
 ```bash
 conda activate kansasii_mic
@@ -293,7 +294,7 @@ python /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/screenin
 
 Writes `data/imm/screening_map_link.csv` (copy in `output/`): one row per isolate,
 key `PROBENNUMMER` (`Mkan329-NNN`), with `LNR`, `LNR2`, `TNR`, `TNR_JC`/`NGS_JC`, `TNR_MM`/`NGS_MM`, `TNR3..`,
-`TNR_MHK`, `MHK`, `MHK_TNR_DIFFERS`, `LABEL` (reference strains, NR 126-133). Extra TNR columns exist because a case can
+`TNR_MHK`, `MHK`, `MHK_TNR_DIFFERS`, `MIC_JC`, `LABEL` (reference strains, NR 126-133). Extra TNR columns exist because a case can
 be re-opened under a new TNR; their number follows the isolate with the most (Mkan329-183).
 `TNR_MHK` is the TNR the `MHK` (AST order) was made under: the strains TNR whose `LNR` equals
 the order's `AUFTRAGSNUMMER`. It differs from `TNR` when the AST was done on a follow-up culture (e.g.
@@ -313,6 +314,9 @@ contaminated; that culture was resequenced and its reads are not used (b05 skips
 sequenced reads of Mkan329-056 (`NGS_MM`) are from 2022500332. The flag is informational: `kansasii-mic`
 still matches the 13 MIC rows of Mkan329-056 via the `MHK` column (decision: include them). A consumer that
 needs a strict MIC/sequence pairing can drop rows with `MHK_TNR_DIFFERS = yes`.
+`MIC_JC` is `yes` when one of the row's TNRs is in `screening_map_ast_jc.csv` (42 isolates, all via
+`TNR_JC`); `kansasii-mic --ast-jc` uses that table for the MHK panel only where `mic.csv` has no panel
+data for the isolate.
 It also prints a comparison with the old `screening_map.csv`.
 
 **`mlsa-kansasii` is a consumer** and reads only the TNR columns and `PROBENNUMMER`:
