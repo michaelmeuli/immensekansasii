@@ -16,7 +16,7 @@
 # (NR, PROBENNUMMER, original paths). The delivered files are named
 # Mkan329-NNN_r1.fastq.gz (lower case); the links get the upper-case _R1/_R2
 # that main.nf's {R1,R2,1,2} glob needs. Do NOT use the bare NR as sample id
-# (scripts/run.sh's old short ids): checkm.nf does `grep ${sample_id}` on the
+# (the former run.sh's short ids): checkm.nf does `grep ${sample_id}` on the
 # CheckM log, a bare number matches almost every line (timestamps) and
 # garbles <run>_quality.tsv (evaluate_QC.py then crashes). Samples without a complete pair
 # (not delivered yet) are skipped with a warning, so rerunning this script
@@ -33,7 +33,7 @@
 # final run: -resume matches tasks by input *path*, "all" has other symlink
 # paths than b01.., so it recomputes every sample (tested 2026-10-05, 0 cache
 # hits). Only use it if a full recompute is wanted; for a table over all
-# samples use scripts/mkan329_samples_report.py.
+# samples use scripts/08_mkan329_samples_report.py.
 #
 # The snippy db dir must exist before the run (kansasii_phylo.nf bind-mounts it
 # into the container; a missing dir = "container creation failed ... mount"),
@@ -41,7 +41,7 @@
 #
 # This script only builds the links and prints the commands; it submits nothing.
 #
-# Usage: mkan329_batches.sh [-r reads_dir] [-m link_csv] [-o batches_dir]
+# Usage: 04_mkan329_batches.sh [-r reads_dir] [-m link_csv] [-o batches_dir]
 #                           [-t test_size] [-b batch_size]
 
 set -euo pipefail

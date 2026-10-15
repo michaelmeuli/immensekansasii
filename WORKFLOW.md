@@ -17,7 +17,7 @@ absolute; **code blocks use full paths** and can be pasted as they are (only
 | `data/lit/gtdb/gtdb232/` | GTDB r232 metadata (downloaded if missing), accession lists, type strains |
 | `data/gtdb_genomes/` | genomes downloaded from NCBI, plus symlink dirs for runs |
 | `data/illumina/Mkan329/reads/kansasii/` | delivered paired-end fastq `Mkan329-NNN_r1/_r2.fastq.gz` (lower case; 133 isolates, NR 1-133; NR 134-186 are in `reads/kansasii_jc`) |
-| `data/illumina/Mkan329/batches/<batch>/` | per-batch input from `mkan329_batches.sh`: `Mkan329-NNN_R1/_R2.fastq.gz` symlinks + `id_map.tsv` |
+| `data/illumina/Mkan329/batches/<batch>/` | per-batch input from `04_mkan329_batches.sh`: `Mkan329-NNN_R1/_R2.fastq.gz` symlinks + `id_map.tsv` |
 | `runs/<run_name>/` | working dir of a pipeline run (contains large, temporary `work/`) |
 | `output/<run_name>/` | end results of a run (no `work/`); downloaded to local `kansasii_C` |
 | `output/lit/gtdb/gtdb232/` | convenience copy of the accession lists and type strains |
@@ -27,24 +27,61 @@ absolute; **code blocks use full paths** and can be pasted as they are (only
 **Rule:** scripts read only from `data/` and `runs/`. `output/` only receives copies made by
 the scripts (results, iTOL files, lists) for convenience and download.
 
+## Run order (whole project)
+
+Everything is called in this order. Numbers are the file prefixes; `repo:` scripts in other repos
+carry their own numbers. A step may start once everything above it that it reads has finished.
+`scripts/run_downstream.sh` submits the whole post-pipeline part (steps 6-13) as a Slurm
+dependency chain.
+
+| # | Step | Script | Env | Reads | Writes |
+|---|---|---|---|---|---|
+| 0 | tool/db install (once, notes) | `scripts/install_notes.txt` | - | - | pipeline dbs, containers |
+| 1 | GTDB r232 metadata, lists, genomes | `scripts/01_gtdb_mycobacteria_genomes.sh` | `env_immense` | GTDB web | `data/lit/gtdb/gtdb232/`, `data/gtdb_genomes/` |
+| 2 | screening map link | `scripts/02_screening_map_link.py` | `kansasii_mic` | `data/imm/screening_map_*.csv` | `data/imm/screening_map_link.csv` |
+| 3 | reference-tree run (7 GTDB representatives) | `scripts/03_run_gtdb_tree.sh` | none | step 1 | `runs/kansasii_complex_gtdb_representatives/` |
+| 4 | Mkan329 batches (mm reads) | `scripts/04_mkan329_batches.sh` | none | step 2, reads | `data/illumina/Mkan329/batches/` |
+| 5 | Mkan329 batches (jc reads, resequenced) | `scripts/05_mkan329_batch_jc.sh` | none | step 2, reads | `batches/b05`, `b06` |
+| 5b | pipeline runs, one batch after another | `run_IMMENSE.sh` (commands printed by 4/5) | none | batches | `runs/mkan329/`, `runs/mkan329_jc/` |
+| 6 | MIC analysis | `kansasii-mic: scripts/run_analysis.py` | `kansasii_mic` | `mic.csv`, step 2 | `output/mic/{mhk,mgit}/` |
+| 7 | MLSA inputs (links, filtered GTDB list) | `mlsa-kansasii: scripts/01..04_*` | `env_mlsa` | steps 1, 2 | `data/gtdb_genomes/.../mlsa-kansasii/`, `data/sanger/seq_kansasii/` |
+| 8 | MLSA analysis | `mlsa-kansasii: main1 -> main2`, `main3`, `main4`, `genome_identity_check` | `env_mlsa` | step 7 | `output/mlsa/` |
+| 9 | results table | `scripts/06_screening_map_results.py` | `kansasii_mic` | steps 2, 5b, 6, 8 | `data/imm/screening_map_results.csv` |
+| 10 | iTOL files | `scripts/07_generate_itol_species_labels.sh` | none | steps 3, 5b, 9 | `output/iTOL/<run>/` |
+| 11 | samples report | `scripts/08_mkan329_samples_report.py` | `kansasii_mic` | steps 5b, 9 | `SAMPLES.md` |
+| 12 | genotype vs MIC | `kansasii-gwas: run_all.sbatch` (scripts 00-26) | `env_mlsa` | steps 5b, 6, 9 | `output/gwas/` |
+| 13 | AMR marker screen | `kansasii-arm: submit_arm.sbatch`, then `submit_arm_bam.sbatch` (optional) and `submit_arm_reannot.sbatch` | `env_arm` | steps 5b, 6, 9 | `output/arm/`, `output/arm_bam/` |
+| - | Sanger Microsynth mail (independent, routine) | `sanger-microsynth: submit_fetch_analyse.sbatch` | `env_sanger_ms` | mail, step 8 refs | `output/sanger-microsynth/` |
+
+Step 9 needs step 8 for the `species_mlsa1/2` and `species_ref` columns, and step 8 needs the link
+table of step 2, so the link table is always built first and the results table last.
+`kansasii-lit` is not part of the run order (exploratory scripts, numbered by the order they were
+written); `gtdb232` metadata is downloaded by step 1.
+
+Step 5b is the only long step (days of CPU). The downstream steps are cheap and deterministic:
+rerun them whenever step 2, 5b or the MIC inputs change, so that the tables stay consistent.
+
 Scripts (`repos/immensekansasii/scripts/`):
 
 | Script | Conda env | Purpose |
 |---|---|---|
-| `gtdb_mycobacteria_genomes.sh` | `env_immense` | GTDB representative lists + genome download |
-| `generate_itol_species_labels.sh` | none | iTOL labels and colour strips for trees |
-| `screening_map_link.py` | `kansasii_mic` | link TNR / LNR / MHK / NGS -> `screening_map_link.csv` |
-| `screening_map_results.py` | `kansasii_mic` | add species + `TNR_MLSA` -> `screening_map_results.csv` |
-| `mkan329_batches.sh` | none | split the Mkan329 reads into a test batch + NR-ordered batches, print the run commands |
-| `mkan329_batch_jc.sh` | none | build `batches/b05` (53 jc isolates, NR 134-186) and `b06` (resequenced `Mkan329-056-jc`, `-009-jc`, run id `mkan329_jc`) from the jc reads (`reads/kansasii_jc`, named by NGS TNR) via `NGS_JC` in `screening_map_link.csv` |
-| `run.sh` | `env_immense` | the two pipeline runs below (copy blocks, not run as a whole) |
+| `01_gtdb_mycobacteria_genomes.sh` | `env_immense` | GTDB representative lists + genome download |
+| `02_screening_map_link.py` | `kansasii_mic` | link TNR / LNR / MHK / NGS -> `screening_map_link.csv` |
+| `03_run_gtdb_tree.sh` | none | link the 7 representatives and submit the reference-tree run (section 2a) |
+| `04_mkan329_batches.sh` | none | split the Mkan329 reads into a test batch + NR-ordered batches, print the run commands |
+| `05_mkan329_batch_jc.sh` | none | build `batches/b05` (53 jc isolates, NR 134-186) and `b06` (resequenced `Mkan329-056-jc`, `-009-jc`, run id `mkan329_jc`) from the jc reads (`reads/kansasii_jc`, named by NGS TNR) via `NGS_JC` in `screening_map_link.csv` |
+| `06_screening_map_results.py` | `kansasii_mic` | add species + `TNR_MLSA` + MIC -> `screening_map_results.csv` |
+| `07_generate_itol_species_labels.sh` | none | iTOL labels and colour strips for trees |
+| `08_mkan329_samples_report.py` | `kansasii_mic` | `SAMPLES.md` from the per-sample summary tables |
+| `run_downstream.sh` | none | submit steps 6-13 as a Slurm dependency chain |
+| `install_notes.txt`, `worktree-branching.txt` | - | notes (not runnable) |
 
 ## 1. GTDB reference genomes
 
 ```bash
 srun --pty -n 1 -c 6 --time=01:00:00 --mem=16G bash -l   # compute node
 conda activate env_immense                                # provides the NCBI `datasets` CLI
-bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/gtdb_mycobacteria_genomes.sh
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/01_gtdb_mycobacteria_genomes.sh
 ```
 
 - Reads `data/lit/gtdb/gtdb232/bac120_metadata_r232.tsv`.
@@ -59,7 +96,7 @@ bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/gtdb_mycob
   - Both lists have two columns, `accession` and `accession_query`. The `_query` suffix is
     needed because every accession is itself a GTDB-Tk reference genome, and
     `gtdbtk_classify_wf` rejects query genomes whose ids match its references.
-- `mlsa-kansasii/scripts/link_gtdb_kansasii_complex.sh` symlinks the downloaded
+- `mlsa-kansasii/scripts/02_link_gtdb_kansasii_complex.sh` symlinks the downloaded
   kansasii-complex genomes by species.
 
 ## 2. Pipeline runs
@@ -85,7 +122,7 @@ rsync -a --exclude work --exclude .nextflow --exclude '*_transfer_result/genomes
 
 ### 2a. `kansasii_complex_gtdb_representatives` (reference tree, `-t fasta`)
 
-`run.sh` symlinks the 7 genomes from step 1 as `<accession>_query.fasta` into
+`03_run_gtdb_tree.sh` symlinks the 7 genomes from step 1 as `<accession>_query.fasta` into
 `data/gtdb_genomes/Mycobacteriaceae/kansasii_complex_gtdb_representatives/` and runs the
 pipeline on that directory. The sample id is the fasta file stem, so tree tips are
 `GCF_xxx_query` (plus a `Reference` tip). `kansasii_phylo.nf` writes
@@ -98,12 +135,12 @@ iTOL files for this tree: see section 2c (default mode, no arguments).
 Input: the delivered paired-end fastq in `data/illumina/Mkan329/reads/kansasii/`
 (`Mkan329-NNN_r1.fastq.gz`, 68.8 GB zip from SWITCH FileSender, 133 isolates: NR 1-133)
 and, for NR 134-186, the jc reads in `reads/kansasii_jc` (see the jc batch below). The run goes in
-batches, a small test batch first. (The old single-run block in `run.sh` is untested and superseded by this.)
+batches, a small test batch first. 
 
 1. **Batches.** (no conda env; options `-r reads_dir -m link_csv -o batches_dir -t test_size
    -b batch_size`)
    ```bash
-   bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/mkan329_batches.sh
+   bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/04_mkan329_batches.sh
    ```
    writes, in NR order (first column of `screening_map_link.csv`):
    - `batches/test/`: the first 3 isolates (pilot)
@@ -116,7 +153,7 @@ batches, a small test batch first. (The old single-run block in `run.sh` is unte
    (sample id = `PROBENNUMMER`; **upper-case `_R1/_R2`**, because the `{R1,R2,1,2}` glob in
    `main.nf` is case-sensitive and would not find the delivered lower-case names) plus
    `id_map.tsv` (`NR`, `PROBENNUMMER`, original paths). **Do not use the bare `NR` as sample
-   id** (as the old `run.sh` block did): `checkm.nf` runs `grep ${sample_id}` on the CheckM
+   id** (as the former `run.sh` did): `checkm.nf` runs `grep ${sample_id}` on the CheckM
    log, a bare number matches nearly every line (timestamps), which garbles
    `<run>_quality.tsv` from `checkm_completeness` on, and `evaluate_QC.py` then crashes in
    `merge_summaries` (found in the first pilot, 2026-10-03). Proper fix would be anchoring
@@ -126,12 +163,12 @@ batches, a small test batch first. (The old single-run block in `run.sh` is unte
    commands below, it submits nothing.
 
    **jc batch (`b05`).** The reads in `reads/kansasii_jc` are named by NGS TNR, so
-   `mkan329_batches.sh` does not see them. `scripts/mkan329_batch_jc.sh` (options
+   `04_mkan329_batches.sh` does not see them. `scripts/05_mkan329_batch_jc.sh` (options
    `-r reads_dir -m link_csv -c ngs_column -o batch_dir -x "ids to skip" -I "ids to keep" -s id_suffix -R run_id`)
    links them under `Mkan329-NNN` using the `NGS_JC` column of `screening_map_link.csv` into `batches/b05`
    and prints the run command. Mkan329-009 and -056 are skipped by default: they are already
    in b01/b02 and the same id with other reads would clash in `runs/mkan329`. Rerun it after
-   `mkan329_batches.sh`, which removes all `bNN` dirs.
+   `04_mkan329_batches.sh`, which removes all `bNN` dirs.
 
    **Resequenced samples (`b06`).** `-I "Mkan329-056 Mkan329-009" -x "" -s -jc -R mkan329_jc -o .../batches/b06`
    builds `Mkan329-056-jc` (NGS 2023187866) and `Mkan329-009-jc` (2023187902) and runs them in their
@@ -146,7 +183,7 @@ batches, a small test batch first. (The old single-run block in `run.sh` is unte
    b02: 45 samples (NR 46..90)
    b03: 41 samples (NR 91..133, without 100 and 108 of the first delivery)
    b04:  2 samples (NR 100, 108; delivered later)
-   b05: 53 samples (NR 134..186, jc reads; `mkan329_batch_jc.sh`)
+   b05: 53 samples (NR 134..186, jc reads; `05_mkan329_batch_jc.sh`)
    ```
 2. **One run dir, one run id, one snippy db.** `--kansasii_snippy_db` is required
    (`main.nf` stops without it). `b01..bNN` all run in `runs/mkan329/` with
@@ -160,7 +197,7 @@ batches, a small test batch first. (The old single-run block in `run.sh` is unte
    (`mkan329_transfer_result/mkan329_quality.tsv`, `_quality_QC.csv`, resistance table,
    multiqc) only cover the samples of *that* invocation, so each batch overwrites the
    previous batch's tables; for a table over all isolates use `SAMPLES.md`
-   (`scripts/mkan329_samples_report.py`, built from the per-sample summary tables).
+   (`scripts/08_mkan329_samples_report.py`, built from the per-sample summary tables).
    **Do not run a final `all` batch to get cumulative tables:** `-resume` only reuses a task
    when its input paths are identical (the hash includes the file path), and `batches/all/`
    has other symlink paths than `b01..b03`, so it re-ran every sample from scratch (0 cache
@@ -200,19 +237,18 @@ batches, a small test batch first. (The old single-run block in `run.sh` is unte
         /shares/sander.imm.uzh/MM/kansasii/runs/mkan329/ /shares/sander.imm.uzh/MM/kansasii/output/mkan329/
    rm -rf /shares/sander.imm.uzh/MM/kansasii/runs/mkan329/work
    ```
-4. **Results table** (`conda activate kansasii_mic`). `screening_map_results.py` takes a single
-   `quality.tsv`, which now only covers the last batch (see 2), so this needs a combined table
-   first (not built yet); per batch, e.g. for `b03`:
+4. **Results table** (`conda activate kansasii_mic`; runs after the MIC analysis and the MLSA
+   programs, see "Run order"). `06_screening_map_results.py` reads the per-sample summary tables
+   `runs/mkan329/assembly/results/<Mkan329-NNN>/3_quality/summary/` (complete for every isolate run so
+   far; the merged `quality.tsv` only covers the last batch and is just a fallback):
    ```bash
-   python /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/screening_map_results.py \
-     --quality /shares/sander.imm.uzh/MM/kansasii/output/mkan329/mkan329_transfer_result/mkan329_quality.tsv \
-     --id-map /shares/sander.imm.uzh/MM/kansasii/data/illumina/Mkan329/batches/b03/id_map.tsv
+   python /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/06_screening_map_results.py
    ```
-   (its default `--id-map` is still the old `data/mkan329_short/id_map.tsv`, so pass it;
-   the quality table's `Sample` is `Mkan329-NNN`, which it matches via `PROBENNUMMER`).
+   Samples are named `Mkan329-NNN`, so no `--id-map` is needed. Check the printed counts
+   (186 rows, 186 with species) and the contamination warning.
 5. **iTOL labels** for the sample tree:
    ```bash
-   bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/generate_itol_species_labels.sh -m samples -p mkan329_
+   bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/07_generate_itol_species_labels.sh -m samples -p mkan329_
    ```
    writes `mkan329_itol_species_labels.txt` (`Species [Mkan329-NNN]`) and
    `mkan329_itol_species_colorstrip.txt` and a copy of the tree to `output/iTOL/mkan329/`.
@@ -229,7 +265,6 @@ batches, a small test batch first. (The old single-run block in `run.sh` is unte
    tree is rebuilt.
 
    **Tested:** `-resume` does not reuse finished samples across batch dirs (see 2).
-   **Not yet tested:** steps 4-5 on the batch outputs.
 
 Where results are: species is **not** in `assembly/results/<s>/5_typing/` (that holds
 `mlst/`, `pyMLST/`, `kansasii_snippy/`). It is in `3_quality/GTDB/<s>.tsv_gtdb_summary.tsv`
@@ -241,7 +276,7 @@ and in the run table `<run>_transfer_result/<run>_quality.tsv` (`gtdb_species`,
 Every tree run gets its own iTOL files, made independently of the others. A run needs
 only its finished tree, `<run>_transfer_result/kansasii_phylogeny/kansasii_complex_tree.treefile`
 (read from `runs/<run>/`), plus a table mapping tip ids to species.
-`generate_itol_species_labels.sh` (no conda env) writes three files to `output/iTOL/<run>/`
+`07_generate_itol_species_labels.sh` (no conda env) writes three files to `output/iTOL/<run>/`
 (plus a copy of the mapping input, i.e. the accessions list or `screening_map_results.csv`):
 
 | File | Content |
@@ -255,8 +290,8 @@ The snippy `Reference` tip of each tree is labelled "Reference genome" (grey).
 
 | Run type | Command | Tip ids | Species from |
 |---|---|---|---|
-| GTDB reference genomes (default `-m gtdb`) | `generate_itol_species_labels.sh [-a ACCESSIONS] [-n RUN]` | `GCF_xxx_query` from the `*_accessions_renamed.txt` file | GTDB metadata `bac120_metadata_r232.tsv` (`s__` token) |
-| real isolates (`-m samples`) | `generate_itol_species_labels.sh -m samples -p mkan329_ [-n RUN]` | `Mkan329-NNN` (`PROBENNUMMER`), only isolates that are tips of the tree | `species` column of `data/imm/screening_map_results.csv` (`LABEL` as fallback) |
+| GTDB reference genomes (default `-m gtdb`) | `07_generate_itol_species_labels.sh [-a ACCESSIONS] [-n RUN]` | `GCF_xxx_query` from the `*_accessions_renamed.txt` file | GTDB metadata `bac120_metadata_r232.tsv` (`s__` token) |
+| real isolates (`-m samples`) | `07_generate_itol_species_labels.sh -m samples -p mkan329_ [-n RUN]` | `Mkan329-NNN` (`PROBENNUMMER`), only isolates that are tips of the tree | `species` column of `data/imm/screening_map_results.csv` (`LABEL` as fallback) |
 
 Defaults: `-n kansasii_complex_gtdb_representatives` (gtdb) or `mkan329` (samples); `-a` defaults
 to the 7-genome kansasii complex list, use
@@ -264,14 +299,14 @@ to the 7-genome kansasii complex list, use
 whose run is `runs/relevant_species_tree_run/` (copied from `output-old/` without `work/` and
 `.nextflow`, so it cannot be resumed; 21 tips = 20 genomes + `Reference`):
 ```bash
-bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/generate_itol_species_labels.sh \
+bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/07_generate_itol_species_labels.sh \
   -a mycobacterium_relevant_species_representative_accessions_renamed.txt -n relevant_species_tree_run
 ```
 `-o` output dir, `-p` file prefix.
 
 To make files for a new run: (1) finish the run, so the `.treefile` exists; (2) make sure
 every tip id is in the mapping (gtdb: accessions file, samples: `screening_map_results.csv`
-via `screening_map_results.py`); (3) run the script with `-n <run>` (plus `-m`/`-a`/`-p`);
+via `06_screening_map_results.py`); (3) run the script with `-n <run>` (plus `-m`/`-a`/`-p`);
 (4) check there is no `WARNING: n/m entries have a species`, which means some tips are unlabeled.
 Re-run after the tree is rebuilt, because the files are only valid for the tree they were made with.
 
@@ -297,7 +332,7 @@ jc isolates, `NR_JC` = its row number; only used for `MIC_JC`/`MHK` here), old `
 
 ```bash
 conda activate kansasii_mic
-python /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/screening_map_link.py [--indir DIR] [--out FILE] [--copy-to DIR]
+python /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/02_screening_map_link.py [--indir DIR] [--out FILE] [--copy-to DIR]
 ```
 
 Writes `data/imm/screening_map_link.csv` (copy in `output/`): one row per isolate,
@@ -312,7 +347,7 @@ own `TNR` when BESCHREIBUNG names the follow-up order (its LNR or TNR), else emp
 (Mkan329-028, -047, -071, -162) have neither a BESCHREIBUNG reference nor the LNR in strains; their
 order was matched by DOB + received date only. They were checked by hand in the LIS (M/LAB): after
 the file was closed the missing information was added as "Bleistift", so the order was made under the
-isolate's own TNR. This is hard-coded as `LIS_VERIFIED_OWN_TNR` in `screening_map_link.py`
+isolate's own TNR. This is hard-coded as `LIS_VERIFIED_OWN_TNR` in `02_screening_map_link.py`
 (`TNR_MHK` = `TNR`); add further rows there only after such a manual check.
 
 `MHK_TNR_DIFFERS` is `yes` when `TNR_MHK` is another TNR than `TNR`: the MHK belongs to a different
@@ -333,7 +368,7 @@ So `MHK` is either an AST order TNR or a `JC_n`, never both.
 It also prints a comparison with the old `screening_map.csv`.
 
 **`mlsa-kansasii` is a consumer** and reads only the TNR columns and `PROBENNUMMER`:
-`scripts/link_sanger_kansasii.sh` selects the columns by regex `^TNR(_JC|_MM|[0-9]+)?$`
+`scripts/03_link_sanger_kansasii.sh` selects the columns by regex `^TNR(_JC|_MM|[0-9]+)?$`
 and links the `.ab1` files whose path contains one of the 10-digit TNRs;
 `main2_sanger_differentiation/run_sanger_differentiation.py` maps every TNR to its
 `PROBENNUMMER` and pools reads per isolate. `mlsa/__init__.py` has the hand-maintained
@@ -341,7 +376,7 @@ and links the `.ab1` files whose path contains one of the 10-digit TNRs;
 
 ### Results table
 
-`screening_map_results.py` reads `screening_map_link.csv` (never modifies it) and writes
+`06_screening_map_results.py` reads `screening_map_link.csv` (never modifies it) and writes
 `data/imm/screening_map_results.csv` (copy in `output/`): all link columns plus
 - `species`, `gtdb_ani`, `gtdb_af`, `gtdb_reference`: GTDB-Tk call from the run's `quality.tsv`
 - `checkm_contamination`, `contamination_flag`: CheckM contamination (%) of the assembly; flag = `contaminated` above `--max-contamination` (default 10). Flagged samples are mixed cultures, see `SPECIES.md`. CheckM is the criterion for contaminated cultures: MIC values of flagged isolates are not used for the final conclusion (filter on `contamination_flag`; the MIC columns and `output/mic/*` keep the values). Flagged now: Mkan329-035, -106, -113 (only 035 has MIC data)
@@ -360,7 +395,7 @@ scp A:\projects\kansasii\input\* mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.u
 ```
 
 (Copy a single file by naming it instead of `*`; add `-r` only if the folder has subfolders.)
-Afterwards rerun `screening_map_link.py` (section 3) so `screening_map_link.csv` is rebuilt.
+Afterwards rerun `02_screening_map_link.py` (section 3) so `screening_map_link.csv` is rebuilt.
 
 ## 5. Downloading results to local `kansasii_C`
 
@@ -373,6 +408,6 @@ scp -r mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/* "$
 
 ## Remaining in `kansasii-lit`
 
-Only exploratory / one-off scripts (`lit_download.sh`, `lit_gtdb_226.sh`, `lit_gtdb_232.sh`,
-`lit_gtdb_ref_check.sh`, `get_mkc_type_strains.sh`, `gtdb-adv-search-genomes.sh`,
+Only exploratory / one-off scripts (`lit_download.ps1`, `01_lit_gtdb_226.sh`, `02_lit_gtdb_232.sh`,
+`03_lit_gtdb_ref_check.sh`, `04_get_mkc_type_strains.sh`, `05_gtdb_adv_search_genomes.sh`,
 `gtdb_adv_search_accessions/`). The workflow above no longer depends on them.

@@ -19,14 +19,14 @@
 #
 #   gtdb     (default) GTDB representative genomes. Tips are the "_query"-
 #            suffixed ids from an accessions file (accession<TAB>renamed_id,
-#            built in immensekansasii/scripts/gtdb_mycobacteria_genomes.sh; the
+#            built in immensekansasii/scripts/01_gtdb_mycobacteria_genomes.sh; the
 #            suffix avoids a collision with GTDB-Tk's own reference ids).
 #            Species come from GTDB metadata (bac120_metadata_r232.tsv).
 #   samples  real isolates. Tips are the PROBENNUMMER ids (Mkan329-NNN); species come from screening_map_results.csv
-#            (written by immensekansasii/scripts/screening_map_results.py).
+#            (written by immensekansasii/scripts/06_screening_map_results.py).
 #            Display text is "Species [Mkan329-NNN]".
 #
-# Usage: bash generate_itol_species_labels.sh [-m gtdb|samples] [-a ACCESSIONS_FILE]
+# Usage: bash 07_generate_itol_species_labels.sh [-m gtdb|samples] [-a ACCESSIONS_FILE]
 #                                              [-r RESULTS_CSV] [-n RUN] [-o OUT_DIR] [-p PREFIX]
 #   -m  mode (default gtdb)
 #   -a  gtdb mode: accessions file name/path (default

@@ -3,10 +3,10 @@
 # Build one extra batch (default b05) from the jc-sequenced reads, which are
 # delivered under their NGS TNR (reads/kansasii_jc/2023187xxx_R1/R2.fastq.gz),
 # not under Mkan329-NNN. The NGS TNR -> PROBENNUMMER mapping is the NGS_JC
-# column of screening_map_link.csv (written by screening_map_link.py from
+# column of screening_map_link.csv (written by 02_screening_map_link.py from
 # screening_map_ngs_jc.csv).
 #
-# The batch dir has the same layout as the ones from mkan329_batches.sh: flat
+# The batch dir has the same layout as the ones from 04_mkan329_batches.sh: flat
 # symlinks <PROBENNUMMER>_R1.fastq.gz / _R2.fastq.gz (upper-case, see there)
 # + id_map.tsv (NR, PROBENNUMMER, original paths), in NR order.
 #
@@ -15,7 +15,7 @@
 # the same sample id with different reads would clash in the shared
 # runs/mkan329 results and snippy db.
 #
-# The batch dir is rebuilt from scratch. mkan329_batches.sh removes every
+# The batch dir is rebuilt from scratch. 04_mkan329_batches.sh removes every
 # b[0-9][0-9] dir, so rerun this script after it.
 #
 # This script only builds the links and prints the run command; it submits
@@ -27,9 +27,9 @@
 # the run id (run dir runs/<R>, snippy db <R>); give a separate one (e.g.
 # -R mkan329_jc) when the samples must stay out of the shared mkan329 tree.
 # Example (b06, resequenced 2023187866 = Mkan329-056 and 2023187902 = Mkan329-009):
-#   mkan329_batch_jc.sh -o .../batches/b06 -I "Mkan329-056 Mkan329-009" -x "" -s -jc -R mkan329_jc
+#   05_mkan329_batch_jc.sh -o .../batches/b06 -I "Mkan329-056 Mkan329-009" -x "" -s -jc -R mkan329_jc
 #
-# Usage: mkan329_batch_jc.sh [-r reads_dir] [-m link_csv] [-c ngs_column]
+# Usage: 05_mkan329_batch_jc.sh [-r reads_dir] [-m link_csv] [-c ngs_column]
 #                            [-o batch_dir] [-x "id id ..."] [-I "id id ..."]
 #                            [-s id_suffix] [-R run_id]
 

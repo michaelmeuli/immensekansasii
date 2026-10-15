@@ -13,7 +13,7 @@ if [ ! -f "$METADATA" ]; then
   (cd "$DATA_DIR" && wget https://data.gtdb.aau.ecogenomic.org/releases/release232/232.0/bac120_metadata_r232.tsv.gz && gunzip bac120_metadata_r232.tsv.gz)
 fi
 
-# the lists are written to DATA_DIR (read by run.sh and generate_itol_species_labels.sh);
+# the lists are written to DATA_DIR (read by 03_run_gtdb_tree.sh and 07_generate_itol_species_labels.sh);
 # OUT_DIR only gets a convenience copy at the end
 cd "$DATA_DIR"
 
@@ -105,7 +105,7 @@ awk -F'\t' -v OFS='\t' \
 # metadata), so feeding them to gtdbtk_classify_wf as query genomes fails
 # outright: "You have N genomes with the same id as GTDB-Tk reference
 # genomes, please rename them." Pair each accession with a renamed id
-# (suffixed "_query") that run.sh uses as the destination filename when
+# (suffixed "_query") that 03_run_gtdb_tree.sh uses as the destination filename when
 # symlinking genomes into the pipeline input directory -- the original
 # accession is kept in column 1 to still locate the source .fna/.fasta under
 # GENOME_DATA_DIR.

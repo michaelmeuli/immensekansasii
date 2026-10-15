@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Add pipeline/MLSA results to screening_map_link.csv -> screening_map_results.csv.
 
-screening_map_link.csv (built by screening_map_link.py) stays the input; this
+screening_map_link.csv (built by 02_screening_map_link.py) stays the input; this
 script never modifies it. Added columns:
 
   species, gtdb_ani, gtdb_af, gtdb_reference
@@ -9,8 +9,8 @@ script never modifies it. Added columns:
       e.g. "kansasii", like the species_mlsa*/species_ref columns). Read per sample from
       <results-dir>/<id>/3_quality/summary/<id>.tab (complete; preferred), else
       from the merged <run>_quality.tsv (--quality; may be stale/partial).
-      <id> is the short id (NR) used as fasta name by scripts/run.sh, or
-      Mkan329-NNN if not renamed; --id-map resolves it.
+      <id> is Mkan329-NNN (PROBENNUMMER); a bare NR or an --id-map are still
+      resolved for older runs.
   checkm_contamination, contamination_flag
       CheckM contamination (%) from the same quality table/summary as the GTDB call;
       contamination_flag = "contaminated" if it exceeds --max-contamination
@@ -44,7 +44,7 @@ script never modifies it. Added columns:
       from kansasii-mic outliers_per_antibiotic.csv (--mic-file). Empty if the
       isolate was not tested.
 
-Usage: python scripts/screening_map_results.py  (in immensekansasii) [--results-dir ...] [--id-map ...]
+Usage: python scripts/06_screening_map_results.py  (in immensekansasii) [--results-dir ...] [--id-map ...]
 """
 from __future__ import annotations
 
@@ -145,8 +145,8 @@ def main() -> None:
                     default=K / "runs/mkan329/mkan329_transfer_result/mkan329_quality.tsv",
                     help="merged quality table, fallback for samples without a per-sample summary")
     ap.add_argument("--id-map", type=Path, default=None,
-                    help="id_map.tsv from run.sh (NR, PROBENNUMMER, original_path); "
-                         "default: <data/mkan329_short>/id_map.tsv if present")
+                    help="optional id_map.tsv (NR, PROBENNUMMER, ...) for runs whose sample ids are not "
+                         "Mkan329-NNN, e.g. data/illumina/Mkan329/batches/b01/id_map.tsv")
     ap.add_argument("--reads", type=Path,
                     default=K / "output/mlsa/main2_sanger_differentiation/representative_reads.tsv")
     ap.add_argument("--mlsa1", type=Path,
@@ -160,12 +160,14 @@ def main() -> None:
                     help="kansasii-mic long table (PROBENNUMMER, antibiotic, mhk_raw, modified_z, clsi_category)")
     ap.add_argument("--max-contamination", type=float, default=10.0,
                     help="CheckM contamination %% above which contamination_flag is set (default 10)")
-    ap.add_argument("--copy-to", type=Path, default=K / "output",
-                    help="directory to also copy the output to")
+    ap.add_argument("--copy-to", type=Path, default=None,
+                    help="directory to also copy the output to (default: <root>/output, but only "
+                         "when --out is not given)")
     args = ap.parse_args()
     link_path = args.link or args.indir / "screening_map_link.csv"
     out = args.out or args.indir / "screening_map_results.csv"
-    id_map_path = args.id_map or K / "data/mkan329_short/id_map.tsv"
+    id_map_path = args.id_map
+    copy_to = args.copy_to or (None if args.out else K / "output")
 
     link = read_tsv(link_path, ",")
     res = link.copy()
@@ -177,7 +179,7 @@ def main() -> None:
 
     # --- GTDB species + resistance from the pipeline run ---
     sample_to_pnr: dict[str, str] = {}
-    if id_map_path.exists():
+    if id_map_path is not None and id_map_path.exists():
         m = read_tsv(id_map_path)
         sample_to_pnr = dict(zip(m.iloc[:, 0], m.iloc[:, 1]))
     by_nr = dict(zip(link["NR"], link["PROBENNUMMER"]))
@@ -299,9 +301,10 @@ def main() -> None:
           f"{(res['TNR_MLSA'] != '').sum()} with TNR_MLSA, "
           f"{(res['species_mlsa1'] != '').sum()}/{(res['species_mlsa2'] != '').sum()}/"
           f"{(res['species_ref'] != '').sum()} with species_mlsa1/mlsa2/ref")
-    args.copy_to.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(out, args.copy_to / out.name)
-    print(f"copied to {args.copy_to / out.name}")
+    if copy_to is not None:
+        copy_to.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(out, copy_to / out.name)
+        print(f"copied to {copy_to / out.name}")
 
 
 if __name__ == "__main__":

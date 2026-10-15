@@ -10,7 +10,7 @@ invocation of the run dir, the per-sample tables cover every sample ever run.
 The flags are heuristics of this report, not the pipeline's QC (the rules file
 in QC_bacteria/rules.csv fails the total length of every kansasii isolate).
 
-Usage: python3 scripts/mkan329_samples_report.py [--results DIR] [--link CSV] [--out FILE]
+Usage: python3 scripts/08_mkan329_samples_report.py [--results DIR] [--link CSV] [--out FILE]
 Standard library only, no conda env needed.
 """
 from __future__ import annotations
@@ -132,7 +132,7 @@ def main() -> None:
     L: list[str] = []
     w = L.append
     w("# Mkan329 samples report\n")
-    w(f"Generated {datetime.date.today()} by `scripts/mkan329_samples_report.py` from the per-sample")
+    w(f"Generated {datetime.date.today()} by `scripts/08_mkan329_samples_report.py` from the per-sample")
     w(f"summary tables in `{args.results}/` and `data/imm/screening_map_link.csv`. Regenerate it after")
     w("every run or delivery; do not edit by hand.\n")
     w("## Coverage\n")
@@ -152,8 +152,8 @@ def main() -> None:
 
     w("## Sequence types (mlst, scheme mycobacteria_2 = 8 ribosomal-protein genes)\n")
     by_sp: dict[str, Counter[str]] = {}
-    for i in isolates:
-        by_sp.setdefault(info[i]["sp"], Counter())[samples[i]["MLST_sequence_type"] or "-"] += 1
+    for iso in isolates:
+        by_sp.setdefault(info[iso]["sp"], Counter())[samples[iso]["MLST_sequence_type"] or "-"] += 1
     w("| Species (GTDB) | Isolates | ST (isolates) |\n|---|---|---|")
     for sp_, c in sorted(by_sp.items(), key=lambda kv: -sum(kv[1].values())):
         sts = ", ".join(f"{'ST' + t if t != '-' else 'no ST'} ({n})"

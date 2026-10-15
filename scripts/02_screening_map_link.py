@@ -2,7 +2,7 @@
 """Build screening_map_link.csv: link project samples to LNR, MHK (AST) and NGS numbers.
 
 Usage (conda activate kansasii_mic):
-    python screening_map_link.py [--indir DIR] [--out FILE] [--copy-to DIR]
+    python 02_screening_map_link.py [--indir DIR] [--out FILE] [--copy-to DIR]
 
 Sources of truth: screening_map_project.csv and screening_map_strains.csv (agree on TNR).
 NGS ids come from screening_map_ngs_jc.csv (reads in kansasii_jc, numeric ids) and
@@ -146,7 +146,7 @@ def build(project: pd.DataFrame, strains: pd.DataFrame, ast: pd.DataFrame,
           ngs_sources: dict[str, pd.DataFrame], mic_jc_tnrs: dict[str, str] | None = None,
           panel_tnrs: set[str] | None = None) -> pd.DataFrame:
     S = strains.set_index("TNR")
-    lnr_tnrs = strains.groupby("LNR")["TNR"].apply(list).to_dict()
+    lnr_tnrs: dict[str, list[str]] = {str(k): v for k, v in strains.groupby("LNR")["TNR"].apply(list).items()}
     rows: list[dict[str, Any]] = []
     for _, p in project.iterrows():
         r = {"NR": p["NR"], "PROBENNUMMER": p["PROBENNUMMER"], "LNR": "", "LNR2": "",
@@ -206,9 +206,10 @@ def build(project: pd.DataFrame, strains: pd.DataFrame, ast: pd.DataFrame,
 
     for r in rows:
         own = {r["TNR"], *(r[f"TNR_{src}"] for src in ngs_sources), *r["extra"]} - {""}
-        hit = sorted(t for t in own if mic_jc_tnrs and t in mic_jc_tnrs)
+        jc_tnrs = mic_jc_tnrs or {}
+        hit = sorted(t for t in own if t in jc_tnrs)
         if hit:
-            r["MIC_JC"] = mic_jc_tnrs[hit[0]]
+            r["MIC_JC"] = jc_tnrs[hit[0]]
             if not ({r["MHK"], r["TNR_MHK"], *own} - {""}) & (panel_tnrs or set()):
                 r["MHK"] = r["MIC_JC"]  # ast_jc is the panel source of this isolate
 
@@ -253,8 +254,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--indir", type=Path, default=Path(os.environ.get("KANSASII_ROOT", "/shares/sander.imm.uzh/MM/kansasii") + "/data/imm"))
     ap.add_argument("--out", type=Path, default=None, help="default: <indir>/screening_map_link.csv")
-    ap.add_argument("--copy-to", type=Path, default=Path(os.environ.get("KANSASII_ROOT", "/shares/sander.imm.uzh/MM/kansasii") + "/output"),
-                    help="directory to also copy the output to")
+    ap.add_argument("--copy-to", type=Path, default=None,
+                    help="directory to also copy the output to (default: <root>/output, but only when --out is not given)")
     args = ap.parse_args()
     out = args.out or args.indir / "screening_map_link.csv"
 
@@ -262,9 +263,11 @@ def main() -> None:
     link = build(project, strains, ast, {"JC": ngs_jc, "MM": ngs_mm}, load_mic_jc_tnrs(args.indir), load_panel_tnrs(args.indir))
     link.to_csv(out, index=False)
     print(f"wrote {out} ({len(link)} rows)")
-    args.copy_to.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(out, args.copy_to / out.name)
-    print(f"copied to {args.copy_to / out.name}")
+    copy_to = args.copy_to or (None if args.out else Path(os.environ.get("KANSASII_ROOT", "/shares/sander.imm.uzh/MM/kansasii")) / "output")
+    if copy_to is not None:
+        copy_to.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(out, copy_to / out.name)
+        print(f"copied to {copy_to / out.name}")
     compare(link, old)
 
 

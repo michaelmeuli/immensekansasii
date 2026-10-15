@@ -7,7 +7,7 @@ They normally agree. A disagreement can mean a mixed culture, so check
 
 ## Contamination flag
 
-`scripts/screening_map_results.py` adds `checkm_contamination` (CheckM, %) and
+`scripts/06_screening_map_results.py` adds `checkm_contamination` (CheckM, %) and
 `contamination_flag` (`contaminated` if > `--max-contamination`, default 10; also
 printed as a warning on each run). Isolates flagged in the mkan329 run:
 

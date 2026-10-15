@@ -70,7 +70,7 @@ echo "Input Directory:      $inputDirectory"
 echo "Additional Arguments: $additionalArguments"
 
 # Check that input directory exists:
-if [ -d $inputDirectory ]; then
+if [ -d "$inputDirectory" ]; then
     echo ""
 else
   echo ""

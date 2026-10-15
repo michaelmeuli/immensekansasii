@@ -186,7 +186,7 @@ dir can be repeated and resume (`-resume` is always on), but run-level tables an
 only cover the samples of the latest invocation.
 
 Real Illumina isolates (Mkan329) are run in batches (test batch, `b01..bNN`, final `all`
-run) with `scripts/mkan329_batches.sh`, see **`WORKFLOW.md`** section 2b for the full,
+run) with `scripts/04_mkan329_batches.sh`, see **`WORKFLOW.md`** section 2b for the full,
 copy-pasteable commands. Use `Mkan329-NNN` as sample id for fastq input, never a bare
 number: `checkm.nf` does `grep ${sample_id}` on the CheckM log.
 
