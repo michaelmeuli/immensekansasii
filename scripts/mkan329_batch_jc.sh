@@ -21,8 +21,17 @@
 # This script only builds the links and prints the run command; it submits
 # nothing.
 #
+# -I limits the batch to the listed PROBENNUMMER (default: all). -s appends a
+# suffix to the sample id of the links (e.g. -s -jc gives Mkan329-056-jc), so a
+# resequenced sample does not clash with the same id from the main run. -R sets
+# the run id (run dir runs/<R>, snippy db <R>); give a separate one (e.g.
+# -R mkan329_jc) when the samples must stay out of the shared mkan329 tree.
+# Example (b06, resequenced 2023187866 = Mkan329-056 and 2023187902 = Mkan329-009):
+#   mkan329_batch_jc.sh -o .../batches/b06 -I "Mkan329-056 Mkan329-009" -x "" -s -jc -R mkan329_jc
+#
 # Usage: mkan329_batch_jc.sh [-r reads_dir] [-m link_csv] [-c ngs_column]
-#                            [-o batch_dir] [-x "id id ..."]
+#                            [-o batch_dir] [-x "id id ..."] [-I "id id ..."]
+#                            [-s id_suffix] [-R run_id]
 
 set -euo pipefail
 
@@ -32,16 +41,22 @@ LINK_CSV="$BASE/data/imm/screening_map_link.csv"
 NGS_COL="NGS_JC"
 BATCH_DIR="$BASE/data/illumina/Mkan329/batches/b05"
 EXCLUDE="Mkan329-009 Mkan329-056"
+INCLUDE=""
+SUFFIX=""
+RUN_ID="mkan329"
 RUN_IMMENSE="$BASE/repos/immensekansasii/run_IMMENSE.sh"
 DB_ROOT="/shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex"
 
-while getopts ":r:m:c:o:x:" opt; do
+while getopts ":r:m:c:o:x:I:s:R:" opt; do
   case $opt in
     r) READS_DIR=$OPTARG ;;
     m) LINK_CSV=$OPTARG ;;
     c) NGS_COL=$OPTARG ;;
     o) BATCH_DIR=$OPTARG ;;
     x) EXCLUDE=$OPTARG ;;
+    I) INCLUDE=$OPTARG ;;
+    s) SUFFIX=$OPTARG ;;
+    R) RUN_ID=$OPTARG ;;
     *) sed -n '/^# Usage/,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
   esac
 done
@@ -60,21 +75,23 @@ printf 'NR\tPROBENNUMMER\toriginal_path_R1\toriginal_path_R2\n' > "$BATCH_DIR/id
 n=0
 while IFS=$'\t' read -r nr pnr ngs; do
   case " $EXCLUDE " in *" $pnr "*) echo "skip $pnr (excluded)" >&2; continue ;; esac
+  if [ -n "$INCLUDE" ]; then case " $INCLUDE " in *" $pnr "*) ;; *) continue ;; esac; fi
+  id="${pnr}${SUFFIX}"
   r1="$READS_DIR/${ngs}_R1.fastq.gz"; r2="$READS_DIR/${ngs}_R2.fastq.gz"
   if [ ! -e "$r1" ] || [ ! -e "$r2" ]; then
     echo "WARNING: no complete fastq pair for $pnr ($ngs), skipped" >&2
     continue
   fi
-  ln -sfn "$r1" "$BATCH_DIR/${pnr}_R1.fastq.gz"
-  ln -sfn "$r2" "$BATCH_DIR/${pnr}_R2.fastq.gz"
-  printf '%s\t%s\t%s\t%s\n' "$nr" "$pnr" "$r1" "$r2" >> "$BATCH_DIR/id_map.tsv"
+  ln -sfn "$r1" "$BATCH_DIR/${id}_R1.fastq.gz"
+  ln -sfn "$r2" "$BATCH_DIR/${id}_R2.fastq.gz"
+  printf '%s\t%s\t%s\t%s\n' "$nr" "$id" "$r1" "$r2" >> "$BATCH_DIR/id_map.tsv"
   n=$(( n + 1 ))
 done <<< "$rows"
 
 echo "$BATCH_DIR: $n samples" >&2
 echo
-echo "# Command (shares runs/mkan329 and its snippy db with b01..b04; run after they finished):"
-echo "mkdir -p $DB_ROOT/mkan329 $BASE/runs/mkan329 \\"
-echo "  && cd $BASE/runs/mkan329 \\"
-echo "  && bash $RUN_IMMENSE -j job_mkan329_$(basename "$BATCH_DIR") -t fq_PE -r mkan329 \\"
-echo "       -x \"--kansasii_snippy_db $DB_ROOT/mkan329\" -i $BATCH_DIR"
+echo "# Command (run id $RUN_ID: run dir runs/$RUN_ID and snippy db $RUN_ID; run after earlier batches of the same run id finished):"
+echo "mkdir -p $DB_ROOT/$RUN_ID $BASE/runs/$RUN_ID \\"
+echo "  && cd $BASE/runs/$RUN_ID \\"
+echo "  && bash $RUN_IMMENSE -j job_${RUN_ID}_$(basename "$BATCH_DIR") -t fq_PE -r $RUN_ID \\"
+echo "       -x \"--kansasii_snippy_db $DB_ROOT/$RUN_ID\" -i $BATCH_DIR"
