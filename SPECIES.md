@@ -20,6 +20,9 @@ printed as a warning on each run). Isolates flagged in the mkan329 run:
 Only 035 shows a species disagreement; 106 and 113 are flagged but GTDB and
 MetaPhlAn4 agree, and I did not check their hsp65 calls. Mkan329-010 and -021 (about 7.7 %) are below the threshold.
 
+MIC values of flagged isolates are excluded from the final conclusions (CheckM `contamination_flag` is the
+criterion; only 035 has MIC data).
+
 ## Case: Mkan329-035 (GTDB kansasii vs hsp65 ostraviense)
 
 The isolate is a mixed culture of *M. kansasii* and *M. ostraviense*; each method
