@@ -380,6 +380,7 @@ and links the `.ab1` files whose path contains one of the 10-digit TNRs;
 `data/imm/screening_map_results.csv` (copy in `output/`): all link columns plus
 - `species`, `gtdb_ani`, `gtdb_af`, `gtdb_reference`: GTDB-Tk call from the run's `quality.tsv`
 - `checkm_contamination`, `contamination_flag`: CheckM contamination (%) of the assembly; flag = `contaminated` above `--max-contamination` (default 10). Flagged samples are mixed cultures, see `SPECIES.md`. CheckM is the criterion for contaminated cultures: MIC values of flagged isolates are not used for the final conclusion (filter on `contamination_flag`; the MIC columns and `output/mic/*` keep the values). Flagged now: Mkan329-035, -106, -113 (only 035 has MIC data)
+- `arm_mut`: markers called `MUT` by kansasii-arm (`output/arm/work/report/marker_calls.pass.tsv`), `<gene>-<marker>` comma-joined (e.g. `rpsL-K43R,rrs-A514C`). Includes non-discriminating markers (`discriminating = no`, reference carries the mutant allele), so `rrs-A514C` is in nearly every isolate. Needs the ARM pipeline to have run before this step
 - `species_mlsa1`, `species_mlsa2`: hsp65 `nearest_species` from `isolate_classification.tsv` of mlsa main2 and main2_excluded
 - `species_ref`: `closest_species` of main3 `reference_alignment.tsv` for the representative hsp65 read, only if status is `ok` (empty for ambiguous/divergent/no_hit or until main3 is run)
 - `TNR_MLSA`: TNR(s) of the representative Sanger reads (`representative_reads.tsv`)

@@ -23,6 +23,11 @@ script never modifies it. Added columns:
   resistance_amrfinder
       <id>/4_resistance_virulence/02_AMRfinderplus/<id>.tsv: Element symbol(s)
       joined by "; ", "none" if AMRFinderPlus ran without a hit, empty if no file.
+  arm_mut
+      Markers called MUT by kansasii-arm (marker_calls.pass.tsv, aa_call == MUT, qc ok),
+      "<gene>-<marker>" comma-joined, e.g. "rpsL-K43R,rrs-A514C". Includes non-discriminating
+      markers (discriminating = no: the ATCC 12478 reference carries the mutant allele, MUT then
+      only means "same as the reference"), so rrs-A514C is in nearly every isolate. Empty = no MUT.
   species_mlsa1, species_mlsa2, species_ref
       hsp65-only species calls of the Sanger data (optional cross-checks; empty
       if the file is missing or the isolate has no hsp65 read / call is NA):
@@ -85,6 +90,15 @@ def hsp65_calls(path: Path) -> dict[str, str]:
     sc = read_tsv(path)
     sc = sc[sc["locus"] == "hsp65"]
     return dict(zip(sc["probennummer"], sc["nearest_species"]))
+
+
+def arm_mut_calls(path: Path) -> dict[str, str]:
+    """Return {PROBENNUMMER: 'gene-marker,gene-marker'} for the aa_call == MUT rows of marker_calls.pass.tsv."""
+    found: dict[str, set[str]] = {}
+    for r in read_tsv(path).to_dict("records"):
+        if r["aa_call"] == "MUT" and r["qc"] == "ok":
+            found.setdefault(r["sample"].split("__", 1)[1], set()).add(f"{r['gene']}-{r['marker']}")
+    return {pnr: ",".join(sorted(v)) for pnr, v in found.items()}
 
 
 def sample_dir_results(sdir: Path, sid: str) -> tuple[dict[str, str] | None, str, str]:
@@ -158,6 +172,9 @@ def main() -> None:
     ap.add_argument("--mic-file", type=Path,
                     default=K / "output/mic/mhk/outliers_per_antibiotic.csv",
                     help="kansasii-mic long table (PROBENNUMMER, antibiotic, mhk_raw, modified_z, clsi_category)")
+    ap.add_argument("--arm-calls", type=Path,
+                    default=K / "output/arm/work/report/marker_calls.pass.tsv",
+                    help="kansasii-arm marker_calls.pass.tsv (aa_call == MUT rows -> arm_mut)")
     ap.add_argument("--max-contamination", type=float, default=10.0,
                     help="CheckM contamination %% above which contamination_flag is set (default 10)")
     ap.add_argument("--copy-to", type=Path, default=None,
@@ -174,7 +191,7 @@ def main() -> None:
     for c in ("species", "gtdb_ani", "gtdb_af", "gtdb_reference",
               "checkm_contamination", "contamination_flag",
               "species_mlsa1", "species_mlsa2", "species_ref", "TNR_MLSA",
-              "resistance_abricate", "resistance_amrfinder"):
+              "resistance_abricate", "resistance_amrfinder", "arm_mut"):
         res[c] = ""
 
     # --- GTDB species + resistance from the pipeline run ---
@@ -227,6 +244,16 @@ def main() -> None:
             warn(f"{len(unmatched)} result dirs not linked to a PROBENNUMMER: {unmatched[:5]}...")
     else:
         warn(f"{args.results_dir} not found; resistance columns left empty")
+
+    # --- kansasii-arm: markers called MUT, "<gene>-<marker>" comma-joined ---
+    if args.arm_calls.exists():
+        arm = arm_mut_calls(args.arm_calls)
+        not_linked = sorted(set(arm) - pnrs)
+        if not_linked:
+            warn(f"{len(not_linked)} arm_mut samples not in the link table: {not_linked[:5]}...")
+        res["arm_mut"] = res["PROBENNUMMER"].map(lambda p: arm.get(p, ""))
+    else:
+        warn(f"{args.arm_calls} not found; arm_mut left empty")
 
     def flag(v: str) -> str:
         try:
