@@ -39,3 +39,24 @@ reports one of the two species present.
 Not yet done: separating the two genomes (binning by coverage/GC or ANI to both
 references, mapping reads to both references) or re-streaking and re-sequencing from
 single colonies. Until then, treat the species of 035 as undetermined (mixed).
+
+## Species coverage (non-contaminated isolates)
+
+Counts per species in `screening_map_results.csv` for the mkan329 run, excluding the 3
+isolates with `contamination_flag == contaminated` (035, 106, 113); n = 183.
+
+| Species | GTDB `species` | hsp65 MLSA (`species_mlsa1`) |
+|---|---|---|
+| kansasii | 123 | 90 |
+| persicum | 30 | 11 |
+| pseudokansasii | 20 | 4 |
+| attenuatum | 2 | 1 |
+| innocens | 1 | 1 |
+| ostraviense | 1 | 1 |
+| gastri | 0 | 0 |
+| non-complex (avium 2, tuberculosis, abscessus, xenopi, marinum) | 6 | 0 |
+
+- *M. gastri* is the only species of the complex without an isolate.
+- 69 of the 177 complex isolates have no MLSA call. This is probably because no Sanger
+  (hsp65) read exists for them; not yet checked against the Sanger sample list.
+- Where both calls exist, GTDB and MLSA agree for all 108 isolates.
