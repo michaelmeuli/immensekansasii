@@ -9,6 +9,7 @@
 | `hsp65-refalign` | check that main3 reference alignment of the Sanger hsp65 reads gives the genome species per isolate |
 | `kansasii-arm` | literature AMR-marker screen on assemblies and reads |
 | `kansasii-mst` | core-SNP minimum spanning tree figures (complex, kansasii, pseudokansasii, persicum) |
+| `kansasii-cgmlst` | chewBBACA cgMLST scheme for the complex + Ridom-style allele MST figures (pairwise deletion) |
 | `sanger-microsynth` | routine: fetch Microsynth Sanger results by mail, identify, report |
 | `kansasii-lit` | exploratory GTDB / type-strain look-ups (not part of the run order) |
 
