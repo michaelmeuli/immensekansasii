@@ -43,6 +43,7 @@ dependency chain.
 | 4 | Mkan329 batches (mm reads) | `scripts/04_mkan329_batches.sh` | none | step 2, reads | `data/illumina/Mkan329/batches/` |
 | 5 | Mkan329 batches (jc reads, resequenced) | `scripts/05_mkan329_batch_jc.sh` | none | step 2, reads | `batches/b05`, `b06` |
 | 5b | pipeline runs, one batch after another | `run_IMMENSE.sh` (commands printed by 4/5) | none | batches | `runs/mkan329/`, `runs/mkan329_jc/` |
+| 5c | public reads: ENA metadata, download, batches | `scripts/09_public_fetch_metadata.sh`, `10_public_select_and_download.py` (sbatch), `11_public_batches.sh` | `kansasii_mic` (10) | `PROJECTS.md` BioProjects, ENA | `data/illumina/public/<BioProject>/{metadata.tsv,selected.tsv,reads/,batches/}`, then `run_IMMENSE.sh` -> `runs/public_<BioProject>/` |
 | 6 | MIC analysis | `kansasii-mic: scripts/run_analysis.py` | `kansasii_mic` | `mic.csv`, step 2 | `output/mic/{mhk,mgit}/` |
 | 7 | MLSA inputs (links, filtered GTDB list) | `mlsa-kansasii: scripts/01..04_*` | `env_mlsa` | steps 1, 2 | `data/gtdb_genomes/.../mlsa-kansasii/`, `data/sanger/seq_kansasii/` |
 | 8 | MLSA analysis | `mlsa-kansasii: main1 -> main2`, `main3`, `main4`, `genome_identity_check` | `env_mlsa` | step 7 | `output/mlsa/` |
@@ -73,6 +74,9 @@ Scripts (`repos/immensekansasii/scripts/`):
 | `06_screening_map_results.py` | `kansasii_mic` | add species + `TNR_MLSA` + MIC -> `screening_map_results.csv` |
 | `07_generate_itol_species_labels.sh` | none | iTOL labels and colour strips for trees |
 | `08_mkan329_samples_report.py` | `kansasii_mic` | `SAMPLES.md` from the per-sample summary tables |
+| `09_public_fetch_metadata.sh` | none | ENA run metadata of public BioProjects -> `data/illumina/public/<BioProject>/metadata.tsv` |
+| `10_public_select_and_download.py` | `kansasii_mic` | all runs -> `selected.tsv` (no species/host filtering; single-end or non-Illumina runs go to `not_runnable.tsv`), md5-checked download to `reads/` |
+| `11_public_batches.sh` | none | test batch + batches of 45 per BioProject, prints the `run_IMMENSE.sh` commands (run id `public_<BioProject>`) |
 | `run_downstream.sh` | none | submit steps 6-13 as a Slurm dependency chain |
 | `install_notes.txt`, `worktree-branching.txt` | - | notes (not runnable) |
 

@@ -22,3 +22,24 @@ SRA counts are experiments on NCBI SRA for the BioProject. BioProjects were matc
 - Possibly related, unmatched: PRJNA1420165 (2026, 54 SRA experiments), NTM from Chinese hospitals.
 - About 1,450 SRA entries on NCBI match "Mycobacterium kansasii", including non-WGS and non-isolate data.
 - PubMed→SRA/BioProject elink returned nothing for most of these papers, so search BioProject/SRA directly.
+
+## Running the public reads through IMMENSE
+
+Reads and tables live outside the repo, in `/shares/sander.imm.uzh/MM/kansasii/data/illumina/public/<BioProject>/`
+(`metadata.tsv`, `selected.tsv`, `not_runnable.tsv`, `reads/`, `batches/`). Steps 09-11, see `WORKFLOW.md` (step 5c):
+
+```bash
+P="PRJNA1078897 PRJNA1048499 PRJNA845115 PRJNA323639"
+bash scripts/09_public_fetch_metadata.sh $P
+sbatch --wrap "python scripts/10_public_select_and_download.py $P" # all runs, no species/host filtering
+bash scripts/11_public_batches.sh PRJNA1078897                      # prints the run_IMMENSE.sh commands
+```
+
+Run ids: `public_<BioProject>` (pilot: `public_<BioProject>_test`), one snippy db per BioProject.
+
+| BioProject | Runs | Not runnable (fq_PE) | Reads downloaded | Pipeline |
+|---|---|---|---|---|
+| PRJNA1078897 | 243 | 0 | no | not run |
+| PRJNA1048499 | 342 | 0 | no | not run |
+| PRJNA845115 | 237 | 0 | no | not run |
+| PRJNA323639 | 273 | 30 (single-end) | no | not run |
