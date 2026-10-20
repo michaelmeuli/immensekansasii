@@ -7,24 +7,22 @@ How GTDB/GTDB-Tk versioning works:
 
 What I actually found on disk (/shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/):
 
-┌───────────────────┬────────────────────────────┬─────────────────────────┐
-│                   │        gtdbtk_r226         │       gtdbtk_r232       │
-├───────────────────┼────────────────────────────┼─────────────────────────┤
-│ Directory created │ 2026-08-24                 │ 2026-08-26              │
-├───────────────────┼────────────────────────────┼─────────────────────────┤
-│ Tarball inside    │ gtdbtk_r207_v2_data.tar.gz │ gtdbtk_r232_data.tar.gz │
-├───────────────────┼────────────────────────────┼─────────────────────────┤
-│ Tarball date      │ 2022-05-10                 │ 2026-04-14              │
-├───────────────────┼────────────────────────────┼─────────────────────────┤
-│ Extracted folder  │ release207_v2              │ release232              │
-├───────────────────┼────────────────────────────┼─────────────────────────┤
-│ Extracted date    │ 2022-05-09                 │ 2026-04-02              │
-└───────────────────┴────────────────────────────┴─────────────────────────┘
+|  | gtdbtk_r226 | gtdbtk_r232 |
+|---|---|---|
+| Directory created | 2026-08-24 | 2026-08-26 |
+| Tarball inside | gtdbtk_r207_v2_data.tar.gz | gtdbtk_r232_data.tar.gz |
+| Tarball date | 2022-05-10 | 2026-04-14 |
+| Extracted folder | release207_v2 | release232 |
+| Extracted date | 2022-05-09 | 2026-04-02 |
 
 gtdbtk_r232 is internally consistent — its name matches its contents, and the dates (Apr 2026) look like a genuine, recent GTDB R232 download. gtdbtk_r226, despite its name, holds a tarball and extracted folder that are both literally named and dated as r207_v2 — the old 2022 package, four GTDB releases behind.
 
-Confirmation this is a real gap, not just an odd name: the sibling conf/profiles/imm.config (the lab's other cluster profile) independently sets:
+Confirmation this is a real gap, not just an odd name: the sibling `conf/profiles/imm.config` (the lab's other cluster profile) independently sets:
+
+```
 gtdb_db = "/mnt/nfs/ngs/share/software/pipelines/IMMense_dependencies/gtdb/release_r226"
+```
+
 So "R226" is genuinely the release this pipeline is supposed to use — it's just that on the S3IT filesystem, whatever process created gtdbtk_r226 (as part of an Aug 24–26 reorg, by the looks of it) never actually populated it with real R226 data; it's sitting on stale r207_v2 leftovers instead.
 
 Practical implications of the fix I made:
