@@ -4,6 +4,11 @@
 screening_map_link.csv (built by 02_screening_map_link.py) stays the input; this
 script never modifies it. Added columns:
 
+  NGS_USED  (inserted right after NGS_MM)
+      The NGS id whose sequencing data is used for the isolate: NGS_MM if there is one,
+      else NGS_JC (i.e. NGS_MM for Mkan329-001..133, NGS_JC for the rest). If NGS_MM was
+      done it is the one used, never NGS_JC: Mkan329-009 and -056 have both, and use NGS_MM
+      (their resequenced -jc reads, run mkan329_jc, are not used).
   species, gtdb_ani, gtdb_af, gtdb_reference
       GTDB-Tk call from the immensekansasii run (species is the epithet only,
       e.g. "kansasii", like the species_mlsa*/species_ref columns). Read per sample from
@@ -188,6 +193,10 @@ def main() -> None:
 
     link = read_tsv(link_path, ",")
     res = link.copy()
+    res.insert(res.columns.get_loc("NGS_MM") + 1, "NGS_USED",
+               res["NGS_MM"].where(res["NGS_MM"] != "", res["NGS_JC"]))
+    if (res["NGS_USED"] == "").any():
+        warn("no NGS_MM and no NGS_JC: %s" % ", ".join(res.loc[res["NGS_USED"] == "", "PROBENNUMMER"]))
     for c in ("species", "gtdb_ani", "gtdb_af", "gtdb_reference",
               "checkm_contamination", "contamination_flag",
               "species_mlsa1", "species_mlsa2", "species_ref", "TNR_MLSA",

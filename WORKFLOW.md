@@ -359,7 +359,7 @@ culture than the one sequenced under `TNR`. Currently only
 Mkan329-056: MHK 2023311034 was made on culture 2022500349 (`TNR_JC`, NGS 2023187866), which was
 suspected to be contaminated; it was resequenced (`Mkan329-056-jc`, b06, run `mkan329_jc`) and the new
 reads are clean, but they are not part of the shared `runs/mkan329` tree (b05 skips Mkan329-056). The
-sequenced reads of Mkan329-056 (`NGS_MM`) are from 2022500332. The flag is informational: `kansasii-mic`
+sequenced reads of Mkan329-056 (`NGS_MM`) are from 2022500332. `NGS_USED` is `NGS_MM` for Mkan329-056 (and -009), not the resequenced `-jc` reads. The flag is informational: `kansasii-mic`
 still matches the 13 MIC rows of Mkan329-056 via the `MHK` column (decision: include them). A consumer that
 needs a strict MIC/sequence pairing can drop rows with `MHK_TNR_DIFFERS = yes`.
 Both the Mkan329-056 genome (CheckM 0.61 %) and the resequenced `-jc` genome (0.61 %, purity 99.1 %) are CheckM-clean, so
@@ -382,6 +382,7 @@ and links the `.ab1` files whose path contains one of the 10-digit TNRs;
 
 `06_screening_map_results.py` reads `screening_map_link.csv` (never modifies it) and writes
 `data/imm/screening_map_results.csv` (copy in `output/`): all link columns plus
+- `NGS_USED` (right after `NGS_MM`): the NGS id of the sequencing data that is used. If `NGS_MM` was done it is the one used, not `NGS_JC`; only if there is no `NGS_MM` is `NGS_JC` used. So Mkan329-001..133 = `NGS_MM`, Mkan329-134..186 = `NGS_JC`. Mkan329-009 and -056 have both and use `NGS_MM`; their resequenced `-jc` reads (b06, run `mkan329_jc`) are not used
 - `species`, `gtdb_ani`, `gtdb_af`, `gtdb_reference`: GTDB-Tk call from the run's `quality.tsv`
 - `checkm_contamination`, `contamination_flag`: CheckM contamination (%) of the assembly; flag = `contaminated` above `--max-contamination` (default 10). Flagged samples are mixed cultures, see `SPECIES.md`. CheckM is the criterion for contaminated cultures: MIC values of flagged isolates are not used for the final conclusion (filter on `contamination_flag`; the MIC columns and `output/mic/*` keep the values). Flagged now: Mkan329-035, -106, -113 (only 035 has MIC data)
 - `arm_mut`: markers called `MUT` by kansasii-arm (`output/arm/work/report/marker_calls.pass.tsv`), `<gene>-<marker>` comma-joined (e.g. `rpsL-K43R,rrs-A514C`). Includes non-discriminating markers (`discriminating = no`, reference carries the mutant allele), so `rrs-A514C` is in nearly every isolate. Needs the ARM pipeline to have run before this step
