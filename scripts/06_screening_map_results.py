@@ -19,7 +19,7 @@ script never modifies it. Added columns:
   checkm_contamination, contamination_flag
       CheckM contamination (%) from the same quality table/summary as the GTDB call;
       contamination_flag = "contaminated" if it exceeds --max-contamination
-      (default 10), else empty (also empty if no value). Flagged isolates are
+      (default 5), else empty (also empty if no value). Flagged isolates are
       mixed cultures/assemblies (e.g. Mkan329-035: kansasii + ostraviense, 13 Mb),
       so GTDB and hsp65 species calls may legitimately disagree.
   resistance_abricate
@@ -180,8 +180,8 @@ def main() -> None:
     ap.add_argument("--arm-calls", type=Path,
                     default=K / "output/arm/work/report/marker_calls.pass.tsv",
                     help="kansasii-arm marker_calls.pass.tsv (aa_call == MUT rows -> arm_mut)")
-    ap.add_argument("--max-contamination", type=float, default=10.0,
-                    help="CheckM contamination %% above which contamination_flag is set (default 10)")
+    ap.add_argument("--max-contamination", type=float, default=5.0,
+                    help="CheckM contamination %% above which contamination_flag is set (default 5)")
     ap.add_argument("--copy-to", type=Path, default=None,
                     help="directory to also copy the output to (default: <root>/output, but only "
                          "when --out is not given)")

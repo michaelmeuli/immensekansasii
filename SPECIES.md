@@ -8,7 +8,7 @@ They normally agree. A disagreement can mean a mixed culture, so check
 ## Contamination flag
 
 `scripts/06_screening_map_results.py` adds `checkm_contamination` (CheckM, %) and
-`contamination_flag` (`contaminated` if > `--max-contamination`, default 10; also
+`contamination_flag` (`contaminated` if > `--max-contamination`, default 5; also
 printed as a warning on each run). Isolates flagged in the mkan329 run:
 
 | PROBENNUMMER | CheckM contamination | species (GTDB) | Notes |
@@ -43,7 +43,7 @@ single colonies. Until then, treat the species of 035 as undetermined (mixed).
 ## Species coverage (non-contaminated isolates)
 
 Counts per species in `screening_map_results.csv` for the mkan329 run, excluding the 3
-isolates with `contamination_flag == contaminated` (035, 106, 113); n = 183.
+isolates with `contamination_flag == contaminated` (035, 106, 113, and since 2026-10-20 also 010, 021 at CheckM 7.7 %); n = 181.
 
 | Species | GTDB `species` | hsp65 MLSA (`species_mlsa1`) |
 |---|---|---|
