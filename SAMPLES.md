@@ -1,6 +1,6 @@
 # Mkan329 samples report
 
-Generated 2026-10-15 by `scripts/08_mkan329_samples_report.py` from the per-sample
+Generated 2026-10-19 by `scripts/08_mkan329_samples_report.py` from the per-sample
 summary tables in `/shares/sander.imm.uzh/MM/kansasii/runs/mkan329/assembly/results/` and `data/imm/screening_map_link.csv`. Regenerate it after
 every run or delivery; do not edit by hand.
 
