@@ -5,7 +5,7 @@
 #   link table -> MIC analysis ----------------------------+
 #              -> MLSA inputs -> main1(+excluded) -> hsp65 references -> main3(hsp65)
 #                              -> main2(+excluded), main3, genome_identity_check
-#   results table (needs MIC, main2, main2_excluded, main3) -> main4, iTOL, SAMPLES.md, gwas
+#   results table (needs MIC, main2, main2_excluded, main3) -> main4, iTOL, SAMPLES.md
 #   results table -> mst figures
 #   arm (assemblies) -> arm reannotation (needs MIC + results)
 #
@@ -25,7 +25,7 @@ done
 
 ROOT=${KANSASII_ROOT:-/shares/sander.imm.uzh/MM/kansasii}
 R=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-IMM=$R/immensekansasii MIC=$R/kansasii-mic MLSA=$R/mlsa-kansasii GWAS=$R/kansasii-gwas ARM=$R/kansasii-amr-marker-screen MST=$R/kansasii-mst
+IMM=$R/immensekansasii MIC=$R/kansasii-mic MLSA=$R/mlsa-kansasii ARM=$R/kansasii-amr-marker-screen MST=$R/kansasii-mst
 MANIFEST=$R/kansasii-docs/bin/write_manifest.sh
 LOG=$ROOT/runs/downstream-$(date +%Y%m%d)
 mkdir -p "$LOG"; cd "$LOG"
@@ -82,9 +82,6 @@ report=$(submit_wrap samples-report kansasii_mic "$results" "cd $IMM; python scr
 # 12b core-SNP MST figures (kansasii-mst; reads the results table)
 mst=$(submit_file "$results" "$MST/run_all.sbatch")
 
-# 12 genotype vs MIC
-gwas=$(submit_file "$(join "$results" "$mic")" "$GWAS/run_all.sbatch")
-
 # 13 AMR markers: assemblies need nothing but the pipeline runs; reannotation joins MIC + results
 arm=$(submit_file "" "$ARM/submit_arm.sbatch")
 arm_deps=("$arm" "$mic" "$results")
@@ -101,4 +98,4 @@ echo
 echo "submitted; logs in $LOG"
 echo "  link=$link mic=$mic prep=$prep main1=$main1 main1x=$main1x hsp65=$hsp65"
 echo "  main2=$main2 main2x=$main2x main3=$main3 main3h=$main3h gic=$gic"
-echo "  results=$results main4=$main4 itol=$itol report=$report gwas=$gwas mst=$mst arm=$arm arm_reannot=$arm_re"
+echo "  results=$results main4=$main4 itol=$itol report=$report mst=$mst arm=$arm arm_reannot=$arm_re"

@@ -5,7 +5,6 @@
 | `immensekansasii` | IMMENSE pipeline (Nextflow, branch `kansasii`) and the project scripts that link, run and summarise it |
 | `kansasii-mic` | MIC outlier analysis (MHK broth microdilution and MGIT) |
 | `mlsa-kansasii` | species-complex differentiation by MLSA / Sanger / reference alignment |
-| `kansasii-gwas` | genotype vs MIC (candidate genes, hotspots, lineages, recombination) |
 | `hsp65-refalign` | check that main3 reference alignment of the Sanger hsp65 reads gives the genome species per isolate |
 | `kansasii-amr-marker-screen` | literature AMR-marker screen on assemblies and reads |
 | `kansasii-mst` | core-SNP minimum spanning tree figures (complex, kansasii, pseudokansasii, persicum) |
