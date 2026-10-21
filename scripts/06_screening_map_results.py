@@ -29,7 +29,7 @@ script never modifies it. Added columns:
       <id>/4_resistance_virulence/02_AMRfinderplus/<id>.tsv: Element symbol(s)
       joined by "; ", "none" if AMRFinderPlus ran without a hit, empty if no file.
   arm_mut
-      Markers called MUT by kansasii-arm (marker_calls.pass.tsv, aa_call == MUT, qc ok),
+      Markers called MUT by kansasii-amr-marker-screen (marker_calls.pass.tsv, aa_call == MUT, qc ok),
       "<gene>-<marker>" comma-joined, e.g. "rpsL-K43R,rrs-A514C". Includes non-discriminating
       markers (discriminating = no: the ATCC 12478 reference carries the mutant allele, MUT then
       only means "same as the reference"), so rrs-A514C is in nearly every isolate. Empty = no MUT.
@@ -179,7 +179,7 @@ def main() -> None:
                     help="kansasii-mic long table (PROBENNUMMER, antibiotic, mhk_raw, modified_z, clsi_category)")
     ap.add_argument("--arm-calls", type=Path,
                     default=K / "output/arm/work/report/marker_calls.pass.tsv",
-                    help="kansasii-arm marker_calls.pass.tsv (aa_call == MUT rows -> arm_mut)")
+                    help="kansasii-amr-marker-screen marker_calls.pass.tsv (aa_call == MUT rows -> arm_mut)")
     ap.add_argument("--max-contamination", type=float, default=5.0,
                     help="CheckM contamination %% above which contamination_flag is set (default 5)")
     ap.add_argument("--copy-to", type=Path, default=None,
@@ -254,7 +254,7 @@ def main() -> None:
     else:
         warn(f"{args.results_dir} not found; resistance columns left empty")
 
-    # --- kansasii-arm: markers called MUT, "<gene>-<marker>" comma-joined ---
+    # --- kansasii-amr-marker-screen: markers called MUT, "<gene>-<marker>" comma-joined ---
     if args.arm_calls.exists():
         arm = arm_mut_calls(args.arm_calls)
         not_linked = sorted(set(arm) - pnrs)

@@ -25,7 +25,7 @@ done
 
 ROOT=${KANSASII_ROOT:-/shares/sander.imm.uzh/MM/kansasii}
 R=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-IMM=$R/immensekansasii MIC=$R/kansasii-mic MLSA=$R/mlsa-kansasii GWAS=$R/kansasii-gwas ARM=$R/kansasii-arm MST=$R/kansasii-mst
+IMM=$R/immensekansasii MIC=$R/kansasii-mic MLSA=$R/mlsa-kansasii GWAS=$R/kansasii-gwas ARM=$R/kansasii-amr-marker-screen MST=$R/kansasii-mst
 MANIFEST=$R/kansasii-docs/bin/write_manifest.sh
 LOG=$ROOT/runs/downstream-$(date +%Y%m%d)
 mkdir -p "$LOG"; cd "$LOG"

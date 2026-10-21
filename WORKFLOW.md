@@ -51,7 +51,7 @@ dependency chain.
 | 10 | iTOL files | `scripts/07_generate_itol_species_labels.sh` | none | steps 3, 5b, 9 | `output/iTOL/<run>/` |
 | 11 | samples report | `scripts/08_mkan329_samples_report.py` | `kansasii_mic` | steps 5b, 9 | `SAMPLES.md` |
 | 12 | genotype vs MIC | `kansasii-gwas: run_all.sbatch` (scripts 00-26) | `env_mlsa` | steps 5b, 6, 9 | `output/gwas/` |
-| 13 | AMR marker screen | `kansasii-arm: submit_arm.sbatch`, then `submit_arm_bam.sbatch` (optional) and `submit_arm_reannot.sbatch` | `env_arm` | steps 5b, 6, 9 | `output/arm/`, `output/arm_bam/` |
+| 13 | AMR marker screen | `kansasii-amr-marker-screen: submit_arm.sbatch`, then `submit_arm_bam.sbatch` (optional) and `submit_arm_reannot.sbatch` | `env_arm` | steps 5b, 6, 9 | `output/arm/`, `output/arm_bam/` |
 | - | Sanger Microsynth mail (independent, routine) | `sanger-microsynth: submit_fetch_analyse.sbatch` | `env_sanger_ms` | mail, step 8 refs | `output/sanger-microsynth/` |
 
 Step 9 needs step 8 for the `species_mlsa1/2` and `species_ref` columns, and step 8 needs the link
@@ -385,7 +385,7 @@ and links the `.ab1` files whose path contains one of the 10-digit TNRs;
 - `NGS_USED` (right after `NGS_MM`): the NGS id of the sequencing data that is used. If `NGS_MM` was done it is the one used, not `NGS_JC`; only if there is no `NGS_MM` is `NGS_JC` used. So Mkan329-001..133 = `NGS_MM`, Mkan329-134..186 = `NGS_JC`. Mkan329-009 and -056 have both and use `NGS_MM`; their resequenced `-jc` reads (b06, run `mkan329_jc`) are not used
 - `species`, `gtdb_ani`, `gtdb_af`, `gtdb_reference`: GTDB-Tk call from the run's `quality.tsv`
 - `checkm_contamination`, `contamination_flag`: CheckM contamination (%) of the assembly; flag = `contaminated` above `--max-contamination` (default 5). Flagged samples are mixed cultures, see `SPECIES.md`. CheckM is the criterion for contaminated cultures: MIC values of flagged isolates are not used for the final conclusion (filter on `contamination_flag`; the MIC columns and `output/mic/*` keep the values). Flagged now: Mkan329-010, -021, -035, -106, -113 (only 035 has MIC data)
-- `arm_mut`: markers called `MUT` by kansasii-arm (`output/arm/work/report/marker_calls.pass.tsv`), `<gene>-<marker>` comma-joined (e.g. `rpsL-K43R,rrs-A514C`). Includes non-discriminating markers (`discriminating = no`, reference carries the mutant allele), so `rrs-A514C` is in nearly every isolate. Needs the ARM pipeline to have run before this step
+- `arm_mut`: markers called `MUT` by kansasii-amr-marker-screen (`output/arm/work/report/marker_calls.pass.tsv`), `<gene>-<marker>` comma-joined (e.g. `rpsL-K43R,rrs-A514C`). Includes non-discriminating markers (`discriminating = no`, reference carries the mutant allele), so `rrs-A514C` is in nearly every isolate. Needs the ARM pipeline to have run before this step
 - `species_mlsa1`, `species_mlsa2`: hsp65 `nearest_species` from `isolate_classification.tsv` of mlsa main2 and main2_excluded
 - `species_ref`: `closest_species` of main3 `reference_alignment.tsv` for the representative hsp65 read, only if status is `ok` (empty for ambiguous/divergent/no_hit or until main3 is run)
 - `TNR_MLSA`: TNR(s) of the representative Sanger reads (`representative_reads.tsv`)
