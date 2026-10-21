@@ -42,6 +42,8 @@ single colonies. Until then, treat the species of 035 as undetermined (mixed).
 
 ## Species coverage (non-contaminated isolates)
 
+`excluded` (same file) = contaminated or < 90 % of the cgMLST loci called; it additionally removes Mkan329-055 (81.5 %, persicum) from the genome-based analyses. The counts below only use `contamination_flag`.
+
 Counts per species in `screening_map_results.csv` for the mkan329 run, excluding the 3
 isolates with `contamination_flag == contaminated` (035, 106, 113, and since 2026-10-20 also 010, 021 at CheckM 7.7 %); n = 181.
 

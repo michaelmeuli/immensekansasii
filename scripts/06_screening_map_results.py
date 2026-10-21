@@ -22,6 +22,14 @@ script never modifies it. Added columns:
       (default 5), else empty (also empty if no value). Flagged isolates are
       mixed cultures/assemblies (e.g. Mkan329-035: kansasii + ostraviense, 13 Mb),
       so GTDB and hsp65 species calls may legitimately disagree.
+  cgmlst_called_pct, excluded  (inserted right after contamination_flag)
+      cgmlst_called_pct: % of the cgMLST95 loci with an allele call (kansasii-cgmlst step 07,
+      output/cgmlst/sample_qc.tsv; --cgmlst-qc); empty for isolates that are not allele-called
+      (contaminated, not in the complex) or if the file is missing.
+      excluded: "true"/"false" on every row; true if contamination_flag is "contaminated" or
+      cgmlst_called_pct < --min-cgmlst-pct (default 90, like Ridom's good-target threshold).
+      The genome-based repos (kansasii-cgmlst, kansasii-mst, kansasii-amr-marker-screen) skip excluded isolates.
+      Order: kansasii-cgmlst 07 -> this script -> kansasii-cgmlst 08-10.
   resistance_abricate
       <id>/4_resistance_virulence/01_Abricate/<id>_resistances_summary.tsv
       ("gene (identity%)", 100%-coverage hits only). Empty = no hit or no result.
@@ -80,6 +88,16 @@ MIC_ABBR = {
     "Sulfamethoxazole/Trimethoprim": "SXT", "Ethionamid": "ETO",
 }
 MIC_FIELDS = (("mic", "mhk_raw"), ("modified_z", "modified_z"), ("clsi_category", "clsi_category"))
+
+
+def is_excluded(contamination_flag: str, cgmlst_called_pct: str, min_pct: float) -> bool:
+    """Contaminated, or fewer than min_pct % of the cgMLST loci called (an empty percentage never excludes)."""
+    if contamination_flag == "contaminated":
+        return True
+    try:
+        return float(cgmlst_called_pct) < min_pct
+    except ValueError:
+        return False
 
 
 def warn(msg: str) -> None:
@@ -180,6 +198,10 @@ def main() -> None:
     ap.add_argument("--arm-calls", type=Path,
                     default=K / "output/arm/work/report/marker_calls.pass.tsv",
                     help="kansasii-amr-marker-screen marker_calls.pass.tsv (aa_call == MUT rows -> arm_mut)")
+    ap.add_argument("--cgmlst-qc", type=Path, default=K / "output/cgmlst/sample_qc.tsv",
+                    help="kansasii-cgmlst sample_qc.tsv (sample, cgmlst_called_pct) -> cgmlst_called_pct")
+    ap.add_argument("--min-cgmlst-pct", type=float, default=90.0,
+                    help="isolates with a lower %% of cgMLST loci called get excluded = true (default 90)")
     ap.add_argument("--max-contamination", type=float, default=5.0,
                     help="CheckM contamination %% above which contamination_flag is set (default 5)")
     ap.add_argument("--copy-to", type=Path, default=None,
@@ -273,6 +295,23 @@ def main() -> None:
     if (res["contamination_flag"] != "").any():
         warn("contaminated (CheckM > %g%%): %s" % (args.max_contamination, ", ".join(
             f"{p} ({c})" for p, c, f in zip(res["PROBENNUMMER"], res["checkm_contamination"], res["contamination_flag"]) if f)))
+
+    # --- cgmlst_called_pct + excluded (contaminated or poor cgMLST coverage) ---
+    pct: dict[str, str] = {}
+    if args.cgmlst_qc.exists():
+        qc = read_tsv(args.cgmlst_qc)
+        pct = dict(zip(qc["sample"], qc["cgmlst_called_pct"]))
+    else:
+        warn(f"{args.cgmlst_qc} not found; cgmlst_called_pct left empty, excluded = contaminated only")
+    after = list(res.columns).index("contamination_flag") + 1
+    res.insert(after, "cgmlst_called_pct", res["PROBENNUMMER"].map(lambda p: pct.get(p, "")))
+    res.insert(after + 1, "excluded", [
+        "true" if is_excluded(f, c, args.min_cgmlst_pct) else "false"
+        for f, c in zip(res["contamination_flag"], res["cgmlst_called_pct"])])
+    low = res[(res["excluded"] == "true") & (res["contamination_flag"] == "")]
+    if len(low):
+        warn("excluded (< %g%% cgMLST loci called): %s" % (args.min_cgmlst_pct, ", ".join(
+            f"{p} ({c})" for p, c in zip(low["PROBENNUMMER"], low["cgmlst_called_pct"]))))
 
     # --- hsp65 species calls: main2 (mlsa1), main2_excluded (mlsa2) ---
     for col, path in (("species_mlsa1", args.mlsa1), ("species_mlsa2", args.mlsa2)):
