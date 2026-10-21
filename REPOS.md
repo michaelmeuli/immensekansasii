@@ -19,7 +19,7 @@ After the IMMENSE pipeline runs (days, step 5b) everything else is one dependenc
 
 ```bash
 bash immensekansasii/scripts/run_downstream.sh --dry-run    # print the sbatch commands
-bash immensekansasii/scripts/run_downstream.sh [--with-bam] # link table -> MIC -> MLSA -> results table -> gwas, arm
+bash immensekansasii/scripts/run_downstream.sh [--with-bam] # link table -> MIC -> MLSA -> results table -> arm
 ```
 
 `check_sync.sh` reports uncommitted or unpushed work in every repo here.
