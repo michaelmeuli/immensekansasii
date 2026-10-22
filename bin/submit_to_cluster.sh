@@ -46,6 +46,9 @@ trap "kill $LSOF_PID" EXIT
 
 # The profile has to be updated if running on a different infrastructure
 #nextflow run $MAIN_DIR/main.nf \
+# Run nextflow in the background so the watchdog can stop it if it stalls
+# (see bin/nxf_watchdog.sh; the exit status is not used further down)
+source $MAIN_DIR/bin/nxf_watchdog.sh
 nextflow -trace nextflow.executor run $MAIN_DIR/main.nf \
           -profile s3it \
           -resume \
@@ -53,7 +56,12 @@ nextflow -trace nextflow.executor run $MAIN_DIR/main.nf \
           --input_type "$INPUT_TYPE" \
           --input "$INPUT_DIR" \
           --SE "$SINGLE_END" \
-          $ADDITIONAL_ARGS
+          $ADDITIONAL_ARGS &
+NXF_PID=$!
+nxf_watchdog $NXF_PID "$launchDir" &
+WATCHDOG_PID=$!
+wait $NXF_PID
+kill $WATCHDOG_PID 2>/dev/null
 
 #-ansi-log false \ # This would keep the slurm output log a bit cleaner but gives less info.
 
