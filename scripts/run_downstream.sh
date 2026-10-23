@@ -3,9 +3,9 @@
 # dependency chain (steps 6-13 of "Run order" in WORKFLOW.md):
 #
 #   link table -> MIC analysis ----------------------------+
-#              -> MLSA inputs -> main1(+excluded) -> hsp65 references -> main3(hsp65)
-#                              -> main2(+excluded), main3, genome_identity_check
-#   results table (needs MIC, main2, main2_excluded, main3) -> main4, iTOL, SAMPLES.md
+#              -> MLSA inputs -> locus_discovery(+excluded) -> hsp65 references -> sanger_refalign(hsp65)
+#                              -> sanger_mlsa(+excluded), sanger_refalign, genome_identity_check
+#   results table (needs MIC, sanger_mlsa, sanger_mlsa_excluded, sanger_refalign) -> sanger_vs_wgs, iTOL, SAMPLES.md
 #   results table -> mst figures
 #   arm (assemblies) -> arm reannotation (needs MIC + results)
 #
@@ -60,21 +60,21 @@ prep=$(submit_wrap mlsa-links env_mlsa "$link" \
   "bash $MLSA/scripts/01_download_filter_gtdb.sh; bash $MLSA/scripts/02_link_gtdb_kansasii_complex.sh; bash $MLSA/scripts/03_link_sanger_kansasii.sh")
 
 # 8  MLSA programs (each sbatch file has its own resources and env)
-main1=$(submit_file "$prep"  "$MLSA/main1_locus_discovery/submit_locus_discovery.sbatch")
-main1x=$(submit_file "$prep" "$MLSA/main1_locus_discovery_excluded/submit_locus_discovery_excluded.sbatch")
+main1=$(submit_file "$prep"  "$MLSA/locus_discovery/submit_locus_discovery.sbatch")
+main1x=$(submit_file "$prep" "$MLSA/locus_discovery_excluded/submit_locus_discovery_excluded.sbatch")
 hsp65=$(submit_wrap hsp65-refs env_mlsa "$main1" "python $MLSA/scripts/04_make_hsp65_references.py")
-main2=$(submit_file "$main1"  "$MLSA/main2_sanger_differentiation/submit_sanger_differentiation.sbatch")
-main2x=$(submit_file "$main1x" "$MLSA/main2_sanger_differentiation_excluded/submit_sanger_differentiation_excluded.sbatch")
-main3=$(submit_file "$prep"  "$MLSA/main3_reference_alignment/submit_reference_alignment.sbatch")
-main3h=$(submit_file "$hsp65" "$MLSA/main3_reference_alignment/submit_hsp65_amplicon_alignment.sbatch")
+main2=$(submit_file "$main1"  "$MLSA/sanger_mlsa/submit_sanger_mlsa.sbatch")
+main2x=$(submit_file "$main1x" "$MLSA/sanger_mlsa_excluded/submit_sanger_mlsa_excluded.sbatch")
+main3=$(submit_file "$prep"  "$MLSA/sanger_refalign/submit_sanger_refalign.sbatch")
+main3h=$(submit_file "$hsp65" "$MLSA/sanger_refalign/submit_hsp65_amplicon_alignment.sbatch")
 gic=$(submit_file "$prep"    "$MLSA/genome_identity_check/submit_genome_identity_check.sbatch")
 
 # 9  results table
 results=$(submit_wrap results kansasii_mic "$(join "$mic" "$main2" "$main2x" "$main3")" \
   "python $IMM/scripts/06_screening_map_results.py")
 
-# 8b main4 reads the results table; 10 iTOL; 11 samples report
-main4=$(submit_file "$(join "$results" "$main3h")" "$MLSA/main4_hsp65_vs_wgs/submit_hsp65_vs_wgs.sbatch")
+# 8b sanger_vs_wgs reads the results table; 10 iTOL; 11 samples report
+main4=$(submit_file "$(join "$results" "$main3h")" "$MLSA/sanger_vs_wgs/submit_sanger_vs_wgs.sbatch")
 itol=$(submit_wrap itol env_immense "$results" \
   "bash $IMM/scripts/07_generate_itol_species_labels.sh; bash $IMM/scripts/07_generate_itol_species_labels.sh -m samples -p mkan329_")
 report=$(submit_wrap samples-report kansasii_mic "$results" "cd $IMM; python scripts/08_mkan329_samples_report.py")

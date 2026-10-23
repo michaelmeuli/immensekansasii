@@ -44,11 +44,11 @@ script never modifies it. Added columns:
   species_mlsa1, species_mlsa2, species_ref
       hsp65-only species calls of the Sanger data (optional cross-checks; empty
       if the file is missing or the isolate has no hsp65 read / call is NA):
-      species_mlsa1  nearest_species, mlsa-kansasii main2 (all reference genomes)
-      species_mlsa2  nearest_species, main2_excluded (3 Korean genomes removed)
-      species_ref    closest_species, main3 reference alignment, of the isolate's
+      species_mlsa1  nearest_species, mlsa-kansasii sanger_mlsa (all reference genomes)
+      species_mlsa2  nearest_species, sanger_mlsa_excluded (3 Korean genomes removed)
+      species_ref    closest_species, sanger_refalign reference alignment, of the isolate's
                      representative hsp65 read (representative_reads.tsv);
-                     only if main3 status is "ok" (else empty)
+                     only if sanger_refalign status is "ok" (else empty)
   TNR_MLSA
       TNR(s) of the representative Sanger reads (representative_reads.tsv) of
       that isolate that differ from the row's TNR. Several -> comma-joined.
@@ -185,13 +185,13 @@ def main() -> None:
                     help="optional id_map.tsv (NR, PROBENNUMMER, ...) for runs whose sample ids are not "
                          "Mkan329-NNN, e.g. data/illumina/Mkan329/batches/b01/id_map.tsv")
     ap.add_argument("--reads", type=Path,
-                    default=K / "output/mlsa/main2_sanger_differentiation/representative_reads.tsv")
+                    default=K / "output/mlsa/sanger_mlsa/representative_reads.tsv")
     ap.add_argument("--mlsa1", type=Path,
-                    default=K / "output/mlsa/main2_sanger_differentiation/isolate_classification.tsv")
+                    default=K / "output/mlsa/sanger_mlsa/isolate_classification.tsv")
     ap.add_argument("--mlsa2", type=Path,
-                    default=K / "output/mlsa/main2_sanger_differentiation_excluded/isolate_classification.tsv")
+                    default=K / "output/mlsa/sanger_mlsa_excluded/isolate_classification.tsv")
     ap.add_argument("--refalign", type=Path,
-                    default=K / "output/mlsa/main3_reference_alignment/reference_alignment.tsv")
+                    default=K / "output/mlsa/sanger_refalign/reference_alignment.tsv")
     ap.add_argument("--mic-file", type=Path,
                     default=K / "output/mic/mhk/outliers_per_antibiotic.csv",
                     help="kansasii-mic long table (PROBENNUMMER, antibiotic, mhk_raw, modified_z, clsi_category)")
@@ -313,7 +313,7 @@ def main() -> None:
         warn("excluded (< %g%% cgMLST loci called): %s" % (args.min_cgmlst_pct, ", ".join(
             f"{p} ({c})" for p, c in zip(low["PROBENNUMMER"], low["cgmlst_called_pct"]))))
 
-    # --- hsp65 species calls: main2 (mlsa1), main2_excluded (mlsa2) ---
+    # --- hsp65 species calls: sanger_mlsa (mlsa1), sanger_mlsa_excluded (mlsa2) ---
     for col, path in (("species_mlsa1", args.mlsa1), ("species_mlsa2", args.mlsa2)):
         if path.exists():
             calls = hsp65_calls(path)
@@ -321,7 +321,7 @@ def main() -> None:
         else:
             warn(f"{path} not found; {col} left empty")
 
-    # --- species_ref: main3 call for the representative hsp65 read ---
+    # --- species_ref: sanger_refalign call for the representative hsp65 read ---
     if args.refalign.exists() and args.reads.exists():
         reads = read_tsv(args.reads)
         reads = reads[reads["locus"] == "hsp65"]

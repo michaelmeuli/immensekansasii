@@ -46,7 +46,7 @@ dependency chain.
 | 5c | public reads: ENA metadata, download, batches | `scripts/09_public_fetch_metadata.sh`, `10_public_select_and_download.py` (sbatch), `11_public_batches.sh` | `kansasii_mic` (10) | `PROJECTS.md` BioProjects, ENA | `data/illumina/public/<BioProject>/{metadata.tsv,selected.tsv,reads/,batches/}`, then `run_IMMENSE.sh` -> `runs/public_<BioProject>/` |
 | 6 | MIC analysis | `kansasii-mic: scripts/run_analysis.py` | `kansasii_mic` | `mic.csv`, step 2 | `output/mic/{mhk,mgit}/` |
 | 7 | MLSA inputs (links, filtered GTDB list) | `mlsa-kansasii: scripts/01..04_*` | `env_mlsa` | steps 1, 2 | `data/gtdb_genomes/.../mlsa-kansasii/`, `data/sanger/seq_kansasii/` |
-| 8 | MLSA analysis | `mlsa-kansasii: main1 -> main2`, `main3`, `main4`, `genome_identity_check` | `env_mlsa` | step 7 | `output/mlsa/` |
+| 8 | MLSA analysis | `mlsa-kansasii: locus_discovery -> sanger_mlsa`, `sanger_refalign`, `sanger_vs_wgs`, `genome_identity_check` | `env_mlsa` | step 7 | `output/mlsa/` |
 | 9 | results table | `scripts/06_screening_map_results.py` | `kansasii_mic` | steps 2, 5b, 6, 8 | `data/imm/screening_map_results.csv` |
 | 10 | iTOL files | `scripts/07_generate_itol_species_labels.sh` | none | steps 3, 5b, 9 | `output/iTOL/<run>/` |
 | 11 | samples report | `scripts/08_mkan329_samples_report.py` | `kansasii_mic` | steps 5b, 9 | `SAMPLES.md` |
@@ -373,7 +373,7 @@ It also prints a comparison with the old `screening_map.csv`.
 **`mlsa-kansasii` is a consumer** and reads only the TNR columns and `PROBENNUMMER`:
 `scripts/03_link_sanger_kansasii.sh` selects the columns by regex `^TNR(_JC|_MM|[0-9]+)?$`
 and links the `.ab1` files whose path contains one of the 10-digit TNRs;
-`main2_sanger_differentiation/run_sanger_differentiation.py` maps every TNR to its
+`sanger_mlsa/run_sanger_mlsa.py` maps every TNR to its
 `PROBENNUMMER` and pools reads per isolate. `mlsa/__init__.py` has the hand-maintained
 `SCREENING_MAP_TNR_COLUMNS` tuple, which must match the columns produced here.
 
@@ -386,8 +386,8 @@ and links the `.ab1` files whose path contains one of the 10-digit TNRs;
 - `checkm_contamination`, `contamination_flag`: CheckM contamination (%) of the assembly; flag = `contaminated` above `--max-contamination` (default 5). Flagged samples are mixed cultures, see `SPECIES.md`. CheckM is the criterion for contaminated cultures: MIC values of flagged isolates are not used for the final conclusion (filter on `contamination_flag`; the MIC columns and `output/mic/*` keep the values). Flagged now: Mkan329-010, -021, -035, -106, -113 (only 035 has MIC data)
 - `cgmlst_called_pct`, `excluded` (after `contamination_flag`): `cgmlst_called_pct` = % of the cgMLST95 loci with an allele call (kansasii-cgmlst `output/cgmlst/sample_qc.tsv`, `--cgmlst-qc`; empty if the isolate is not allele-called); `excluded` = `true` if `contamination_flag` is `contaminated` or `cgmlst_called_pct` < `--min-cgmlst-pct` (default 90, Ridom's good-target threshold), else `false`. Genome-based repos (cgmlst, mst, amr screen) skip `excluded` isolates. Run order: cgmlst `STEPS="07"` -> 06 -> cgmlst `STEPS="08 09 10"`.
 - `arm_mut`: markers called `MUT` by kansasii-amr-marker-screen (`output/arm/work/report/marker_calls.pass.tsv`), `<gene>-<marker>` comma-joined (e.g. `rpsL-K43R,rrs-A514C`). Includes non-discriminating markers (`discriminating = no`, reference carries the mutant allele), so `rrs-A514C` is in nearly every isolate. Needs the ARM pipeline to have run before this step
-- `species_mlsa1`, `species_mlsa2`: hsp65 `nearest_species` from `isolate_classification.tsv` of mlsa main2 and main2_excluded
-- `species_ref`: `closest_species` of main3 `reference_alignment.tsv` for the representative hsp65 read, only if status is `ok` (empty for ambiguous/divergent/no_hit or until main3 is run)
+- `species_mlsa1`, `species_mlsa2`: hsp65 `nearest_species` from `isolate_classification.tsv` of mlsa sanger_mlsa and sanger_mlsa_excluded
+- `species_ref`: `closest_species` of sanger_refalign `reference_alignment.tsv` for the representative hsp65 read, only if status is `ok` (empty for ambiguous/divergent/no_hit or until sanger_refalign is run)
 - `TNR_MLSA`: TNR(s) of the representative Sanger reads (`representative_reads.tsv`)
   that differ from the row's `TNR`. Currently only Mkan329-183 (`2023500268`).
 
