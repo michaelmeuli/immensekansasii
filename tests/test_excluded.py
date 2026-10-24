@@ -1,4 +1,4 @@
-"""is_excluded of scripts/06_screening_map_results.py: contaminated or < min_pct % of the cgMLST loci called."""
+"""is_excluded of scripts/06_screening_map_results.py: contaminated, non-complex clinical sample, or < min_pct % of the cgMLST loci called."""
 from __future__ import annotations
 
 import importlib.util
@@ -24,3 +24,16 @@ def test_contaminated_always_excluded() -> None:
 
 def test_missing_percentage_does_not_exclude() -> None:
     assert not is_excluded("", "", 90.0)
+
+
+def test_non_complex_sample_excluded() -> None:
+    assert is_excluded("", "", 90.0, "avium", "")
+
+
+def test_non_complex_control_not_excluded() -> None:
+    assert not is_excluded("", "", 90.0, "avium", "M. avium (ATCC 19421)")
+
+
+def test_complex_or_unknown_species_not_excluded() -> None:
+    assert not is_excluded("", "99.8", 90.0, "persicum", "")
+    assert not is_excluded("", "", 90.0, "", "")

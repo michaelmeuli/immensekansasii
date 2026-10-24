@@ -26,8 +26,10 @@ script never modifies it. Added columns:
       cgmlst_called_pct: % of the cgMLST95 loci with an allele call (kansasii-cgmlst step 07,
       output/cgmlst/sample_qc.tsv; --cgmlst-qc); empty for isolates that are not allele-called
       (contaminated, not in the complex) or if the file is missing.
-      excluded: "true"/"false" on every row; true if contamination_flag is "contaminated" or
-      cgmlst_called_pct < --min-cgmlst-pct (default 90, like Ridom's good-target threshold).
+      excluded: "true"/"false" on every row; true if contamination_flag is "contaminated",
+      cgmlst_called_pct < --min-cgmlst-pct (default 90, like Ridom's good-target threshold), or the
+      row is a clinical sample (LABEL empty) whose GTDB species is outside the M. kansasii complex
+      (e.g. NR 184, M. avium). Non-complex control strains (LABEL set) are not excluded by this.
       The genome-based repos (kansasii-cgmlst, kansasii-mst, kansasii-amr-marker-screen) skip excluded isolates.
       Order: kansasii-cgmlst 07 -> this script -> kansasii-cgmlst 08-10.
   resistance_abricate
@@ -90,9 +92,16 @@ MIC_ABBR = {
 MIC_FIELDS = (("mic", "mhk_raw"), ("modified_z", "modified_z"), ("clsi_category", "clsi_category"))
 
 
-def is_excluded(contamination_flag: str, cgmlst_called_pct: str, min_pct: float) -> bool:
-    """Contaminated, or fewer than min_pct % of the cgMLST loci called (an empty percentage never excludes)."""
+COMPLEX = {"kansasii", "persicum", "pseudokansasii", "attenuatum", "innocens", "ostraviense", "gastri"}
+
+
+def is_excluded(contamination_flag: str, cgmlst_called_pct: str, min_pct: float,
+                species: str = "", label: str = "") -> bool:
+    """Contaminated, a non-complex clinical sample (known species outside COMPLEX, no LABEL), or fewer than min_pct %
+    of the cgMLST loci called (an empty percentage never excludes)."""
     if contamination_flag == "contaminated":
+        return True
+    if species and species not in COMPLEX and not label:
         return True
     try:
         return float(cgmlst_called_pct) < min_pct
@@ -306,9 +315,15 @@ def main() -> None:
     after = list(res.columns).index("contamination_flag") + 1
     res.insert(after, "cgmlst_called_pct", res["PROBENNUMMER"].map(lambda p: pct.get(p, "")))
     res.insert(after + 1, "excluded", [
-        "true" if is_excluded(f, c, args.min_cgmlst_pct) else "false"
-        for f, c in zip(res["contamination_flag"], res["cgmlst_called_pct"])])
-    low = res[(res["excluded"] == "true") & (res["contamination_flag"] == "")]
+        "true" if is_excluded(f, c, args.min_cgmlst_pct, sp, lb) else "false"
+        for f, c, sp, lb in zip(res["contamination_flag"], res["cgmlst_called_pct"],
+                                res["species"].fillna(""), res["LABEL"].fillna(""))])
+    non_complex = res[(res["excluded"] == "true") & (res["contamination_flag"] == "") & ~res["species"].fillna("").isin(COMPLEX)
+                      & (res["species"].fillna("") != "")]
+    if len(non_complex):
+        warn("excluded (clinical sample outside the complex): %s" % ", ".join(
+            f"{p} ({sp})" for p, sp in zip(non_complex["PROBENNUMMER"], non_complex["species"])))
+    low = res[(res["excluded"] == "true") & (res["contamination_flag"] == "") & ~res.index.isin(non_complex.index)]
     if len(low):
         warn("excluded (< %g%% cgMLST loci called): %s" % (args.min_cgmlst_pct, ", ".join(
             f"{p} ({c})" for p, c in zip(low["PROBENNUMMER"], low["cgmlst_called_pct"]))))
