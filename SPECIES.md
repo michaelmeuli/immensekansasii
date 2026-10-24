@@ -1,7 +1,7 @@
 # Species calls: when GTDB and hsp65 MLSA disagree
 
 `screening_map_results.csv` carries two independent species calls per isolate:
-`species` (GTDB-Tk on the assembly) and `species_mlsa1/2/ref` (hsp65 Sanger reads).
+`species` (GTDB-Tk on the assembly) and `species_sanger_mlsa/_mlsa_excl/_refalign` (hsp65 Sanger reads).
 They normally agree. A disagreement can mean a mixed culture, so check
 `contamination_flag` first.
 
@@ -47,7 +47,7 @@ single colonies. Until then, treat the species of 035 as undetermined (mixed).
 Counts per species in `screening_map_results.csv` for the mkan329 run, excluding the 3
 isolates with `contamination_flag == contaminated` (035, 106, 113, and since 2026-10-20 also 010, 021 at CheckM 7.7 %); n = 181.
 
-| Species | GTDB `species` | hsp65 MLSA (`species_mlsa1`) |
+| Species | GTDB `species` | hsp65 MLSA (`species_sanger_mlsa`) |
 |---|---|---|
 | kansasii | 123 | 90 |
 | persicum | 30 | 11 |

@@ -11,7 +11,7 @@ script never modifies it. Added columns:
       (their resequenced -jc reads, run mkan329_jc, are not used).
   species, gtdb_ani, gtdb_af, gtdb_reference
       GTDB-Tk call from the immensekansasii run (species is the epithet only,
-      e.g. "kansasii", like the species_mlsa*/species_ref columns). Read per sample from
+      e.g. "kansasii", like the species_sanger_* columns). Read per sample from
       <results-dir>/<id>/3_quality/summary/<id>.tab (complete; preferred), else
       from the merged <run>_quality.tsv (--quality; may be stale/partial).
       <id> is Mkan329-NNN (PROBENNUMMER); a bare NR or an --id-map are still
@@ -43,12 +43,12 @@ script never modifies it. Added columns:
       "<gene>-<marker>" comma-joined, e.g. "rpsL-K43R,rrs-A514C". Includes non-discriminating
       markers (discriminating = no: the ATCC 12478 reference carries the mutant allele, MUT then
       only means "same as the reference"), so rrs-A514C is in nearly every isolate. Empty = no MUT.
-  species_mlsa1, species_mlsa2, species_ref
+  species_sanger_mlsa, species_sanger_mlsa_excl, species_sanger_refalign
       hsp65-only species calls of the Sanger data (optional cross-checks; empty
       if the file is missing or the isolate has no hsp65 read / call is NA):
-      species_mlsa1  nearest_species, mlsa-kansasii sanger_mlsa (all reference genomes)
-      species_mlsa2  nearest_species, sanger_mlsa_excluded (3 Korean genomes removed)
-      species_ref    closest_species, sanger_refalign reference alignment, of the isolate's
+      species_sanger_mlsa  nearest_species, mlsa-kansasii sanger_mlsa (all reference genomes)
+      species_sanger_mlsa_excl  nearest_species, sanger_mlsa_excluded (3 Korean genomes removed)
+      species_sanger_refalign    closest_species, sanger_refalign reference alignment, of the isolate's
                      representative hsp65 read (representative_reads.tsv);
                      only if sanger_refalign status is "ok" (else empty)
   TNR_MLSA
@@ -230,7 +230,7 @@ def main() -> None:
         warn("no NGS_MM and no NGS_JC: %s" % ", ".join(res.loc[res["NGS_USED"] == "", "PROBENNUMMER"]))
     for c in ("species", "gtdb_ani", "gtdb_af", "gtdb_reference",
               "checkm_contamination", "contamination_flag",
-              "species_mlsa1", "species_mlsa2", "species_ref", "TNR_MLSA",
+              "species_sanger_mlsa", "species_sanger_mlsa_excl", "species_sanger_refalign", "TNR_MLSA",
               "resistance_abricate", "resistance_amrfinder", "arm_mut"):
         res[c] = ""
 
@@ -329,14 +329,14 @@ def main() -> None:
             f"{p} ({c})" for p, c in zip(low["PROBENNUMMER"], low["cgmlst_called_pct"]))))
 
     # --- hsp65 species calls: sanger_mlsa (mlsa1), sanger_mlsa_excluded (mlsa2) ---
-    for col, path in (("species_mlsa1", args.mlsa1), ("species_mlsa2", args.mlsa2)):
+    for col, path in (("species_sanger_mlsa", args.mlsa1), ("species_sanger_mlsa_excl", args.mlsa2)):
         if path.exists():
             calls = hsp65_calls(path)
             res[col] = res["PROBENNUMMER"].map(lambda p: calls.get(p, ""))
         else:
             warn(f"{path} not found; {col} left empty")
 
-    # --- species_ref: sanger_refalign call for the representative hsp65 read ---
+    # --- species_sanger_refalign: sanger_refalign call for the representative hsp65 read ---
     if args.refalign.exists() and args.reads.exists():
         reads = read_tsv(args.reads)
         reads = reads[reads["locus"] == "hsp65"]
@@ -351,10 +351,10 @@ def main() -> None:
         missing = [p for p, r in rep.items() if r not in closest and Path(r).stem not in closest]
         if missing:
             warn(f"{len(missing)} representative hsp65 reads not in {args.refalign.name}: {missing[:5]}...")
-        res["species_ref"] = res["PROBENNUMMER"].map(
+        res["species_sanger_refalign"] = res["PROBENNUMMER"].map(
             lambda p: closest.get(rep.get(p, ""), closest.get(Path(rep.get(p, "")).stem, "")) if p in rep else "")
     else:
-        warn(f"{args.refalign} or {args.reads} not found; species_ref left empty")
+        warn(f"{args.refalign} or {args.reads} not found; species_sanger_refalign left empty")
 
     # --- TNR_MLSA ---
     if args.reads.exists():
@@ -389,8 +389,8 @@ def main() -> None:
           f"{(res['resistance_abricate'] != '').sum()}/{(res['resistance_amrfinder'] != '').sum()} "
           f"with resistance_abricate/amrfinder, "
           f"{(res['TNR_MLSA'] != '').sum()} with TNR_MLSA, "
-          f"{(res['species_mlsa1'] != '').sum()}/{(res['species_mlsa2'] != '').sum()}/"
-          f"{(res['species_ref'] != '').sum()} with species_mlsa1/mlsa2/ref")
+          f"{(res['species_sanger_mlsa'] != '').sum()}/{(res['species_sanger_mlsa_excl'] != '').sum()}/"
+          f"{(res['species_sanger_refalign'] != '').sum()} with species_sanger_mlsa/mlsa_excl/refalign")
     if copy_to is not None:
         copy_to.mkdir(parents=True, exist_ok=True)
         shutil.copy2(out, copy_to / out.name)

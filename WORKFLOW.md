@@ -53,7 +53,7 @@ dependency chain.
 | 13 | AMR marker screen | `kansasii-amr-marker-screen: submit_arm.sbatch`, then `submit_arm_bam.sbatch` (optional) and `submit_arm_reannot.sbatch` | `env_amr` | steps 5b, 6, 9 | `output/arm/`, `output/amr_bam/` |
 | - | Sanger Microsynth mail (independent, routine) | `sanger-microsynth: submit_fetch_analyse.sbatch` | `env_sanger_ms` | mail, step 8 refs | `output/sanger-microsynth/` |
 
-Step 9 needs step 8 for the `species_mlsa1/2` and `species_ref` columns, and step 8 needs the link
+Step 9 needs step 8 for the `species_sanger_mlsa`, `species_sanger_mlsa_excl` and `species_sanger_refalign` columns, and step 8 needs the link
 table of step 2, so the link table is always built first and the results table last.
 `kansasii-lit` is not part of the run order (exploratory scripts, numbered by the order they were
 written); `gtdb232` metadata is downloaded by step 1.
@@ -386,8 +386,8 @@ and links the `.ab1` files whose path contains one of the 10-digit TNRs;
 - `checkm_contamination`, `contamination_flag`: CheckM contamination (%) of the assembly; flag = `contaminated` above `--max-contamination` (default 5). Flagged samples are mixed cultures, see `SPECIES.md`. CheckM is the criterion for contaminated cultures: MIC values of flagged isolates are not used for the final conclusion (filter on `contamination_flag`; the MIC columns and `output/mic/*` keep the values). Flagged now: Mkan329-010, -021, -035, -106, -113 (only 035 has MIC data)
 - `cgmlst_called_pct`, `excluded` (after `contamination_flag`): `cgmlst_called_pct` = % of the cgMLST95 loci with an allele call (kansasii-cgmlst `output/cgmlst/sample_qc.tsv`, `--cgmlst-qc`; empty if the isolate is not allele-called); `excluded` = `true` if `contamination_flag` is `contaminated` or `cgmlst_called_pct` < `--min-cgmlst-pct` (default 90, Ridom's good-target threshold), or the row is a clinical sample (`LABEL` empty) with a GTDB species outside the complex (NR 184, *M. avium*), else `false`. Non-complex control strains (`LABEL` set) are not excluded by this. Genome-based repos (cgmlst, mst, amr screen) skip `excluded` isolates. Run order: cgmlst `STEPS="07"` -> 06 -> cgmlst `STEPS="08 09 10"`.
 - `arm_mut`: markers called `MUT` by kansasii-amr-marker-screen (`output/arm/work/report/marker_calls.pass.tsv`), `<gene>-<marker>` comma-joined (e.g. `rpsL-K43R,rrs-A514C`). Includes non-discriminating markers (`discriminating = no`, reference carries the mutant allele), so `rrs-A514C` is in nearly every isolate. Needs the ARM pipeline to have run before this step
-- `species_mlsa1`, `species_mlsa2`: hsp65 `nearest_species` from `isolate_classification.tsv` of mlsa sanger_mlsa and sanger_mlsa_excluded
-- `species_ref`: `closest_species` of sanger_refalign `reference_alignment.tsv` for the representative hsp65 read, only if status is `ok` (empty for ambiguous/divergent/no_hit or until sanger_refalign is run)
+- `species_sanger_mlsa`, `species_sanger_mlsa_excl`: hsp65 `nearest_species` from `isolate_classification.tsv` of mlsa sanger_mlsa and sanger_mlsa_excluded
+- `species_sanger_refalign`: `closest_species` of sanger_refalign `reference_alignment.tsv` for the representative hsp65 read, only if status is `ok` (empty for ambiguous/divergent/no_hit or until sanger_refalign is run)
 - `TNR_MLSA`: TNR(s) of the representative Sanger reads (`representative_reads.tsv`)
   that differ from the row's `TNR`. Currently only Mkan329-183 (`2023500268`).
 
