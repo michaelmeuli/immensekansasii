@@ -52,3 +52,31 @@ Check `slurm-<jobid>.out` of every batch for "Execution status: OK"; the chain c
 Findings from the runs: the coordinator sometimes stalled with work left (no tasks, no workers) and held the chain until the 24 h limit,
 which also corrupts `.nextflow/cache` (moved aside, resume lost for that batch). `bin/nxf_watchdog.sh` now stops a stalled coordinator
 and `tbprofiler` has a 2 h x attempt time limit (the 10 min default killed it on large read sets). Stall casualties were rerun, not bad samples.
+
+### GTDB-Tk species (2026-10-24)
+
+1,064 of 1,065 samples have a call (SRR27048649 in PRJNA1048499 was OOM-killed in unicycler at 20 GB, rerun with 40 GB).
+
+| Species | Total | PRJNA1078897 | PRJNA1048499 | PRJNA845115 | PRJNA323639 |
+|---|---|---|---|---|---|
+| *M. kansasii* | 880 | 197 | 242 | 237 | 204 |
+| *M. persicum* | 80 | 18 | 48 | 0 | 14 |
+| *M. pseudokansasii* | 42 | 0 | 27 | 0 | 15 |
+| CAIMFV01 sp040757715 | 21 | 21 | 0 | 0 | 0 |
+| *M. attenuatum* | 20 | 3 | 11 | 0 | 6 |
+| *M. ostraviense* | 10 | 0 | 7 | 0 | 3 |
+| *M. gastri* | 4 | 0 | 3 | 0 | 1 |
+| *M. innocens* | 3 | 0 | 3 | 0 | 0 |
+| *Sediminibacterium magnilacihabitans* | 2 | 2 | 0 | 0 | 0 |
+| *Sphingomonas aquatilis* | 1 | 1 | 0 | 0 | 0 |
+| *M. parascrofulaceum* | 1 | 1 | 0 | 0 | 0 |
+
+The non-complex calls (CAIMFV01, *Sediminibacterium*, *Sphingomonas*, *M. parascrofulaceum*) are not checked against the metadata.
+
+### Faulty nodes
+
+On 2026-10-20 (mostly 09:00-13:59) Slurm worker jobs on node `u24-cva0000-305` died instantly (exit 53, 0 s), a few more on `u24-chaiam0-613`.
+Nextflow retried once and then ignored the failed sample, so 124 samples (41 PRJNA1078897, 53 PRJNA1048499, 30 PRJNA323639) ended with trimming
+and FastQC only and an all-`null` summary row; the batches still reported "Execution status: OK". Rerun with `-resume` on 2026-10-24
+(`batches/rerun` per project). Check for such samples with: results dir without `1_unicycler`.
+`kansasii_tree` on 342 samples needed 63 min (limit is 30 min x attempt); raise it for larger runs.
