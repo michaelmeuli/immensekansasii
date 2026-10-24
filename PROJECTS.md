@@ -39,12 +39,16 @@ Run ids: `public_<BioProject>` (pilot: `public_<BioProject>_test`), one snippy d
 
 | BioProject | Runs | Not runnable (fq_PE) | Reads downloaded | Pipeline |
 |---|---|---|---|---|
-| PRJNA1078897 | 243 | 0 | yes (87 GB) | pilot OK (3/3 *M. kansasii*, ST38); b01-b06 chained, started 2026-10-20 |
-| PRJNA1048499 | 342 | 0 | yes (90 GB) | b01-b08 chained, started 2026-10-20 |
-| PRJNA845115 | 237 | 0 | yes (174 GB) | b01-b06 chained, started 2026-10-20 |
-| PRJNA323639 | 273 | 30 (single-end) | yes (92 GB, 243 samples) | b01-b06 chained, started 2026-10-20 |
+| PRJNA1078897 | 243 | 0 | yes (87 GB) | pilot OK (3/3 *M. kansasii*, ST38); all 243 done (2026-10-22; 3 stall casualties rerun) |
+| PRJNA1048499 | 342 | 0 | yes (90 GB) | all 342 done (2026-10-22) |
+| PRJNA845115 | 237 | 0 | yes (174 GB) | all 237 done (2026-10-24; SRR19543452 rerun after the tbprofiler time-limit fix) |
+| PRJNA323639 | 273 | 30 (single-end) | yes (92 GB, 243 samples) | all 243 done (2026-10-22) |
 
 Batches of one project run one after another in `runs/public_<BioProject>/` (Slurm `--dependency=afterany`);
 the four projects run in parallel. `SBATCH_DEPENDENCY` is ignored here, so `run_IMMENSE.sh` cannot chain:
 call `sbatch --dependency=... bin/submit_to_cluster.sh <main_dir> fastq NO <run_id> <batch_dir> "--kansasii_snippy_db <db>"` directly.
 Check `slurm-<jobid>.out` of every batch for "Execution status: OK"; the chain continues after a failed batch.
+
+Findings from the runs: the coordinator sometimes stalled with work left (no tasks, no workers) and held the chain until the 24 h limit,
+which also corrupts `.nextflow/cache` (moved aside, resume lost for that batch). `bin/nxf_watchdog.sh` now stops a stalled coordinator
+and `tbprofiler` has a 2 h x attempt time limit (the 10 min default killed it on large read sets). Stall casualties were rerun, not bad samples.
