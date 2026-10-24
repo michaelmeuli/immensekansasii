@@ -50,7 +50,7 @@ dependency chain.
 | 9 | results table | `scripts/06_screening_map_results.py` | `kansasii_mic` | steps 2, 5b, 6, 8 | `data/imm/screening_map_results.csv` |
 | 10 | iTOL files | `scripts/07_generate_itol_species_labels.sh` | none | steps 3, 5b, 9 | `output/iTOL/<run>/` |
 | 11 | samples report | `scripts/08_mkan329_samples_report.py` | `kansasii_mic` | steps 5b, 9 | `SAMPLES.md` |
-| 13 | AMR marker screen | `kansasii-amr-marker-screen: submit_arm.sbatch`, then `submit_arm_bam.sbatch` (optional) and `submit_arm_reannot.sbatch` | `env_arm` | steps 5b, 6, 9 | `output/arm/`, `output/arm_bam/` |
+| 13 | AMR marker screen | `kansasii-amr-marker-screen: submit_arm.sbatch`, then `submit_arm_bam.sbatch` (optional) and `submit_arm_reannot.sbatch` | `env_amr` | steps 5b, 6, 9 | `output/arm/`, `output/amr_bam/` |
 | - | Sanger Microsynth mail (independent, routine) | `sanger-microsynth: submit_fetch_analyse.sbatch` | `env_sanger_ms` | mail, step 8 refs | `output/sanger-microsynth/` |
 
 Step 9 needs step 8 for the `species_mlsa1/2` and `species_ref` columns, and step 8 needs the link

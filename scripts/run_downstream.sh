@@ -86,10 +86,10 @@ mst=$(submit_file "$results" "$MST/run_all.sbatch")
 arm=$(submit_file "" "$ARM/submit_arm.sbatch")
 arm_deps=("$arm" "$mic" "$results")
 if (( BAM )); then
-  bam_prep=$(submit_wrap arm-bam-prepare env_arm "$arm" "bash $ARM/run_arm_bam.sh prepare")
+  bam_prep=$(submit_wrap arm-bam-prepare env_amr "$arm" "bash $ARM/run_arm_bam.sh prepare")
   n_samples=$(ls "$ROOT/runs/mkan329/assembly/results" | wc -l)   # array covers every sample
   bam=$(submit_file "$bam_prep" "$ARM/submit_arm_bam.sbatch" --array="0-$((n_samples - 1))%20")
-  bam_fin=$(submit_wrap arm-bam-finish env_arm "$bam" "bash $ARM/run_arm_bam.sh finish")
+  bam_fin=$(submit_wrap arm-bam-finish env_amr "$bam" "bash $ARM/run_arm_bam.sh finish")
   arm_deps+=("$bam_fin")
 fi
 arm_re=$(submit_file "$(join "${arm_deps[@]}")" "$ARM/submit_arm_reannot.sbatch")
