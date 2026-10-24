@@ -55,7 +55,8 @@ and `tbprofiler` has a 2 h x attempt time limit (the 10 min default killed it on
 
 ### GTDB-Tk species (2026-10-24)
 
-1,064 of 1,065 samples have a call (SRR27048649 in PRJNA1048499 was OOM-killed in unicycler at 20 GB, rerun with 40 GB).
+1,064 of 1,065 samples have a call. SRR27048649 (PRJNA1048499, 13.2M read pairs after trimming) is **excluded**: unicycler was OOM-killed at 20 GB and
+had not finished after 3.5 h at 40 GB, so the rerun was cancelled on 2026-10-24. Its results dir holds trimming and FastQC only (all-`null` summary row).
 
 | Species | Total | PRJNA1078897 | PRJNA1048499 | PRJNA845115 | PRJNA323639 |
 |---|---|---|---|---|---|
