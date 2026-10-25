@@ -5,7 +5,7 @@
 set -euo pipefail
 
 DATA_DIR=/shares/sander.imm.uzh/MM/kansasii/data/lit/gtdb/gtdb232
-OUT_DIR=/shares/sander.imm.uzh/MM/kansasii/output/lit/gtdb/gtdb232
+OUT_DIR=/shares/sander.imm.uzh/MM/kansasii/output/immensekansasii/gtdb/gtdb232
 mkdir -p "$DATA_DIR" "$OUT_DIR"
 
 METADATA="$DATA_DIR/bac120_metadata_r232.tsv"
