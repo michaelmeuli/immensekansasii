@@ -12,6 +12,8 @@
 # After the Slurm job (job_kansasii_complex_gtdb_representatives) has finished and been checked:
 #   rsync -a --exclude work --exclude .nextflow --exclude '*_transfer_result/genomes/' \
 #       $ROOT/runs/kansasii_complex_gtdb_representatives/ $ROOT/output/kansasii_complex_gtdb_representatives/
+#   bash $ROOT/repos/kansasii-docs/bin/write_manifest.sh $ROOT/output/kansasii_complex_gtdb_representatives \
+#       $ROOT/repos/immensekansasii 03_run_gtdb_tree.sh <accessions file>     # provenance
 #   bash 07_generate_itol_species_labels.sh        # iTOL files for the tree
 # run_IMMENSE.sh only submits the controller job and returns at once, so the rsync must wait.
 set -euo pipefail

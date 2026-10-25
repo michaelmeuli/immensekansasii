@@ -196,3 +196,6 @@ awk -F'\t' -v OFS='\t' -v dir="$OUTDIR/ncbi_dataset/data" \
   mycobacteriaceae_selected_columns.tsv > not_downloaded_genomes.tsv
 echo "-- $(($(wc -l < not_downloaded_genomes.tsv) - 1)) genome(s) not available, see $OUT_DIR/not_downloaded_genomes.tsv --"
 
+# provenance (see kansasii-docs/docs/PROVENANCE.md)
+bash /shares/sander.imm.uzh/MM/kansasii/repos/kansasii-docs/bin/write_manifest.sh "$OUT_DIR" \
+  /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii 01_gtdb_mycobacteria_genomes.sh "$METADATA"
