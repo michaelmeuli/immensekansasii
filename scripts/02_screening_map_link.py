@@ -30,6 +30,7 @@ import os
 import argparse
 import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -268,6 +269,11 @@ def main() -> None:
         copy_to.mkdir(parents=True, exist_ok=True)
         shutil.copy2(out, copy_to / out.name)
         print(f"copied to {copy_to / out.name}")
+        # provenance (see kansasii-docs/docs/PROVENANCE.md); own file name since output/ is shared
+        root = Path(os.environ.get("KANSASII_ROOT", "/shares/sander.imm.uzh/MM/kansasii"))
+        subprocess.run(["bash", str(root / "repos/kansasii-docs/bin/write_manifest.sh"), str(copy_to),
+                        str(root / "repos/immensekansasii"), "02_screening_map_link.py", str(args.indir)],
+                       env={**os.environ, "MANIFEST_NAME": "screening_map_link.MANIFEST.txt"}, check=True)
     compare(link, old)
 
 
