@@ -1,8 +1,7 @@
 # M. kansasii project workflow
 
 How the project-specific scripts around the IMMENSE pipeline fit together
-(the pipeline itself is described in `README.md`). This replaces the README of
-the former `kansasii-lit` repo. Everything runs on the s3it cluster. Paths in the
+(the pipeline itself is described in `README.md`). Everything runs on the s3it cluster. Paths in the
 tables and text are relative to `/shares/sander.imm.uzh/MM/kansasii/` (`K`) unless
 absolute; **code blocks use full paths** and can be pasted as they are (only
 `<placeholders>` need filling in).
@@ -55,8 +54,7 @@ dependency chain.
 
 Step 9 needs step 8 for the `species_sanger_mlsa`, `species_sanger_mlsa_excl` and `species_sanger_refalign` columns, and step 8 needs the link
 table of step 2, so the link table is always built first and the results table last.
-`kansasii-lit` is not part of the run order (exploratory scripts, numbered by the order they were
-written); `gtdb232` metadata is downloaded by step 1.
+`gtdb232` metadata is downloaded by step 1.
 
 Step 5b is the only long step (days of CPU). The downstream steps are cheap and deterministic:
 rerun them whenever step 2, 5b or the MIC inputs change, so that the tables stay consistent.
@@ -411,9 +409,3 @@ From a local PowerShell terminal:
 New-Item -ItemType Directory -Path "$env:USERPROFILE\kansasii_C\downloads\" -Force
 scp -r mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/output/* "$env:USERPROFILE\kansasii_C\downloads\"
 ```
-
-## Remaining in `kansasii-lit`
-
-Only exploratory / one-off scripts (`lit_download.ps1`, `01_lit_gtdb_226.sh`, `02_lit_gtdb_232.sh`,
-`03_lit_gtdb_ref_check.sh`, `04_get_mkc_type_strains.sh`, `05_gtdb_adv_search_genomes.sh`,
-`gtdb_adv_search_accessions/`). The workflow above no longer depends on them.

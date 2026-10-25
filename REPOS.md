@@ -10,7 +10,6 @@
 | `kansasii-mst` | core-SNP minimum spanning tree figures (complex, kansasii, pseudokansasii, persicum) |
 | `kansasii-cgmlst` | chewBBACA cgMLST scheme for the complex + Ridom-style allele MST figures (pairwise deletion) |
 | `sanger-microsynth` | routine: fetch Microsynth Sanger results by mail, identify, report |
-| `kansasii-lit` | exploratory GTDB / type-strain look-ups (not part of the run order) |
 
 **Run order:** `immensekansasii/WORKFLOW.md`, section "Run order". Scripts carry the number of their
 step (`01_...`, `02_...`), so within one repo they sort in the order they are called.
