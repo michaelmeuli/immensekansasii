@@ -30,29 +30,35 @@ the scripts (results, iTOL files, lists) for convenience and download.
 
 Everything is called in this order. Numbers are the file prefixes; `repo:` scripts in other repos
 carry their own numbers. A step may start once everything above it that it reads has finished.
-`scripts/run_downstream.sh` submits the whole post-pipeline part (steps 6-13) as a Slurm
-dependency chain.
+`scripts/run_downstream.sh` submits the whole post-pipeline part (steps 2 and 6-14, every repo except the routine
+sanger-microsynth) as a Slurm dependency chain. Every path below is a constant of `kansasii_paths.{py,sh}`
+(`kansasii-docs/templates/`, one copy per repo) and a flag of the script.
 
 | # | Step | Script | Env | Reads | Writes |
 |---|---|---|---|---|---|
 | 0 | tool/db install (once, notes) | `scripts/install_notes.txt` | - | - | pipeline dbs, containers |
 | 1 | GTDB r232 metadata, lists, genomes | `scripts/01_gtdb_mycobacteria_genomes.sh` | `env_immense` | GTDB web | `data/immensekansasii/gtdb/gtdb232/`, `data/gtdb_genomes/`, `output/immensekansasii/gtdb/gtdb232/` |
-| 2 | screening map link | `scripts/02_screening_map_link.py` | `kansasii_mic` | `data/imm/screening_map_*.csv` | `data/imm/screening_map_link.csv` |
+| 2 | screening map link | `scripts/02_screening_map_link.py` | `env_mic` | `data/imm/screening_map_*.csv` | `data/imm/screening_map_link.csv` |
 | 3 | reference-tree run (7 GTDB representatives) | `scripts/03_run_gtdb_tree.sh` | none | step 1 | `runs/kansasii_complex_gtdb_representatives/` |
 | 4 | Mkan329 batches (mm reads) | `scripts/04_mkan329_batches.sh` | none | step 2, reads | `data/illumina/Mkan329/batches/` |
 | 5 | Mkan329 batches (jc reads, resequenced) | `scripts/05_mkan329_batch_jc.sh` | none | step 2, reads | `batches/b05`, `b06` |
 | 5b | pipeline runs, one batch after another | `run_IMMENSE.sh` (commands printed by 4/5) | none | batches | `runs/mkan329/`, `runs/mkan329_jc/` |
-| 5c | public reads: ENA metadata, download, batches | `scripts/09_public_fetch_metadata.sh`, `10_public_select_and_download.py` (sbatch), `11_public_batches.sh` | `kansasii_mic` (10) | `PROJECTS.md` BioProjects, ENA | `data/illumina/public/<BioProject>/{metadata.tsv,selected.tsv,reads/,batches/}`, then `run_IMMENSE.sh` -> `runs/public_<BioProject>/` |
-| 6 | MIC analysis | `kansasii-mic: scripts/run_analysis.py` | `kansasii_mic` | `mic.csv`, step 2 | `output/mic/{mhk,mgit}/` |
+| 5c | public reads: ENA metadata, download, batches | `scripts/09_public_fetch_metadata.sh`, `10_public_select_and_download.py` (sbatch), `11_public_batches.sh` | `env_mic` (10) | `PROJECTS.md` BioProjects, ENA | `data/illumina/public/<BioProject>/{metadata.tsv,selected.tsv,reads/,batches/}`, then `run_IMMENSE.sh` -> `runs/public_<BioProject>/` |
+| 6 | MIC analysis | `kansasii-mic: submit_mic.sbatch` (`scripts/01_run_analysis.py`) | `env_mic` | `mic.csv`, step 2 | `output/mic/{mhk,mgit}/` |
 | 7 | MLSA inputs (links, filtered GTDB list) | `mlsa-kansasii: scripts/01..04_*` | `env_mlsa` | steps 1, 2 | `data/gtdb_genomes/.../mlsa-kansasii/`, `data/sanger/seq_kansasii/` |
-| 8 | MLSA analysis | `mlsa-kansasii: locus_discovery -> sanger_mlsa`, `sanger_refalign`, `sanger_vs_wgs`, `genome_identity_check` | `env_mlsa` | step 7 | `output/mlsa/` |
-| 9 | results table | `scripts/06_screening_map_results.py` | `kansasii_mic` | steps 2, 5b, 6, 8 | `data/imm/screening_map_results.csv` |
+| 8 | MLSA analysis | `mlsa-kansasii: scripts/04_locus_discovery -> 08_sanger_mlsa` (+ `--exclude-atypical`), `09_sanger_refalign`, `05_genome_identity_check`, `06_make_hsp65_references`; `10_sanger_vs_wgs` after step 9 | `env_mlsa` | step 7 | `output/mlsa/` |
+| 9 | results table | `scripts/06_screening_map_results.py` | `env_mic` | steps 2, 5b, 6, 8 | `data/imm/screening_map_results.csv` |
+| 9b | hsp65 / gyrA of project and public samples | `hsp65-refalign: submit_validate.sbatch, submit_korean_check.sbatch, submit_public.sbatch [ctl\|persicum]`; `gyrA-refalign: submit_gyrA.sbatch` | `env_mlsa` | steps 5b, 8, 9 | `output/hsp65_refalign/`, `output/gyrA_refalign/{project,public}/` |
 | 10 | iTOL files | `scripts/07_generate_itol_species_labels.sh` | none | steps 3, 5b, 9 | `output/iTOL/<run>/` |
-| 11 | samples report | `scripts/08_mkan329_samples_report.py` | `kansasii_mic` | steps 5b, 9 | `SAMPLES.md` |
+| 11 | samples report | `scripts/08_mkan329_samples_report.py` | `env_mic` | steps 5b, 9 | `SAMPLES.md` |
+| 12a | cgMLST scheme, allele calls, per-genome QC | `kansasii-cgmlst: submit_all.sbatch` (steps 00-07) | `env_cgmlst` | steps 2, 5b | `output/cgmlst/sample_qc.tsv`, `runs/cgmlst/` |
+| 12b | cgMLST distances, MSTs, Ridom export; core-SNP MSTs | `kansasii-cgmlst: submit_all.sbatch` (steps 08-10), `kansasii-mst: submit_all.sbatch` | `env_cgmlst`, `env_mst` | steps 5b, 9 | `output/cgmlst/`, `output/ridom_assemblies.tar.gz`, `output/mst/` |
 | 13 | AMR marker screen | `kansasii-amr-marker-screen: submit_arm.sbatch`, then `submit_arm_bam.sbatch` (optional) and `submit_arm_reannot.sbatch` | `env_amr` | steps 5b, 6, 9 | `output/arm/`, `output/amr_bam/` |
+| 14 | atypical gyrA / hsp65 samples, output overview | `kansasii-docs: bin/make_atypical_table.py`, `bin/make_summary.py` | `env_mlsa` | step 9b | `output/atypical_samples/`, `output/SUMMARY.html` |
 | - | Sanger Microsynth mail (independent, routine) | `sanger-microsynth: submit_fetch_analyse.sbatch` | `env_sanger_ms` | mail, step 8 refs | `output/sanger-microsynth/` |
 
-Step 9 needs step 8 for the `species_sanger_mlsa`, `species_sanger_mlsa_excl` and `species_sanger_refalign` columns, and step 8 needs the link
+Step 9 needs steps 6, 8 and 12a (`cgmlst_called_pct`) and steps 8 and 12b need step 9 for the `species`/`excluded` columns of the previous table; for the first run the
+cgMLST pool uses the species of the previous results table. Step 9 needs step 8 for the `species_sanger_mlsa`, `species_sanger_mlsa_excl` and `species_sanger_refalign` columns, and step 8 needs the link
 table of step 2, so the link table is always built first and the results table last.
 `gtdb232` metadata is downloaded by step 1.
 
@@ -64,15 +70,15 @@ Scripts (`repos/immensekansasii/scripts/`):
 | Script | Conda env | Purpose |
 |---|---|---|
 | `01_gtdb_mycobacteria_genomes.sh` | `env_immense` | GTDB representative lists + genome download |
-| `02_screening_map_link.py` | `kansasii_mic` | link TNR / LNR / MHK / NGS -> `screening_map_link.csv` |
+| `02_screening_map_link.py` | `env_mic` | link TNR / LNR / MHK / NGS -> `screening_map_link.csv` |
 | `03_run_gtdb_tree.sh` | none | link the 7 representatives and submit the reference-tree run (section 2a) |
 | `04_mkan329_batches.sh` | none | split the Mkan329 reads into a test batch + NR-ordered batches, print the run commands |
 | `05_mkan329_batch_jc.sh` | none | build `batches/b05` (53 jc isolates, NR 134-186) and `b06` (resequenced `Mkan329-056-jc`, `-009-jc`, run id `mkan329_jc`) from the jc reads (`reads/kansasii_jc`, named by NGS TNR) via `NGS_JC` in `screening_map_link.csv` |
-| `06_screening_map_results.py` | `kansasii_mic` | add species + `TNR_MLSA` + MIC -> `screening_map_results.csv` |
+| `06_screening_map_results.py` | `env_mic` | add species + `TNR_MLSA` + MIC -> `screening_map_results.csv` |
 | `07_generate_itol_species_labels.sh` | none | iTOL labels and colour strips for trees |
-| `08_mkan329_samples_report.py` | `kansasii_mic` | `SAMPLES.md` from the per-sample summary tables |
+| `08_mkan329_samples_report.py` | `env_mic` | `SAMPLES.md` from the per-sample summary tables |
 | `09_public_fetch_metadata.sh` | none | ENA run metadata of public BioProjects -> `data/illumina/public/<BioProject>/metadata.tsv` |
-| `10_public_select_and_download.py` | `kansasii_mic` | all runs -> `selected.tsv` (no species/host filtering; single-end or non-Illumina runs go to `not_runnable.tsv`), md5-checked download to `reads/` |
+| `10_public_select_and_download.py` | `env_mic` | all runs -> `selected.tsv` (no species/host filtering; single-end or non-Illumina runs go to `not_runnable.tsv`), md5-checked download to `reads/` |
 | `11_public_batches.sh` | none | test batch + batches of 45 per BioProject, prints the `run_IMMENSE.sh` commands (run id `public_<BioProject>`) |
 | `run_downstream.sh` | none | submit steps 6-13 as a Slurm dependency chain |
 | `install_notes.txt`, `worktree-branching.txt` | - | notes (not runnable) |
@@ -238,7 +244,7 @@ batches, a small test batch first.
         /shares/sander.imm.uzh/MM/kansasii/runs/mkan329/ /shares/sander.imm.uzh/MM/kansasii/output/mkan329/
    rm -rf /shares/sander.imm.uzh/MM/kansasii/runs/mkan329/work
    ```
-4. **Results table** (`conda activate kansasii_mic`; runs after the MIC analysis and the MLSA
+4. **Results table** (`conda activate env_mic`; runs after the MIC analysis and the MLSA
    programs, see "Run order"). `06_screening_map_results.py` reads the per-sample summary tables
    `runs/mkan329/assembly/results/<Mkan329-NNN>/3_quality/summary/` (complete for every isolate run so
    far; the merged `quality.tsv` only covers the last batch and is just a fallback):
@@ -332,7 +338,7 @@ Sources in `data/imm/`: `screening_map_project.csv`, `screening_map_strains.csv`
 jc isolates, `NR_JC` = its row number; only used for `MIC_JC`/`MHK` here), old `screening_map.csv` (comparison only).
 
 ```bash
-conda activate kansasii_mic
+conda activate env_mic
 python /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/02_screening_map_link.py [--indir DIR] [--out FILE] [--copy-to DIR]
 ```
 
@@ -371,9 +377,9 @@ It also prints a comparison with the old `screening_map.csv`.
 **`mlsa-kansasii` is a consumer** and reads only the TNR columns and `PROBENNUMMER`:
 `scripts/03_link_sanger_kansasii.sh` selects the columns by regex `^TNR(_JC|_MM|[0-9]+)?$`
 and links the `.ab1` files whose path contains one of the 10-digit TNRs;
-`sanger_mlsa/run_sanger_mlsa.py` maps every TNR to its
-`PROBENNUMMER` and pools reads per isolate. `mlsa/__init__.py` has the hand-maintained
-`SCREENING_MAP_TNR_COLUMNS` tuple, which must match the columns produced here.
+`mlsa-kansasii/scripts/08_sanger_mlsa.py` maps every TNR to its
+`PROBENNUMMER` and pools reads per isolate. `kansasii_paths.TNR_COLUMNS` (and `TNR_COLUMNS_RESULTS`, with `TNR_MLSA`) is the
+hand-maintained tuple, which must match the columns produced here.
 
 ### Results table
 
