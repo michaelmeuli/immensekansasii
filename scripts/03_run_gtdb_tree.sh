@@ -19,7 +19,7 @@ set -euo pipefail
 ROOT=${KANSASII_ROOT:-/shares/sander.imm.uzh/MM/kansasii}
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 RUN=kansasii_complex_gtdb_representatives
-ACCESSIONS_FILE=$ROOT/data/immensekansasii/gtdb/gtdb232/kansasii_complex_gtdb_representative_accessions_renamed.txt
+ACCESSIONS_FILE=$ROOT/output/immensekansasii/gtdb/gtdb232/kansasii_complex_gtdb_representative_accessions_renamed.txt
 GENOME_DATA_DIR=$ROOT/data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data
 SELECTED_DIR=$ROOT/data/gtdb_genomes/Mycobacteriaceae/$RUN
 SNIPPY_DB_DIR=/shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/$RUN

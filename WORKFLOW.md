@@ -13,13 +13,13 @@ absolute; **code blocks use full paths** and can be pasted as they are (only
 | `repos/immensekansasii` | this repo: pipeline + project scripts in `scripts/` |
 | `repos/mlsa-kansasii` | MLSA / Sanger differentiation (reads `data/imm/screening_map_link.csv`) |
 | `data/imm/` | screening map sources and derived tables |
-| `data/immensekansasii/gtdb/gtdb232/` | GTDB r232 metadata (downloaded if missing), accession lists, type strains |
+| `data/immensekansasii/gtdb/gtdb232/` | GTDB r232 `bac120_*` metadata/taxonomy only (downloaded if missing) |
 | `data/gtdb_genomes/` | genomes downloaded from NCBI, plus symlink dirs for runs |
 | `data/illumina/Mkan329/reads/kansasii/` | delivered paired-end fastq `Mkan329-NNN_r1/_r2.fastq.gz` (lower case; 133 isolates, NR 1-133; NR 134-186 are in `reads/kansasii_jc`) |
 | `data/illumina/Mkan329/batches/<batch>/` | per-batch input from `04_mkan329_batches.sh`: `Mkan329-NNN_R1/_R2.fastq.gz` symlinks + `id_map.tsv` |
 | `runs/<run_name>/` | working dir of a pipeline run (contains large, temporary `work/`) |
 | `output/<run_name>/` | end results of a run (no `work/`); downloaded to local `kansasii_C` |
-| `output/immensekansasii/gtdb/gtdb232/` | convenience copy of the accession lists and type strains |
+| `output/immensekansasii/gtdb/gtdb232/` | accession lists and type strains derived from the GTDB metadata |
 | `output/iTOL/<run_name>/` | iTOL tree + annotation files per run |
 | `output/mlsa/` | MLSA outputs |
 
@@ -36,7 +36,7 @@ dependency chain.
 | # | Step | Script | Env | Reads | Writes |
 |---|---|---|---|---|---|
 | 0 | tool/db install (once, notes) | `scripts/install_notes.txt` | - | - | pipeline dbs, containers |
-| 1 | GTDB r232 metadata, lists, genomes | `scripts/01_gtdb_mycobacteria_genomes.sh` | `env_immense` | GTDB web | `data/immensekansasii/gtdb/gtdb232/`, `data/gtdb_genomes/` |
+| 1 | GTDB r232 metadata, lists, genomes | `scripts/01_gtdb_mycobacteria_genomes.sh` | `env_immense` | GTDB web | `data/immensekansasii/gtdb/gtdb232/`, `data/gtdb_genomes/`, `output/immensekansasii/gtdb/gtdb232/` |
 | 2 | screening map link | `scripts/02_screening_map_link.py` | `kansasii_mic` | `data/imm/screening_map_*.csv` | `data/imm/screening_map_link.csv` |
 | 3 | reference-tree run (7 GTDB representatives) | `scripts/03_run_gtdb_tree.sh` | none | step 1 | `runs/kansasii_complex_gtdb_representatives/` |
 | 4 | Mkan329 batches (mm reads) | `scripts/04_mkan329_batches.sh` | none | step 2, reads | `data/illumina/Mkan329/batches/` |
@@ -88,7 +88,7 @@ bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/01_gtdb_my
 - Reads `data/immensekansasii/gtdb/gtdb232/bac120_metadata_r232.tsv`.
 - Downloads all Mycobacteriaceae genomes to
   `data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data/` (existing ones are skipped).
-- Writes to `data/immensekansasii/gtdb/gtdb232/` (and copies to `output/immensekansasii/gtdb/gtdb232/`):
+- Writes to `output/immensekansasii/gtdb/gtdb232/`:
   - `mycobacterium_relevant_species_representative_accessions_renamed.txt`:
     20 GTDB representatives of the kansasii complex, MTBC, MAC and *M. simiae*
   - `kansasii_complex_gtdb_representative_accessions_renamed.txt`: the 7 kansasii-complex
