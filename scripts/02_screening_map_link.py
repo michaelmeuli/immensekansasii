@@ -37,6 +37,10 @@ from typing import Any
 
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # kansasii_paths.py sits next to this script
+
+from kansasii_paths import IMM_DIR, MANIFEST_SCRIPT, OUTPUT_ROOT, REPOS  # noqa: E402
+
 # Rows whose follow-up AST order was matched by DOB + received date only (no reference in BESCHREIBUNG).
 # Checked by hand in the LIS (M/LAB): after the file was closed the missing information was added
 # as "Bleistift", so the order was made under the isolate's own TNR (TNR_MHK = TNR).
@@ -253,7 +257,7 @@ def compare(link: pd.DataFrame, old: pd.DataFrame) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--indir", type=Path, default=Path(os.environ.get("KANSASII_ROOT", "/shares/sander.imm.uzh/MM/kansasii") + "/data/imm"))
+    ap.add_argument("--indir", type=Path, default=IMM_DIR)
     ap.add_argument("--out", type=Path, default=None, help="default: <indir>/screening_map_link.csv")
     ap.add_argument("--copy-to", type=Path, default=None,
                     help="directory to also copy the output to (default: <root>/output, but only when --out is not given)")
@@ -264,15 +268,14 @@ def main() -> None:
     link = build(project, strains, ast, {"JC": ngs_jc, "MM": ngs_mm}, load_mic_jc_tnrs(args.indir), load_panel_tnrs(args.indir))
     link.to_csv(out, index=False)
     print(f"wrote {out} ({len(link)} rows)")
-    copy_to = args.copy_to or (None if args.out else Path(os.environ.get("KANSASII_ROOT", "/shares/sander.imm.uzh/MM/kansasii")) / "output")
+    copy_to = args.copy_to or (None if args.out else OUTPUT_ROOT)
     if copy_to is not None:
         copy_to.mkdir(parents=True, exist_ok=True)
         shutil.copy2(out, copy_to / out.name)
         print(f"copied to {copy_to / out.name}")
         # provenance (see kansasii-docs/docs/PROVENANCE.md); own file name since output/ is shared
-        root = Path(os.environ.get("KANSASII_ROOT", "/shares/sander.imm.uzh/MM/kansasii"))
-        subprocess.run(["bash", str(root / "repos/kansasii-docs/bin/write_manifest.sh"), str(copy_to),
-                        str(root / "repos/immensekansasii"), "02_screening_map_link.py", str(args.indir)],
+        subprocess.run(["bash", str(MANIFEST_SCRIPT), str(copy_to),
+                        str(REPOS / "immensekansasii"), "02_screening_map_link.py", str(args.indir)],
                        env={**os.environ, "MANIFEST_NAME": "screening_map_link.MANIFEST.txt"}, check=True)
     compare(link, old)
 

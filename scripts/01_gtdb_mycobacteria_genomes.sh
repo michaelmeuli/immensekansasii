@@ -3,9 +3,10 @@
 # srun --pty -n 1 -c 6 --time=01:00:00 --mem=16G bash -l
 
 set -euo pipefail
+source "${KANSASII_ROOT:-/shares/sander.imm.uzh/MM/kansasii}/repos/kansasii-docs/templates/kansasii_paths.sh"
 
-DATA_DIR=/shares/sander.imm.uzh/MM/kansasii/data/immensekansasii/gtdb/gtdb232
-OUT_DIR=/shares/sander.imm.uzh/MM/kansasii/output/immensekansasii/gtdb/gtdb232
+DATA_DIR=$GTDB_METADATA_DIR
+OUT_DIR=$GTDB_ACCESSIONS_DIR
 mkdir -p "$DATA_DIR" "$OUT_DIR"
 
 METADATA="$DATA_DIR/bac120_metadata_r232.tsv"
@@ -124,7 +125,7 @@ awk -F'\t' -v OFS='\t' '{print $1, $1"_query"}' \
   kansasii_complex_gtdb_representative_accessions.txt > kansasii_complex_gtdb_representative_accessions_renamed.txt
 
 
-OUTDIR="/shares/sander.imm.uzh/MM/kansasii/data/gtdb_genomes/Mycobacteriaceae"
+OUTDIR="$GTDB_DIR"
 CHUNK_SIZE=500
 MAX_RETRIES=3
 
@@ -197,5 +198,4 @@ awk -F'\t' -v OFS='\t' -v dir="$OUTDIR/ncbi_dataset/data" \
 echo "-- $(($(wc -l < not_downloaded_genomes.tsv) - 1)) genome(s) not available, see $OUT_DIR/not_downloaded_genomes.tsv --"
 
 # provenance (see kansasii-docs/docs/PROVENANCE.md)
-bash /shares/sander.imm.uzh/MM/kansasii/repos/kansasii-docs/bin/write_manifest.sh "$OUT_DIR" \
-  /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii 01_gtdb_mycobacteria_genomes.sh "$METADATA"
+bash "$MANIFEST_SCRIPT" "$OUT_DIR" "$REPOS/immensekansasii" 01_gtdb_mycobacteria_genomes.sh "$METADATA"

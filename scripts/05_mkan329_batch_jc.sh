@@ -35,17 +35,17 @@
 
 set -euo pipefail
 
-BASE="/shares/sander.imm.uzh/MM/kansasii"
-READS_DIR="$BASE/data/illumina/Mkan329/reads/kansasii_jc"
-LINK_CSV="$BASE/data/imm/screening_map_link.csv"
+source "${KANSASII_ROOT:-/shares/sander.imm.uzh/MM/kansasii}/repos/kansasii-docs/templates/kansasii_paths.sh"
+READS_DIR="$ILLUMINA_DIR/Mkan329/reads/kansasii_jc"
+LINK_CSV="$SCREENING_MAP_LINK"
 NGS_COL="NGS_JC"
-BATCH_DIR="$BASE/data/illumina/Mkan329/batches/b05"
+BATCH_DIR="$ILLUMINA_DIR/Mkan329/batches/b05"
 EXCLUDE="Mkan329-009 Mkan329-056"
 INCLUDE=""
 SUFFIX=""
 RUN_ID="mkan329"
-RUN_IMMENSE="$BASE/repos/immensekansasii/run_IMMENSE.sh"
-DB_ROOT="/shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex"
+RUN_IMMENSE="$REPOS/immensekansasii/run_IMMENSE.sh"
+DB_ROOT=$IMMENSE_DB_ROOT
 
 while getopts ":r:m:c:o:x:I:s:R:" opt; do
   case $opt in
@@ -91,7 +91,7 @@ done <<< "$rows"
 echo "$BATCH_DIR: $n samples" >&2
 echo
 echo "# Command (run id $RUN_ID: run dir runs/$RUN_ID and snippy db $RUN_ID; run after earlier batches of the same run id finished):"
-echo "mkdir -p $DB_ROOT/$RUN_ID $BASE/runs/$RUN_ID \\"
-echo "  && cd $BASE/runs/$RUN_ID \\"
+echo "mkdir -p $DB_ROOT/$RUN_ID $RUNS/$RUN_ID \\"
+echo "  && cd $RUNS/$RUN_ID \\"
 echo "  && bash $RUN_IMMENSE -j job_${RUN_ID}_$(basename "$BATCH_DIR") -t fq_PE -r $RUN_ID \\"
 echo "       -x \"--kansasii_snippy_db $DB_ROOT/$RUN_ID\" -i $BATCH_DIR"

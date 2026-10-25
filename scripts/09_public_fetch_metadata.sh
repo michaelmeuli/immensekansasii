@@ -12,8 +12,8 @@
 
 set -euo pipefail
 
-BASE="/shares/sander.imm.uzh/MM/kansasii"
-PUBLIC_DIR="$BASE/data/illumina/public"
+source "${KANSASII_ROOT:-/shares/sander.imm.uzh/MM/kansasii}/repos/kansasii-docs/templates/kansasii_paths.sh"
+PUBLIC_DIR="$PUBLIC_READS"
 FIELDS="run_accession,experiment_accession,sample_accession,secondary_sample_accession,study_accession,scientific_name,strain,isolate,instrument_platform,instrument_model,library_strategy,library_source,library_layout,read_count,base_count,country,host,collection_date,sample_title,fastq_md5,fastq_ftp"
 
 while getopts ":o:" opt; do

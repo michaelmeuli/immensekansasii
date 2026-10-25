@@ -43,15 +43,15 @@
 
 set -euo pipefail
 
-K=/shares/sander.imm.uzh/MM/kansasii
-DATA_DIR=$K/data/immensekansasii/gtdb/gtdb232
-OUT_GTDB_DIR=$K/output/immensekansasii/gtdb/gtdb232
-METADATA="$DATA_DIR/bac120_metadata_r232.tsv"
+source "${KANSASII_ROOT:-/shares/sander.imm.uzh/MM/kansasii}/repos/kansasii-docs/templates/kansasii_paths.sh"
+DATA_DIR=$GTDB_METADATA_DIR
+OUT_GTDB_DIR=$GTDB_ACCESSIONS_DIR
+METADATA="$DATA_DIR/bac120_metadata_r${GTDB_RELEASE}.tsv"
 ACC_DIR=$OUT_GTDB_DIR   # accessions files
 
 MODE=gtdb
 ACCESSIONS_FILE="kansasii_complex_gtdb_representative_accessions_renamed.txt"
-RESULTS_CSV="$K/data/imm/screening_map_results.csv"
+RESULTS_CSV="$SCREENING_MAP_RESULTS"
 RUN=
 OUT_DIR=""
 PREFIX=""
@@ -72,7 +72,7 @@ case $MODE in
   samples) : "${RUN:=mkan329}" ;;
   *) echo "unknown mode: $MODE" >&2; exit 2 ;;
 esac
-: "${OUT_DIR:=$K/output/iTOL/$RUN}"
+: "${OUT_DIR:=$OUTPUT_ROOT/iTOL/$RUN}"
 
 # resolve the accessions file against ACC_DIR if given as a bare name
 if [ "$MODE" = gtdb ] && [ "${ACCESSIONS_FILE#/}" = "$ACCESSIONS_FILE" ] && [ ! -f "$ACCESSIONS_FILE" ]; then
@@ -81,7 +81,7 @@ fi
 mkdir -p "$OUT_DIR"
 
 # the tree is read from the run dir (never from output/); output/ only receives copies
-TREE_DIR=$K/runs/$RUN/${RUN}_transfer_result/kansasii_phylogeny
+TREE_DIR=$RUNS/$RUN/${RUN}_transfer_result/kansasii_phylogeny
 TREEFILE=$TREE_DIR/kansasii_complex_tree.treefile
 [ -f "$TREEFILE" ] || { echo "ERROR: no tree at $TREEFILE" >&2; exit 1; }
 
@@ -206,5 +206,5 @@ echo "Wrote ${PREFIX}itol_species_labels.txt and ${PREFIX}itol_species_colorstri
 
 # provenance (see kansasii-docs/docs/PROVENANCE.md)
 if [ "$MODE" = gtdb ]; then MAN_IN=$ACCESSIONS_FILE; else MAN_IN=$RESULTS_CSV; fi
-bash "$K/repos/kansasii-docs/bin/write_manifest.sh" "$OUT_DIR" "$K/repos/immensekansasii" \
+bash "$MANIFEST_SCRIPT" "$OUT_DIR" "$REPOS/immensekansasii" \
   07_generate_itol_species_labels.sh "$MAN_IN" "$TREE_DIR/kansasii_complex_tree.treefile"

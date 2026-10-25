@@ -13,3 +13,8 @@ report*
 .DS_Store
 __pycache__/
 *.pyc
+.mypy_cache/
+.pytest_cache/
+.ipynb_checkpoints/
+*.egg-info/
+*.log

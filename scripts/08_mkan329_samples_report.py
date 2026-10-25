@@ -19,12 +19,16 @@ import argparse
 import csv
 import datetime
 import glob
-import os
+import sys
 from collections import Counter
+from pathlib import Path
 from typing import TypedDict
 
-K = os.environ.get("KANSASII_ROOT", "/shares/sander.imm.uzh/MM/kansasii")
-COMPLEX = {"kansasii", "persicum", "pseudokansasii", "innocens", "attenuatum", "ostraviense", "gastri"}
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # kansasii_paths.py sits next to this script
+
+from kansasii_paths import ASSEMBLIES, REPOS, SCREENING_MAP_LINK, SPECIES  # noqa: E402
+
+COMPLEX = set(SPECIES)  # all 7 species of the complex, gastri included
 # GTDB merged M. ulcerans into M. marinum; MetaPhlAn writes Mycobacteroides_abscessus
 ALIAS = {"ulcerans": "marinum"}
 
@@ -68,9 +72,9 @@ def read_tab(path: str) -> dict[str, str]:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--results", default=f"{K}/runs/mkan329/assembly/results")
-    ap.add_argument("--link", default=f"{K}/data/imm/screening_map_link.csv")
-    ap.add_argument("--out", default=f"{K}/repos/immensekansasii/SAMPLES.md")
+    ap.add_argument("--results", default=str(ASSEMBLIES))
+    ap.add_argument("--link", default=str(SCREENING_MAP_LINK))
+    ap.add_argument("--out", default=str(REPOS / "immensekansasii" / "SAMPLES.md"))
     args = ap.parse_args()
 
     with open(args.link, encoding="utf-8") as fh:

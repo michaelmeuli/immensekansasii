@@ -27,12 +27,12 @@
 
 set -euo pipefail
 
-BASE="/shares/sander.imm.uzh/MM/kansasii"
-PUBLIC_DIR="$BASE/data/illumina/public"
+source "${KANSASII_ROOT:-/shares/sander.imm.uzh/MM/kansasii}/repos/kansasii-docs/templates/kansasii_paths.sh"
+PUBLIC_DIR="$PUBLIC_READS"
 TEST_SIZE=3
 BATCH_SIZE=45
-RUN_IMMENSE="$BASE/repos/immensekansasii/run_IMMENSE.sh"
-DB_ROOT="/shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex"
+RUN_IMMENSE="$REPOS/immensekansasii/run_IMMENSE.sh"
+DB_ROOT=$IMMENSE_DB_ROOT
 
 while getopts ":o:t:b:" opt; do
   case $opt in
@@ -113,8 +113,8 @@ echo "# Submit b01..bNN one after another (wait for each to finish)."
 for b in "${order[@]}"; do
   if [ "$b" = test ]; then run="public_${PROJ}_test"; else run="public_$PROJ"; fi
   db="$DB_ROOT/$run"
-  echo "mkdir -p $db $BASE/runs/$run \\"
-  echo "  && cd $BASE/runs/$run \\"
+  echo "mkdir -p $db $RUNS/$run \\"
+  echo "  && cd $RUNS/$run \\"
   echo "  && bash $RUN_IMMENSE -j job_public_${PROJ}_$b -t fq_PE -r $run \\"
   echo "       -x \"--kansasii_snippy_db $db\" -i $BATCHES_DIR/$b"
 done

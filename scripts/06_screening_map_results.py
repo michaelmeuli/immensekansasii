@@ -78,7 +78,10 @@ from typing import Any
 
 import pandas as pd
 
-K = Path(os.environ.get("KANSASII_ROOT", "/shares/sander.imm.uzh/MM/kansasii"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # kansasii_paths.py sits next to this script
+
+from kansasii_paths import (ASSEMBLIES, IMM_DIR, MANIFEST_SCRIPT, OUTPUT_ROOT, REPOS, RUNS, SPECIES)  # noqa: E402
+
 TNR_COLS_RE = r"^TNR(_JC|_MM|[0-9]+)?$"
 
 
@@ -93,7 +96,7 @@ MIC_ABBR = {
 MIC_FIELDS = (("mic", "mhk_raw"), ("modified_z", "modified_z"), ("clsi_category", "clsi_category"))
 
 
-COMPLEX = {"kansasii", "persicum", "pseudokansasii", "attenuatum", "innocens", "ostraviense", "gastri"}
+COMPLEX = set(SPECIES)  # all 7 species of the complex, gastri included
 
 
 def is_excluded(contamination_flag: str, cgmlst_called_pct: str, min_pct: float,
@@ -183,32 +186,32 @@ def tnr_mlsa(link: pd.DataFrame, reads_path: Path) -> dict[str, str]:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--indir", type=Path, default=K / "data/imm")
+    ap.add_argument("--indir", type=Path, default=IMM_DIR)
     ap.add_argument("--link", type=Path, default=None, help="default: <indir>/screening_map_link.csv")
     ap.add_argument("--out", type=Path, default=None, help="default: <indir>/screening_map_results.csv")
-    ap.add_argument("--results-dir", type=Path, default=K / "runs/mkan329/assembly/results",
+    ap.add_argument("--results-dir", type=Path, default=ASSEMBLIES,
                     help="per-sample result dirs of the immensekansasii run (<id>/3_quality, <id>/4_resistance_virulence)")
     ap.add_argument("--quality", type=Path,
-                    default=K / "runs/mkan329/mkan329_transfer_result/mkan329_quality.tsv",
+                    default=RUNS / "mkan329/mkan329_transfer_result/mkan329_quality.tsv",
                     help="merged quality table, fallback for samples without a per-sample summary")
     ap.add_argument("--id-map", type=Path, default=None,
                     help="optional id_map.tsv (NR, PROBENNUMMER, ...) for runs whose sample ids are not "
                          "Mkan329-NNN, e.g. data/illumina/Mkan329/batches/b01/id_map.tsv")
     ap.add_argument("--reads", type=Path,
-                    default=K / "output/mlsa/sanger_mlsa/representative_reads.tsv")
+                    default=OUTPUT_ROOT / "mlsa/sanger_mlsa/representative_reads.tsv")
     ap.add_argument("--mlsa1", type=Path,
-                    default=K / "output/mlsa/sanger_mlsa/isolate_classification.tsv")
+                    default=OUTPUT_ROOT / "mlsa/sanger_mlsa/isolate_classification.tsv")
     ap.add_argument("--mlsa2", type=Path,
-                    default=K / "output/mlsa/sanger_mlsa_excluded/isolate_classification.tsv")
+                    default=OUTPUT_ROOT / "mlsa/sanger_mlsa_excluded/isolate_classification.tsv")
     ap.add_argument("--refalign", type=Path,
-                    default=K / "output/mlsa/sanger_refalign/reference_alignment.tsv")
+                    default=OUTPUT_ROOT / "mlsa/sanger_refalign/reference_alignment.tsv")
     ap.add_argument("--mic-file", type=Path,
-                    default=K / "output/mic/mhk/outliers_per_antibiotic.csv",
+                    default=OUTPUT_ROOT / "mic/mhk/outliers_per_antibiotic.csv",
                     help="kansasii-mic long table (PROBENNUMMER, antibiotic, mhk_raw, modified_z, clsi_category)")
     ap.add_argument("--arm-calls", type=Path,
-                    default=K / "output/arm/work/report/marker_calls.pass.tsv",
+                    default=OUTPUT_ROOT / "arm/work/report/marker_calls.pass.tsv",
                     help="kansasii-amr-marker-screen marker_calls.pass.tsv (aa_call == MUT rows -> arm_mut)")
-    ap.add_argument("--cgmlst-qc", type=Path, default=K / "output/cgmlst/sample_qc.tsv",
+    ap.add_argument("--cgmlst-qc", type=Path, default=OUTPUT_ROOT / "cgmlst/sample_qc.tsv",
                     help="kansasii-cgmlst sample_qc.tsv (sample, cgmlst_called_pct) -> cgmlst_called_pct")
     ap.add_argument("--min-cgmlst-pct", type=float, default=90.0,
                     help="isolates with a lower %% of cgMLST loci called get excluded = true (default 90)")
@@ -221,11 +224,11 @@ def main() -> None:
     link_path = args.link or args.indir / "screening_map_link.csv"
     out = args.out or args.indir / "screening_map_results.csv"
     id_map_path = args.id_map
-    copy_to = args.copy_to or (None if args.out else K / "output")
+    copy_to = args.copy_to or (None if args.out else OUTPUT_ROOT)
 
     link = read_tsv(link_path, ",")
     res = link.copy()
-    res.insert(res.columns.get_loc("NGS_MM") + 1, "NGS_USED",
+    res.insert(list(res.columns).index("NGS_MM") + 1, "NGS_USED",
                res["NGS_MM"].where(res["NGS_MM"] != "", res["NGS_JC"]))
     if (res["NGS_USED"] == "").any():
         warn("no NGS_MM and no NGS_JC: %s" % ", ".join(res.loc[res["NGS_USED"] == "", "PROBENNUMMER"]))
@@ -397,9 +400,8 @@ def main() -> None:
         shutil.copy2(out, copy_to / out.name)
         print(f"copied to {copy_to / out.name}")
         # provenance (see kansasii-docs/docs/PROVENANCE.md); own file name since output/ is shared
-        root = Path(os.environ.get("KANSASII_ROOT", "/shares/sander.imm.uzh/MM/kansasii"))
-        subprocess.run(["bash", str(root / "repos/kansasii-docs/bin/write_manifest.sh"), str(copy_to),
-                        str(root / "repos/immensekansasii"), "06_screening_map_results.py", str(args.indir)],
+        subprocess.run(["bash", str(MANIFEST_SCRIPT), str(copy_to),
+                        str(REPOS / "immensekansasii"), "06_screening_map_results.py", str(args.indir)],
                        env={**os.environ, "MANIFEST_NAME": "screening_map_results.MANIFEST.txt"}, check=True)
 
 

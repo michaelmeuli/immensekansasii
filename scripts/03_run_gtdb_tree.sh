@@ -8,7 +8,8 @@
 # them as queries ("same id as GTDB-Tk reference genomes"). The list pairs each accession
 # with a "_query" id; the symlink carries that id, which becomes the tree tip name.
 #
-# Usage:  bash 03_run_gtdb_tree.sh        (conda activate env_immense not needed, only submits)
+# Usage:  bash 03_run_gtdb_tree.sh [-s GTDB_REPRESENTATIVES_DIR]   (conda activate env_immense not needed, only submits)
+#   -s  directory the <accession>_query.fasta links are written to (default GTDB_REPRESENTATIVES, the reference set of all repos)
 # After the Slurm job (job_kansasii_complex_gtdb_representatives) has finished and been checked:
 #   rsync -a --exclude work --exclude .nextflow --exclude '*_transfer_result/genomes/' \
 #       $ROOT/runs/kansasii_complex_gtdb_representatives/ $ROOT/output/kansasii_complex_gtdb_representatives/
@@ -18,14 +19,15 @@
 # run_IMMENSE.sh only submits the controller job and returns at once, so the rsync must wait.
 set -euo pipefail
 
-ROOT=${KANSASII_ROOT:-/shares/sander.imm.uzh/MM/kansasii}
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+source "${KANSASII_ROOT:-/shares/sander.imm.uzh/MM/kansasii}/repos/kansasii-docs/templates/kansasii_paths.sh"
 RUN=kansasii_complex_gtdb_representatives
-ACCESSIONS_FILE=$ROOT/output/immensekansasii/gtdb/gtdb232/kansasii_complex_gtdb_representative_accessions_renamed.txt
-GENOME_DATA_DIR=$ROOT/data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data
-SELECTED_DIR=$ROOT/data/gtdb_genomes/Mycobacteriaceae/$RUN
-SNIPPY_DB_DIR=/shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/$RUN
-RUN_DIR=$ROOT/runs/$RUN
+ACCESSIONS_FILE=$GTDB_ACCESSIONS_DIR/kansasii_complex_gtdb_representative_accessions_renamed.txt
+GENOME_DATA_DIR=$NCBI_DATASET
+SELECTED_DIR=$GTDB_REPRESENTATIVES
+while getopts s: o; do case $o in s) SELECTED_DIR=$OPTARG ;; *) echo "usage: $0 [-s dir]" >&2; exit 2 ;; esac; done
+SNIPPY_DB_DIR=$IMMENSE_DB_ROOT/$RUN
+RUN_DIR=$RUNS/$RUN
 
 [[ -s "$ACCESSIONS_FILE" ]] || { echo "missing $ACCESSIONS_FILE: run 01_gtdb_mycobacteria_genomes.sh first" >&2; exit 1; }
 mkdir -p "$SELECTED_DIR" "$SNIPPY_DB_DIR" "$RUN_DIR"

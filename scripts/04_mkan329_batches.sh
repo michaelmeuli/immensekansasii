@@ -46,14 +46,14 @@
 
 set -euo pipefail
 
-BASE="/shares/sander.imm.uzh/MM/kansasii"
-READS_DIR="$BASE/data/illumina/Mkan329/reads/kansasii"
-LINK_CSV="$BASE/data/imm/screening_map_link.csv"
-BATCHES_DIR="$BASE/data/illumina/Mkan329/batches"
+source "${KANSASII_ROOT:-/shares/sander.imm.uzh/MM/kansasii}/repos/kansasii-docs/templates/kansasii_paths.sh"
+READS_DIR="$ILLUMINA_DIR/Mkan329/reads/kansasii"
+LINK_CSV="$SCREENING_MAP_LINK"
+BATCHES_DIR="$ILLUMINA_DIR/Mkan329/batches"
 TEST_SIZE=3
 BATCH_SIZE=45
-RUN_IMMENSE="$BASE/repos/immensekansasii/run_IMMENSE.sh"
-DB_ROOT="/shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex"
+RUN_IMMENSE="$REPOS/immensekansasii/run_IMMENSE.sh"
+DB_ROOT=$IMMENSE_DB_ROOT
 
 while getopts ":r:m:o:t:b:" opt; do
   case $opt in
@@ -144,8 +144,8 @@ echo "# submit b01..bNN one after another (wait for each to finish). all = full 
 for b in "${order[@]}"; do
   if [ "$b" = test ]; then run="mkan329_test"; else run="mkan329"; fi
   db="$DB_ROOT/$run"
-  echo "mkdir -p $db $BASE/runs/$run \\"
-  echo "  && cd $BASE/runs/$run \\"
+  echo "mkdir -p $db $RUNS/$run \\"
+  echo "  && cd $RUNS/$run \\"
   echo "  && bash $RUN_IMMENSE -j job_mkan329_$b -t fq_PE -r $run \\"
   echo "       -x \"--kansasii_snippy_db $db\" -i $BATCHES_DIR/$b"
 done

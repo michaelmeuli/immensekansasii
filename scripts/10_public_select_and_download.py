@@ -30,8 +30,13 @@ import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import Any
 
-BASE = Path("/shares/sander.imm.uzh/MM/kansasii")
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # kansasii_paths.py sits next to this script
+
+from kansasii_paths import PUBLIC_READS  # noqa: E402
+
+Row = dict[str, Any]
 SELECTED_COLS = ["sample_id", "bioproject", "runs", "biosample", "scientific_name", "strain", "isolate",
                  "country", "host", "collection_date", "platform", "instrument_model", "read_count", "base_count",
                  "overlap", "R1", "R2"]
@@ -46,7 +51,7 @@ def md5(path: Path) -> str:
     return h.hexdigest()
 
 
-def pair_files(row: dict) -> "tuple[tuple[str, str], tuple[str, str]] | None":
+def pair_files(row: Row) -> "tuple[tuple[str, str], tuple[str, str]] | None":
     """((url1, md5_1), (url2, md5_2)) from fastq_ftp/fastq_md5, or None if there is no _1/_2 pair."""
     urls = [u for u in row["fastq_ftp"].split(";") if u]
     sums = [s for s in row["fastq_md5"].split(";") if s]
@@ -80,7 +85,7 @@ def fetch(url: str, want_md5: str, dest: Path) -> None:
     raise RuntimeError(f"download or md5 failed after 5 attempts: {url}")
 
 
-def build_sample(sample: dict, reads_dir: Path) -> str:
+def build_sample(sample: Row, reads_dir: Path) -> str:
     """Download all runs of one sample and place R1/R2; concatenate if several runs."""
     sid = sample["sample_id"]
     out = [reads_dir / f"{sid}_R1.fastq.gz", reads_dir / f"{sid}_R2.fastq.gz"]
@@ -106,20 +111,20 @@ def build_sample(sample: dict, reads_dir: Path) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("projects", nargs="+")
-    ap.add_argument("-o", "--public-dir", type=Path, default=BASE / "data/illumina/public")
+    ap.add_argument("-o", "--public-dir", type=Path, default=PUBLIC_READS)
     ap.add_argument("-j", "--jobs", type=int, default=4)
     ap.add_argument("--no-download", action="store_true", help="write selected.tsv / not_runnable.tsv only")
     args = ap.parse_args()
 
     # Pass 1: group runs per project and BioSample
-    samples: "dict[str, list[dict]]" = {}
-    not_runnable: "dict[str, list[dict]]" = {}
+    samples: "dict[str, list[list[Row]]]" = {}
+    not_runnable: "dict[str, list[Row]]" = {}
     biosample_projects: "dict[str, set[str]]" = defaultdict(set)
     for proj in args.projects:
         meta = args.public_dir / proj / "metadata.tsv"
         if not meta.exists():
             sys.exit(f"ERROR: {meta} missing, run 09_public_fetch_metadata.sh first")
-        by_bs: "dict[str, list[dict]]" = defaultdict(list)
+        by_bs: "dict[str, list[Row]]" = defaultdict(list)
         not_runnable[proj] = []
         with meta.open() as f:
             for row in csv.DictReader(f, delimiter="\t"):
@@ -139,7 +144,7 @@ def main() -> None:
                     continue
                 by_bs[row["sample_accession"]].append(row)
                 biosample_projects[row["sample_accession"]].add(proj)
-        samples[proj] = [rows for _, rows in sorted(by_bs.items())]
+        samples[proj] = [biosample_rows for _, biosample_rows in sorted(by_bs.items())]
 
     # Pass 2: write tables, then download
     had_failures = False
@@ -147,9 +152,10 @@ def main() -> None:
         proj_ids: "set[str]" = set()
         pdir = args.public_dir / proj
         reads_dir = pdir / "reads"
-        sel_rows, jobs = [], []
-        for rows in samples[proj]:
-            rows = sorted(rows, key=lambda r: r["run_accession"])
+        sel_rows: list[Row] = []
+        jobs: list[Row] = []
+        for biosample_rows in samples[proj]:
+            rows = sorted(biosample_rows, key=lambda r: r["run_accession"])
             first = rows[0]
             sid = first["run_accession"]
             if sid in proj_ids:
@@ -168,12 +174,12 @@ def main() -> None:
                 "R2": reads_dir / f"{sid}_R2.fastq.gz"})
             jobs.append({"sample_id": sid, "files": [(r["run_accession"], pair_files(r)) for r in rows]})
         pdir.mkdir(parents=True, exist_ok=True)
-        for name, cols, rows in (("selected.tsv", SELECTED_COLS, sel_rows),
+        for name, cols, table in (("selected.tsv", SELECTED_COLS, sel_rows),
                                  ("not_runnable.tsv", NOT_RUNNABLE_COLS, not_runnable[proj])):
             with (pdir / name).open("w", newline="") as f:
                 w = csv.DictWriter(f, fieldnames=cols, delimiter="\t", lineterminator="\n")
                 w.writeheader()
-                w.writerows(rows)
+                w.writerows(table)
         n_ov = sum(1 for r in sel_rows if r["overlap"])
         print(f"{proj}: {len(sel_rows)} samples ({n_ov} shared with another given project), "
               f"{len(not_runnable[proj])} runs not runnable -> {pdir}")
