@@ -203,3 +203,8 @@ cp -v "$TREE_DIR"/kansasii_complex_tree.treefile "$TREE_DIR"/kansasii_complex_tr
 if [ "$MODE" = gtdb ]; then cp -v "$ACCESSIONS_FILE" "$OUT_DIR/"; else cp -v "$RESULTS_CSV" "$OUT_DIR/"; fi
 
 echo "Wrote ${PREFIX}itol_species_labels.txt and ${PREFIX}itol_species_colorstrip.txt to $OUT_DIR ($n_joined tips, mode $MODE)"
+
+# provenance (see kansasii-docs/docs/PROVENANCE.md)
+if [ "$MODE" = gtdb ]; then MAN_IN=$ACCESSIONS_FILE; else MAN_IN=$RESULTS_CSV; fi
+bash "$K/repos/kansasii-docs/bin/write_manifest.sh" "$OUT_DIR" "$K/repos/immensekansasii" \
+  07_generate_itol_species_labels.sh "$MAN_IN" "$TREE_DIR/kansasii_complex_tree.treefile"
