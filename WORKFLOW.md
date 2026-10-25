@@ -14,7 +14,6 @@ absolute; **code blocks use full paths** and can be pasted as they are (only
 | `repos/mlsa-kansasii` | MLSA / Sanger differentiation (reads `data/imm/screening_map_link.csv`) |
 | `data/imm/` | screening map sources and derived tables |
 | `data/immensekansasii/gtdb/gtdb232/` | GTDB r232 metadata (downloaded if missing), accession lists, type strains |
-| `data/immensekansasii/gtdb/gtdb226/` | GTDB r226 metadata and taxonomy only; recreate with `mlsa-kansasii/scripts/01_download_filter_gtdb.sh 226` |
 | `data/gtdb_genomes/` | genomes downloaded from NCBI, plus symlink dirs for runs |
 | `data/illumina/Mkan329/reads/kansasii/` | delivered paired-end fastq `Mkan329-NNN_r1/_r2.fastq.gz` (lower case; 133 isolates, NR 1-133; NR 134-186 are in `reads/kansasii_jc`) |
 | `data/illumina/Mkan329/batches/<batch>/` | per-batch input from `04_mkan329_batches.sh`: `Mkan329-NNN_R1/_R2.fastq.gz` symlinks + `id_map.tsv` |
