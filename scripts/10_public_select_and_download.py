@@ -126,7 +126,7 @@ def main() -> None:
             sys.exit(f"ERROR: {meta} missing, run 09_public_fetch_metadata.sh first")
         by_bs: "dict[str, list[Row]]" = defaultdict(list)
         not_runnable[proj] = []
-        with meta.open() as f:
+        with meta.open(encoding="utf-8") as f:
             for row in csv.DictReader(f, delimiter="\t"):
                 reason = None
                 if row["instrument_platform"] != "ILLUMINA":
@@ -176,7 +176,7 @@ def main() -> None:
         pdir.mkdir(parents=True, exist_ok=True)
         for name, cols, table in (("selected.tsv", SELECTED_COLS, sel_rows),
                                  ("not_runnable.tsv", NOT_RUNNABLE_COLS, not_runnable[proj])):
-            with (pdir / name).open("w", newline="") as f:
+            with (pdir / name).open("w", newline="", encoding="utf-8") as f:
                 w = csv.DictWriter(f, fieldnames=cols, delimiter="\t", lineterminator="\n")
                 w.writeheader()
                 w.writerows(table)
