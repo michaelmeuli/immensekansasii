@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-DATA_DIR=/shares/sander.imm.uzh/MM/kansasii/data/lit/gtdb/gtdb232
+DATA_DIR=/shares/sander.imm.uzh/MM/kansasii/data/immensekansasii/gtdb/gtdb232
 OUT_DIR=/shares/sander.imm.uzh/MM/kansasii/output/immensekansasii/gtdb/gtdb232
 mkdir -p "$DATA_DIR" "$OUT_DIR"
 

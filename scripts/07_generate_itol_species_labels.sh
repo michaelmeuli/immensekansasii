@@ -30,7 +30,7 @@
 #                                              [-r RESULTS_CSV] [-n RUN] [-o OUT_DIR] [-p PREFIX]
 #   -m  mode (default gtdb)
 #   -a  gtdb mode: accessions file name/path (default
-#       kansasii_complex_gtdb_representative_accessions_renamed.txt in data/lit/gtdb/gtdb232; use
+#       kansasii_complex_gtdb_representative_accessions_renamed.txt in data/immensekansasii/gtdb/gtdb232; use
 #       mycobacterium_relevant_species_representative_accessions_renamed.txt for the 20-genome set)
 #   -r  samples mode: screening_map_results.csv (default data/imm/screening_map_results.csv)
 #   -n  pipeline run name (default kansasii_complex_gtdb_representatives in gtdb mode,
@@ -44,7 +44,7 @@
 set -euo pipefail
 
 K=/shares/sander.imm.uzh/MM/kansasii
-DATA_DIR=$K/data/lit/gtdb/gtdb232
+DATA_DIR=$K/data/immensekansasii/gtdb/gtdb232
 METADATA="$DATA_DIR/bac120_metadata_r232.tsv"
 ACC_DIR=$DATA_DIR   # accessions files
 
