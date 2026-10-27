@@ -36,6 +36,11 @@ NON_CLSI_THRESHOLDS_MG_L = {"EMB": 8.0, "INH": 8.0, "ETO": 0.6, "STR": 16.0}
 # True: resistant if MIC > threshold (MIC == threshold is susceptible); False: resistant if MIC >= threshold
 NON_CLSI_RESISTANT_IF_ABOVE = True
 COMPLEX_SPECIES = tuple(kp.SPECIES_COLORS)
+DRUG_NAMES = {
+    "AMK": "amikacin", "CIP": "ciprofloxacin", "CLR": "clarithromycin", "DOX": "doxycycline", "EMB": "ethambutol",
+    "ETO": "ethionamide", "INH": "isoniazid", "LZD": "linezolid", "MXF": "moxifloxacin", "RFB": "rifabutin",
+    "RIF": "rifampicin", "STR": "streptomycin", "SXT": "trimethoprim-sulfamethoxazole",
+}
 RESISTANT, SUSCEPTIBLE, NO_DATA = 1, 0, -1
 DRUG_SHAPE_CIRCLE = "2"
 BLACK = "#000000"
@@ -106,14 +111,20 @@ def write_tree(tree_file: Path, keep: set[str], out: Path) -> list[str]:
 
 def write_ast(patients: dict[str, dict[str, str]], tips: list[str], out: Path) -> dict[str, int]:
     n = len(DRUGS)
+    legend_drugs = [
+        f"{i}. {d} {DRUG_NAMES[d]} ({'> ' + format(NON_CLSI_THRESHOLDS_MG_L[d], 'g') + ' mg/L' if d in NON_CLSI_THRESHOLDS_MG_L else 'CLSI'})"
+        for i, d in enumerate(DRUGS, 1)
+    ]
     lines = [
         "DATASET_BINARY", "SEPARATOR TAB", "DATASET_LABEL\tAST", f"COLOR\t{BLACK}",
         "FIELD_SHAPES\t" + "\t".join([DRUG_SHAPE_CIRCLE] * n),
         "FIELD_LABELS\t" + "\t".join(DRUGS),
         "FIELD_COLORS\t" + "\t".join([BLACK] * n),
         "SHOW_LABELS\t1", "LABEL_ROTATION\t45", "HEIGHT_FACTOR\t1", "MARGIN\t5",
-        "LEGEND_TITLE\tAST (CLSI; EMB, INH, ETO, STR by MIC threshold)",
-        "LEGEND_SHAPES\t2\t2", "LEGEND_COLORS\t" + f"{BLACK}\t{BLACK}", "LEGEND_LABELS\tresistant (filled)\tsusceptible/intermediate (hollow)",
+        "LEGEND_TITLE\tAST, rings from inner to outer",
+        "LEGEND_SHAPES\t" + "\t".join([DRUG_SHAPE_CIRCLE] * (n + 2)),
+        "LEGEND_COLORS\t" + "\t".join([BLACK] * (n + 2)),
+        "LEGEND_LABELS\t" + "\t".join(["filled = resistant", "hollow = susceptible/intermediate", *legend_drugs]),
         "DATA",
     ]
     resistant = dict.fromkeys(DRUGS, 0)
