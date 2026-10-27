@@ -99,6 +99,7 @@ gy=$(submit_file "$(join "$results" "$hv")" "$GYRA/submit_gyrA.sbatch")
 # 10 iTOL, 11 samples report
 itol=$(submit_wrap itol env_immense "$results" \
   "bash $IMM/scripts/07_generate_itol_species_labels.sh; bash $IMM/scripts/07_generate_itol_species_labels.sh -m samples -p mkan329_")
+itol_ast=$(submit_wrap itol-ast biopython "$results" "python $IMM/scripts/12_generate_itol_ast.py")
 report=$(submit_wrap samples-report env_mic "$results" "cd $IMM; python scripts/08_mkan329_samples_report.py")
 
 # 12b cgMLST distances / MSTs / Ridom export, core-SNP MSTs
