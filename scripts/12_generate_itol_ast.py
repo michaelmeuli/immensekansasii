@@ -24,6 +24,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -98,15 +99,34 @@ def read_patients(results_csv: Path) -> dict[str, dict[str, str]]:
         return {r["PROBENNUMMER"]: r for r in csv.DictReader(fh) if is_patient_isolate(r)}
 
 
-def write_tree(tree_file: Path, keep: set[str], out: Path) -> list[str]:
+def order_by_species(clade: Any, species: dict[str, str]) -> tuple[int, int]:
+    """Rotate the children of every node (topology unchanged) so that species sit together in the circle.
+
+    Children are ordered by the species rank of their largest species group (COMPLEX_SPECIES order), then by size,
+    largest first. Returns (rank, size) of `clade`.
+    """
+    if clade.is_terminal():
+        return COMPLEX_SPECIES.index(species[clade.name]), 1
+    keyed = [(order_by_species(c, species), c) for c in clade.clades]
+    clade.clades = [c for _, c in sorted(keyed, key=lambda kc: (kc[0][0], -kc[0][1]))]
+    counts: dict[int, int] = {}
+    for c in clade.get_terminals():
+        r = COMPLEX_SPECIES.index(species[c.name])
+        counts[r] = counts.get(r, 0) + 1
+    rank = min(counts, key=lambda r: (-counts[r], r))
+    return rank, len(clade.get_terminals())
+
+
+def write_tree(tree_file: Path, species: dict[str, str], out: Path) -> list[str]:
     from Bio import Phylo  # only here, so the call logic can be tested without Biopython
 
     tree = Phylo.read(str(tree_file), "newick")
-    for tip in [t.name for t in tree.get_terminals() if t.name not in keep]:
+    for tip in [t.name for t in tree.get_terminals() if t.name not in species]:
         tree.prune(tip)
     tree.root_at_midpoint()
+    order_by_species(tree.root, species)
     Phylo.write(tree, str(out), "newick")
-    return sorted(t.name for t in tree.get_terminals())
+    return [t.name for t in tree.get_terminals()]
 
 
 def write_ast(patients: dict[str, dict[str, str]], tips: list[str], out: Path) -> dict[str, int]:
@@ -171,7 +191,7 @@ def main() -> None:
 
     patients = read_patients(args.results)
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    tips = write_tree(args.tree, set(patients), args.out_dir / "kansasii_patients_midpoint.nwk")
+    tips = write_tree(args.tree, {k: v["species"].strip() for k, v in patients.items()}, args.out_dir / "kansasii_patients_midpoint.nwk")
     missing = sorted(set(patients) - set(tips))
     if missing:
         print(f"WARNING: {len(missing)} patient isolates not in the tree: {', '.join(missing)}", file=sys.stderr)
