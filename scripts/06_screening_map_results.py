@@ -69,6 +69,7 @@ Usage: python scripts/06_screening_map_results.py  (in immensekansasii) [--resul
 from __future__ import annotations
 
 import os
+import re
 import argparse
 import shutil
 import subprocess
@@ -80,7 +81,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # kansasii_paths.py sits next to this script
 
-from kansasii_paths import (ASSEMBLIES, IMM_DIR, MANIFEST_SCRIPT, OUTPUT_ROOT, REPOS, RUNS, SPECIES)  # noqa: E402
+from kansasii_paths import (ASSEMBLIES, IMM_DIR, MANIFEST_SCRIPT, OUTPUT_ROOT, REPOS, RIDOM_CLUSTERS, RUNS, SPECIES)  # noqa: E402
 
 TNR_COLS_RE = r"^TNR(_JC|_MM|[0-9]+)?$"
 
@@ -94,6 +95,19 @@ MIC_ABBR = {
     "Sulfamethoxazole/Trimethoprim": "SXT", "Ethionamid": "ETO",
 }
 MIC_FIELDS = (("mic", "mhk_raw"), ("modified_z", "modified_z"), ("clsi_category", "clsi_category"))
+
+
+# ridom-clusters.csv column -> screening_map_results column (appended last)
+RIDOM_COLS = {"Perc. Good Targets": "ridom_perc_good_targets",
+              "Approximated Genome Size (Mbases)": "ridom_genome_size_mb",
+              "Species": "ridom_species", "-Group-": "ridom_mst_cluster"}
+
+
+def ridom_id(pnr: str, label: str) -> str:
+    """Sample ID of the Ridom export (kansasii-cgmlst 10_export_ridom.py): Mkan329-081 -> M081, controls -> safe label."""
+    if label:
+        return re.sub(r"_+", "_", re.sub(r"[^A-Za-z0-9]+", "_", label)).strip("_")
+    return pnr.replace("Mkan329-", "M")
 
 
 COMPLEX = set(SPECIES)  # all 7 species of the complex, gastri included
@@ -213,6 +227,8 @@ def main() -> None:
                     help="kansasii-amr-marker-screen marker_calls.pass.tsv (aa_call == MUT rows -> arm_mut)")
     ap.add_argument("--cgmlst-qc", type=Path, default=OUTPUT_ROOT / "cgmlst/sample_qc.tsv",
                     help="kansasii-cgmlst sample_qc.tsv (sample, cgmlst_called_pct) -> cgmlst_called_pct")
+    ap.add_argument("--ridom-clusters", type=Path, default=RIDOM_CLUSTERS,
+                    help="Ridom ridom-clusters.csv (Sample ID, ...) -> ridom_* columns, appended last")
     ap.add_argument("--min-cgmlst-pct", type=float, default=90.0,
                     help="isolates with a lower %% of cgMLST loci called get excluded = true (default 90)")
     ap.add_argument("--max-contamination", type=float, default=5.0,
@@ -386,6 +402,19 @@ def main() -> None:
                 res.at[i, f"{MIC_ABBR[r['antibiotic']]}_{f}"] = r[src]
     else:
         warn(f"{args.mic_file} not found; MIC columns left empty")
+
+    for c in RIDOM_COLS.values():
+        res[c] = ""
+    if args.ridom_clusters.exists():
+        rid = read_tsv(args.ridom_clusters, ",").set_index("Sample ID")
+        keys = [ridom_id(p, l) for p, l in zip(res["PROBENNUMMER"], res["LABEL"])]
+        hit = [k in rid.index for k in keys]
+        for src, dst in RIDOM_COLS.items():
+            res[dst] = [rid.at[k, src].strip() if h else "" for k, h in zip(keys, hit)]
+        warn(f"ridom: {sum(hit)}/{len(res)} isolates matched; not in screening table: "
+             f"{', '.join(sorted(set(rid.index) - set(keys)))}")
+    else:
+        warn(f"{args.ridom_clusters} not found; ridom columns left empty")
 
     res.to_csv(out, index=False)
     print(f"{(res[[f'{a}_mic' for a in MIC_ABBR.values()]] != '').any(axis=1).sum()} isolates with MIC data")
