@@ -24,7 +24,7 @@ script never modifies it. Added columns:
       so GTDB and hsp65 species calls may legitimately disagree.
   cgmlst_called_pct, excluded  (inserted right after contamination_flag)
       cgmlst_called_pct: % of the cgMLST95 loci with an allele call (kansasii-cgmlst step 07,
-      output/cgmlst/sample_qc.tsv; --cgmlst-qc); empty for isolates that are not allele-called
+      output/kansasii-cgmlst/results/sample_qc.tsv; --cgmlst-qc); empty for isolates that are not allele-called
       (contaminated, not in the complex) or if the file is missing.
       excluded: "true"/"false" on every row; true if contamination_flag is "contaminated",
       cgmlst_called_pct < --min-cgmlst-pct (default 90, like Ridom's good-target threshold), or the
@@ -81,7 +81,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # kansasii_paths.py sits next to this script
 
-from kansasii_paths import (ASSEMBLIES, IMM_DIR, MANIFEST_SCRIPT, OUTPUT_ROOT, REPOS, RIDOM_CLUSTERS, RUNS, SPECIES)  # noqa: E402
+from kansasii_paths import (ASSEMBLIES, IMM_DIR, MANIFEST_SCRIPT, OUT_AMR, OUT_CGMLST, OUT_MIC, OUT_IMM, OUT_MLSA, REPOS, RIDOM_CLUSTERS, RUNS, SPECIES)  # noqa: E402
 
 TNR_COLS_RE = r"^TNR(_JC|_MM|[0-9]+)?$"
 
@@ -212,20 +212,20 @@ def main() -> None:
                     help="optional id_map.tsv (NR, PROBENNUMMER, ...) for runs whose sample ids are not "
                          "Mkan329-NNN, e.g. data/illumina/Mkan329/batches/b01/id_map.tsv")
     ap.add_argument("--reads", type=Path,
-                    default=OUTPUT_ROOT / "mlsa/sanger_mlsa/representative_reads.tsv")
+                    default=OUT_MLSA / "results/sanger_mlsa/representative_reads.tsv")
     ap.add_argument("--mlsa1", type=Path,
-                    default=OUTPUT_ROOT / "mlsa/sanger_mlsa/isolate_classification.tsv")
+                    default=OUT_MLSA / "results/sanger_mlsa/isolate_classification.tsv")
     ap.add_argument("--mlsa2", type=Path,
-                    default=OUTPUT_ROOT / "mlsa/sanger_mlsa_excluded/isolate_classification.tsv")
+                    default=OUT_MLSA / "results/sanger_mlsa_excluded/isolate_classification.tsv")
     ap.add_argument("--refalign", type=Path,
-                    default=OUTPUT_ROOT / "mlsa/sanger_refalign/reference_alignment.tsv")
+                    default=OUT_MLSA / "results/sanger_refalign/reference_alignment.tsv")
     ap.add_argument("--mic-file", type=Path,
-                    default=OUTPUT_ROOT / "mic/mhk/outliers_per_antibiotic.csv",
+                    default=OUT_MIC / "results/mhk/outliers_per_antibiotic.csv",
                     help="kansasii-mic long table (PROBENNUMMER, antibiotic, mhk_raw, modified_z, clsi_category)")
     ap.add_argument("--amr-calls", type=Path,
-                    default=OUTPUT_ROOT / "amr/work/report/marker_calls.pass.tsv",
+                    default=OUT_AMR / "results/assembly/work/report/marker_calls.pass.tsv",
                     help="kansasii-amr-marker-screen marker_calls.pass.tsv (aa_call == MUT rows -> amr_mut)")
-    ap.add_argument("--cgmlst-qc", type=Path, default=OUTPUT_ROOT / "cgmlst/sample_qc.tsv",
+    ap.add_argument("--cgmlst-qc", type=Path, default=OUT_CGMLST / "results/sample_qc.tsv",
                     help="kansasii-cgmlst sample_qc.tsv (sample, cgmlst_called_pct) -> cgmlst_called_pct")
     ap.add_argument("--ridom-clusters", type=Path, default=RIDOM_CLUSTERS,
                     help="Ridom ridom-clusters.csv (Sample ID, ...) -> ridom_* columns, appended last")
@@ -240,7 +240,7 @@ def main() -> None:
     link_path = args.link or args.indir / "screening_map_link.csv"
     out = args.out or args.indir / "screening_map_results.csv"
     id_map_path = args.id_map
-    copy_to = args.copy_to or (None if args.out else OUTPUT_ROOT)
+    copy_to = args.copy_to or (None if args.out else OUT_IMM / "results")
 
     link = read_tsv(link_path, ",")
     res = link.copy()

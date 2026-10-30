@@ -68,7 +68,7 @@ isolates with `contamination_flag == contaminated` (035, 106, 113, and since 202
 Question: how many of the 880 GTDB-kansasii assemblies of the four public BioProjects (see `PROJECTS.md`) would be misidentified by Sanger hsp65?
 `hsp65-refalign/scripts/05_call_public.py` (moved from `mlsa-kansasii/sanger_vs_wgs/run_insilico_public.py`, commit 5498d72; identical table on rerun 2026-10-25) cuts the 441 bp hsp65 amplicon (TB-11/TB-12(w) in silico PCR)
 out of each `1_unicycler/<id>.fasta` and classifies it against the 72 per-genome hsp65 amplicons of the GTDB complex genomes
-(sanger_refalign logic). Output: `output/hsp65_refalign/public/{insilico_public.tsv,SUMMARY.txt}` (the first run is kept in `output/mlsa/sanger_vs_wgs_public/`).
+(sanger_refalign logic). Output: `output/hsp65-refalign/results/public/{insilico_public.tsv,SUMMARY.txt}` (the first run is kept in `output/mlsa-kansasii/results/sanger_vs_wgs_public/`).
 Positive control: 9 GTDB-persicum samples gave 6 persicum and 3 closest to the atypical kansasii genomes, as expected.
 
 Result: an amplicon was found in all 880; 877 are closest to a typical kansasii reference with 0 differences. Three are not:
@@ -86,6 +86,6 @@ Result: an amplicon was found in all 880; 877 are closest to a typical kansasii 
   that of *pseudokansasii* / *attenuatum*; a typical kansasii hsp65 is at least 11 / 15 differences away. Sanger hsp65 would call them
   pseudokansasii / attenuatum.
 - Not established: whether this is a real hsp65 transfer or an assembly artefact (misassembled contig). Not checked: reads mapped to the amplicon
-  (mixed bases, coverage). Amplicons: `output/mlsa/logs/SRR27048434_hsp65_amplicon.fa`, `SRR27048675_hsp65_amplicon.fa`.
+  (mixed bases, coverage). Amplicons: `output/mlsa-kansasii/logs/SRR27048434_hsp65_amplicon.fa`, `SRR27048675_hsp65_amplicon.fa`.
 - Not covered: the 184 public samples without a kansasii GTDB call, SRR27048649 (no assembly) and the in-house Mkan329 set
-  (`output/mlsa/sanger_vs_wgs/insilico_vs_wgs.tsv`).
+  (`output/mlsa-kansasii/results/sanger_vs_wgs/insilico_vs_wgs.tsv`).

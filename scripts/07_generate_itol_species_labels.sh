@@ -35,7 +35,7 @@
 #   -r  samples mode: screening_map_results.csv (default data/imm/screening_map_results.csv)
 #   -n  pipeline run name (default kansasii_complex_gtdb_representatives in gtdb mode,
 #       mkan329 in samples mode); the tree files are read from runs/<run>/<run>_transfer_result/kansasii_phylogeny/
-#   -o  output dir (default output/iTOL/<run>)
+#   -o  output dir (default output/immensekansasii/results/iTOL/<run>)
 #   -p  output file prefix, e.g. "mkan329_" (default none)
 # Writes: <prefix>itol_species_labels.txt, <prefix>itol_species_colorstrip.txt in OUT_DIR
 # (also copies the run's .treefile/.iqtree and the mapping input there, so OUT_DIR is all of iTOL's
@@ -72,7 +72,7 @@ case $MODE in
   samples) : "${RUN:=mkan329}" ;;
   *) echo "unknown mode: $MODE" >&2; exit 2 ;;
 esac
-: "${OUT_DIR:=$OUTPUT_ROOT/iTOL/$RUN}"
+: "${OUT_DIR:=$OUT_IMM/results/iTOL/$RUN}"
 
 # resolve the accessions file against ACC_DIR if given as a bare name
 if [ "$MODE" = gtdb ] && [ "${ACCESSIONS_FILE#/}" = "$ACCESSIONS_FILE" ] && [ ! -f "$ACCESSIONS_FILE" ]; then

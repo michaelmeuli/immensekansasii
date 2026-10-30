@@ -35,7 +35,7 @@ HSP=$REPOS/hsp65-refalign GYRA=$REPOS/gyrA-refalign DOCS=$REPOS/kansasii-docs
 LOG=$RUNS/downstream-$(date +%Y%m%d)
 mkdir -p "$LOG"; cd "$LOG"
 # log directories named in the #SBATCH --output lines must exist before sbatch
-for d in mlsa mic hsp65_refalign gyrA_refalign amr mst sanger-microsynth; do mkdir -p "$OUTPUT_ROOT/$d/logs"; done
+for d in "$OUT_MLSA" "$OUT_MIC" "$OUT_HSP65" "$OUT_GYRA" "$OUT_AMR" "$OUT_MST" "$OUT_CGMLST" "$OUT_MICROSYNTH"; do mkdir -p "$d/logs"; done
 mkdir -p "$RUNS/cgmlst/logs"
 
 CONDA_SH='source "$(conda info --base)/etc/profile.d/conda.sh"'

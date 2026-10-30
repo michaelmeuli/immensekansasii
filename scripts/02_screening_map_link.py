@@ -39,7 +39,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # kansasii_paths.py sits next to this script
 
-from kansasii_paths import IMM_DIR, MANIFEST_SCRIPT, OUTPUT_ROOT, REPOS  # noqa: E402
+from kansasii_paths import IMM_DIR, MANIFEST_SCRIPT, OUT_IMM, REPOS  # noqa: E402
 
 # Rows whose follow-up AST order was matched by DOB + received date only (no reference in BESCHREIBUNG).
 # Checked by hand in the LIS (M/LAB): after the file was closed the missing information was added
@@ -268,7 +268,7 @@ def main() -> None:
     link = build(project, strains, ast, {"JC": ngs_jc, "MM": ngs_mm}, load_mic_jc_tnrs(args.indir), load_panel_tnrs(args.indir))
     link.to_csv(out, index=False)
     print(f"wrote {out} ({len(link)} rows)")
-    copy_to = args.copy_to or (None if args.out else OUTPUT_ROOT)
+    copy_to = args.copy_to or (None if args.out else OUT_IMM / "results")
     if copy_to is not None:
         copy_to.mkdir(parents=True, exist_ok=True)
         shutil.copy2(out, copy_to / out.name)

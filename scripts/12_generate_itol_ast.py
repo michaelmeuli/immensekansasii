@@ -184,9 +184,9 @@ def write_labels(patients: dict[str, dict[str, str]], tips: list[str], out: Path
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--tree", type=Path, default=kp.OUTPUT_ROOT / "iTOL" / "mkan329" / "kansasii_complex_tree.treefile")
+    ap.add_argument("--tree", type=Path, default=kp.OUT_IMM / "results" / "iTOL" / "mkan329" / "kansasii_complex_tree.treefile")
     ap.add_argument("--results", type=Path, default=kp.SCREENING_MAP_RESULTS)
-    ap.add_argument("--out-dir", type=Path, default=kp.OUTPUT_ROOT / "iTOL" / "mkan329_patients")
+    ap.add_argument("--out-dir", type=Path, default=kp.OUT_IMM / "results" / "iTOL" / "mkan329_patients")
     args = ap.parse_args()
 
     patients = read_patients(args.results)

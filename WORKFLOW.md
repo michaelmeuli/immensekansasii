@@ -20,8 +20,8 @@ absolute; **code blocks use full paths** and can be pasted as they are (only
 | `runs/<run_name>/` | working dir of a pipeline run (contains large, temporary `work/`) |
 | `output/<run_name>/` | end results of a run (no `work/`); downloaded to local `kansasii_C` |
 | `output/immensekansasii/gtdb/gtdb232/` | accession lists and type strains derived from the GTDB metadata |
-| `output/iTOL/<run_name>/` | iTOL tree + annotation files per run |
-| `output/mlsa/` | MLSA outputs |
+| `output/immensekansasii/results/iTOL/<run_name>/` | iTOL tree + annotation files per run |
+| `output/mlsa-kansasii/results/` | MLSA outputs |
 
 **Rule:** scripts read only from `data/` and `runs/`. `output/` only receives copies made by
 the scripts (results, iTOL files, lists) for convenience and download.
@@ -44,17 +44,17 @@ sanger-microsynth) as a Slurm dependency chain. Every path below is a constant o
 | 5 | Mkan329 batches (jc reads, resequenced) | `scripts/05_mkan329_batch_jc.sh` | none | step 2, reads | `batches/b05`, `b06` |
 | 5b | pipeline runs, one batch after another | `run_IMMENSE.sh` (commands printed by 4/5) | none | batches | `runs/mkan329/`, `runs/mkan329_jc/` |
 | 5c | public reads: ENA metadata, download, batches | `scripts/09_public_fetch_metadata.sh`, `10_public_select_and_download.py` (sbatch), `11_public_batches.sh` | `env_mic` (10) | `PROJECTS.md` BioProjects, ENA | `data/illumina/public/<BioProject>/{metadata.tsv,selected.tsv,reads/,batches/}`, then `run_IMMENSE.sh` -> `runs/public_<BioProject>/` |
-| 6 | MIC analysis | `kansasii-mic: submit_mic.sbatch` (`scripts/01_run_analysis.py`) | `env_mic` | `mic.csv`, step 2 | `output/mic/{mhk,mgit}/` |
+| 6 | MIC analysis | `kansasii-mic: submit_mic.sbatch` (`scripts/01_run_analysis.py`) | `env_mic` | `mic.csv`, step 2 | `output/kansasii-mic/results/{mhk,mgit}/` |
 | 7 | MLSA inputs (links, filtered GTDB list) | `mlsa-kansasii: scripts/01..04_*` | `env_mlsa` | steps 1, 2 | `data/gtdb_genomes/.../mlsa-kansasii/`, `data/sanger/seq_kansasii/` |
-| 8 | MLSA analysis | `mlsa-kansasii: scripts/04_locus_discovery -> 08_sanger_mlsa` (+ `--exclude-atypical`), `09_sanger_refalign`, `05_genome_identity_check`, `06_make_hsp65_references`; `10_sanger_vs_wgs` after step 9 | `env_mlsa` | step 7 | `output/mlsa/` |
+| 8 | MLSA analysis | `mlsa-kansasii: scripts/04_locus_discovery -> 08_sanger_mlsa` (+ `--exclude-atypical`), `09_sanger_refalign`, `05_genome_identity_check`, `06_make_hsp65_references`; `10_sanger_vs_wgs` after step 9 | `env_mlsa` | step 7 | `output/mlsa-kansasii/results/` |
 | 9 | results table | `scripts/06_screening_map_results.py` | `env_mic` | steps 2, 5b, 6, 8 | `data/imm/screening_map_results.csv` |
-| 9b | hsp65 / gyrA of project and public samples | `hsp65-refalign: submit_validate.sbatch, submit_korean_check.sbatch, submit_public.sbatch [ctl\|persicum]`; `gyrA-refalign: submit_gyrA.sbatch` | `env_mlsa` | steps 5b, 8, 9 | `output/hsp65_refalign/`, `output/gyrA_refalign/{project,public}/` |
-| 10 | iTOL files | `scripts/07_generate_itol_species_labels.sh` | none | steps 3, 5b, 9 | `output/iTOL/<run>/` |
+| 9b | hsp65 / gyrA of project and public samples | `hsp65-refalign: submit_validate.sbatch, submit_korean_check.sbatch, submit_public.sbatch [ctl\|persicum]`; `gyrA-refalign: submit_gyrA.sbatch` | `env_mlsa` | steps 5b, 8, 9 | `output/hsp65-refalign/results/`, `output/gyrA-refalign/results/{project,public}/` |
+| 10 | iTOL files | `scripts/07_generate_itol_species_labels.sh` | none | steps 3, 5b, 9 | `output/immensekansasii/results/iTOL/<run>/` |
 | 11 | samples report | `scripts/08_mkan329_samples_report.py` | `env_mic` | steps 5b, 9 | `SAMPLES.md` |
-| 12a | cgMLST scheme, allele calls, per-genome QC | `kansasii-cgmlst: submit_all.sbatch` (steps 00-07) | `env_cgmlst` | steps 2, 5b | `output/cgmlst/sample_qc.tsv`, `runs/cgmlst/` |
-| 12b | cgMLST distances, MSTs, Ridom export; core-SNP MSTs | `kansasii-cgmlst: submit_all.sbatch` (steps 08-10), `kansasii-mst: submit_all.sbatch` | `env_cgmlst`, `env_mst` | steps 5b, 9 | `output/cgmlst/`, `output/ridom_assemblies.tar.gz`, `output/mst/` |
-| 13 | AMR marker screen | `kansasii-amr-marker-screen: submit_amr.sbatch`, then `submit_amr_bam.sbatch` (optional) and `submit_amr_reannot.sbatch` | `env_amr` | steps 5b, 6, 9 | `output/amr/`, `output/amr_bam/` |
-| 14 | atypical gyrA / hsp65 samples, output overview | `kansasii-docs: bin/make_atypical_table.py`, `bin/make_summary.py` | `env_mlsa` | step 9b | `output/atypical_samples/`, `output/SUMMARY.html` |
+| 12a | cgMLST scheme, allele calls, per-genome QC | `kansasii-cgmlst: submit_all.sbatch` (steps 00-07) | `env_cgmlst` | steps 2, 5b | `output/kansasii-cgmlst/results/sample_qc.tsv`, `runs/cgmlst/` |
+| 12b | cgMLST distances, MSTs, Ridom export; core-SNP MSTs | `kansasii-cgmlst: submit_all.sbatch` (steps 08-10), `kansasii-mst: submit_all.sbatch` | `env_cgmlst`, `env_mst` | steps 5b, 9 | `output/kansasii-cgmlst/results/`, `output/kansasii-cgmlst/ridom_assemblies.tar.gz`, `output/kansasii-mst/results/` |
+| 13 | AMR marker screen | `kansasii-amr-marker-screen: submit_amr.sbatch`, then `submit_amr_bam.sbatch` (optional) and `submit_amr_reannot.sbatch` | `env_amr` | steps 5b, 6, 9 | `output/kansasii-amr-marker-screen/results/assembly/`, `output/kansasii-amr-marker-screen/results/bam/` |
+| 14 | atypical gyrA / hsp65 samples, output overview | `kansasii-docs: bin/make_atypical_table.py`, `bin/make_summary.py` | `env_mlsa` | step 9b | `output/kansasii-docs/results/atypical_samples/`, `output/SUMMARY.html` |
 | - | Sanger Microsynth mail (independent, routine) | `sanger-microsynth: submit_fetch_analyse.sbatch` | `env_sanger_ms` | mail, step 8 refs | `output/sanger-microsynth/` |
 
 Step 9 needs steps 6, 8 and 12a (`cgmlst_called_pct`) and steps 8 and 12b need step 9 for the `species`/`excluded` columns of the previous table; for the first run the
@@ -258,7 +258,7 @@ batches, a small test batch first.
    bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/scripts/07_generate_itol_species_labels.sh -m samples -p mkan329_
    ```
    writes `mkan329_itol_species_labels.txt` (`Species [Mkan329-NNN]`) and
-   `mkan329_itol_species_colorstrip.txt` and a copy of the tree to `output/iTOL/mkan329/`.
+   `mkan329_itol_species_colorstrip.txt` and a copy of the tree to `output/immensekansasii/results/iTOL/mkan329/`.
    Copy them to your computer and load them into iTOL as described in section 2c.
 
    In `samples` mode the script uses `PROBENNUMMER` (`Mkan329-NNN`) as the tree tip id and
@@ -283,7 +283,7 @@ and in the run table `<run>_transfer_result/<run>_quality.tsv` (`gtdb_species`,
 Every tree run gets its own iTOL files, made independently of the others. A run needs
 only its finished tree, `<run>_transfer_result/kansasii_phylogeny/kansasii_complex_tree.treefile`
 (read from `runs/<run>/`), plus a table mapping tip ids to species.
-`07_generate_itol_species_labels.sh` (no conda env) writes three files to `output/iTOL/<run>/`
+`07_generate_itol_species_labels.sh` (no conda env) writes three files to `output/immensekansasii/results/iTOL/<run>/`
 (plus a copy of the mapping input, i.e. the accessions list or `screening_map_results.csv`):
 
 | File | Content |
@@ -317,28 +317,28 @@ via `06_screening_map_results.py`); (3) run the script with `-n <run>` (plus `-m
 (4) check there is no `WARNING: n/m entries have a species`, which means some tips are unlabeled.
 Re-run after the tree is rebuilt, because the files are only valid for the tree they were made with.
 
-Current outputs: `output/iTOL/kansasii_complex_gtdb_representatives/` (8 tips),
-`output/iTOL/relevant_species_tree_run/` (21 tips), `output/iTOL/mkan329/` (132 tips).
+Current outputs: `output/immensekansasii/results/iTOL/kansasii_complex_gtdb_representatives/` (8 tips),
+`output/immensekansasii/results/iTOL/relevant_species_tree_run/` (21 tips), `output/immensekansasii/results/iTOL/mkan329/` (132 tips).
 
 #### Patient isolates: midpoint-rooted tree, AST dots, species ring
 
 `12_generate_itol_ast.py` (conda env `biopython`, needs Bio.Phylo) prunes the `mkan329` tree to the 171 patient
 isolates of the complex (no `Reference` tip, no control / type strains with a `LABEL`, no `excluded` isolates),
-roots it at the midpoint, rotates the branches so species sit together (topology unchanged) and writes to `output/iTOL/mkan329_patients/`: `kansasii_patients_midpoint.nwk`,
+roots it at the midpoint, rotates the branches so species sit together (topology unchanged) and writes to `output/immensekansasii/results/iTOL/mkan329_patients/`: `kansasii_patients_midpoint.nwk`,
 `itol_1_ast_dots.txt` (13 circle rings, filled = resistant, hollow = susceptible or intermediate, none = no MIC),
 `itol_2_species_ring.txt` (outermost ring, load it last) and `itol_leaf_labels.txt`. Resistance is the CLSI category
 (`<DRUG>_clsi_category`); EMB, INH, ETO and STR have no CLSI breakpoint, so `NON_CLSI_THRESHOLDS_MG_L` at the top of
 the script (8, 8, 0.6, 16 mg/L; resistant if MIC is above) decides. Tests: `tests/test_itol_ast.py`.
 
 The figure `data/imm/midpoint-rooted-tree.{pdf,svg}` is the iTOL render of these files (tree, `itol_1_ast_dots`,
-`itol_2_species_ring`, leaf labels), exported by hand from itol.embl.de (copy in `output/iTOL/mkan329_patients/`). No script writes or reads it; re-export it
+`itol_2_species_ring`, leaf labels), exported by hand from itol.embl.de (copy in `output/immensekansasii/results/iTOL/mkan329_patients/`). No script writes or reads it; re-export it
 after the tree or the script is re-run.
 
 Getting the files into iTOL (the script only writes them on the server):
 
 1. Copy to your computer, run from your laptop (not on the server):
    ```bash
-   scp "<user>@<server-hostname>:/shares/sander.imm.uzh/MM/kansasii/output/iTOL/<run>/*" ~/Downloads/
+   scp "<user>@<server-hostname>:/shares/sander.imm.uzh/MM/kansasii/output/immensekansasii/results/iTOL/<run>/*" ~/Downloads/
    ```
    A GUI client (WinSCP, Cyberduck, MobaXterm) works too.
 2. At <https://itol.embl.de> upload the `.treefile`, open the tree, then drag
@@ -401,9 +401,9 @@ hand-maintained tuple, which must match the columns produced here.
 `data/imm/screening_map_results.csv` (copy in `output/`): all link columns plus
 - `NGS_USED` (right after `NGS_MM`): the NGS id of the sequencing data that is used. If `NGS_MM` was done it is the one used, not `NGS_JC`; only if there is no `NGS_MM` is `NGS_JC` used. So Mkan329-001..133 = `NGS_MM`, Mkan329-134..186 = `NGS_JC`. Mkan329-009 and -056 have both and use `NGS_MM`; their resequenced `-jc` reads (b06, run `mkan329_jc`) are not used
 - `species`, `gtdb_ani`, `gtdb_af`, `gtdb_reference`: GTDB-Tk call from the run's `quality.tsv`
-- `checkm_contamination`, `contamination_flag`: CheckM contamination (%) of the assembly; flag = `contaminated` above `--max-contamination` (default 5). Flagged samples are mixed cultures, see `SPECIES.md`. CheckM is the criterion for contaminated cultures: MIC values of flagged isolates are not used for the final conclusion (filter on `contamination_flag`; the MIC columns and `output/mic/*` keep the values). Flagged now: Mkan329-010, -021, -035, -106, -113 (only 035 has MIC data)
-- `cgmlst_called_pct`, `excluded` (after `contamination_flag`): `cgmlst_called_pct` = % of the cgMLST95 loci with an allele call (kansasii-cgmlst `output/cgmlst/sample_qc.tsv`, `--cgmlst-qc`; empty if the isolate is not allele-called); `excluded` = `true` if `contamination_flag` is `contaminated` or `cgmlst_called_pct` < `--min-cgmlst-pct` (default 90, Ridom's good-target threshold), or the row is a clinical sample (`LABEL` empty) with a GTDB species outside the complex (NR 184, *M. avium*), else `false`. Non-complex control strains (`LABEL` set) are not excluded by this. Genome-based repos (cgmlst, mst, amr screen) skip `excluded` isolates. Run order: cgmlst `STEPS="07"` -> 06 -> cgmlst `STEPS="08 09 10"`.
-- `amr_mut`: markers called `MUT` by kansasii-amr-marker-screen (`output/amr/work/report/marker_calls.pass.tsv`), `<gene>-<marker>` comma-joined (e.g. `rpsL-K43R,rrs-A514C`). Includes non-discriminating markers (`discriminating = no`, reference carries the mutant allele), so `rrs-A514C` is in nearly every isolate. Needs the AMR pipeline to have run before this step
+- `checkm_contamination`, `contamination_flag`: CheckM contamination (%) of the assembly; flag = `contaminated` above `--max-contamination` (default 5). Flagged samples are mixed cultures, see `SPECIES.md`. CheckM is the criterion for contaminated cultures: MIC values of flagged isolates are not used for the final conclusion (filter on `contamination_flag`; the MIC columns and `output/kansasii-mic/results/*` keep the values). Flagged now: Mkan329-010, -021, -035, -106, -113 (only 035 has MIC data)
+- `cgmlst_called_pct`, `excluded` (after `contamination_flag`): `cgmlst_called_pct` = % of the cgMLST95 loci with an allele call (kansasii-cgmlst `output/kansasii-cgmlst/results/sample_qc.tsv`, `--cgmlst-qc`; empty if the isolate is not allele-called); `excluded` = `true` if `contamination_flag` is `contaminated` or `cgmlst_called_pct` < `--min-cgmlst-pct` (default 90, Ridom's good-target threshold), or the row is a clinical sample (`LABEL` empty) with a GTDB species outside the complex (NR 184, *M. avium*), else `false`. Non-complex control strains (`LABEL` set) are not excluded by this. Genome-based repos (cgmlst, mst, amr screen) skip `excluded` isolates. Run order: cgmlst `STEPS="07"` -> 06 -> cgmlst `STEPS="08 09 10"`.
+- `amr_mut`: markers called `MUT` by kansasii-amr-marker-screen (`output/kansasii-amr-marker-screen/results/assembly/work/report/marker_calls.pass.tsv`), `<gene>-<marker>` comma-joined (e.g. `rpsL-K43R,rrs-A514C`). Includes non-discriminating markers (`discriminating = no`, reference carries the mutant allele), so `rrs-A514C` is in nearly every isolate. Needs the AMR pipeline to have run before this step
 - `species_sanger_mlsa`, `species_sanger_mlsa_excl`: hsp65 `nearest_species` from `isolate_classification.tsv` of mlsa sanger_mlsa and sanger_mlsa_excluded
 - `species_sanger_refalign`: `closest_species` of sanger_refalign `reference_alignment.tsv` for the representative hsp65 read, only if status is `ok` (empty for ambiguous/divergent/no_hit or until sanger_refalign is run)
 - `TNR_MLSA`: TNR(s) of the representative Sanger reads (`representative_reads.tsv`)
