@@ -11,12 +11,8 @@
 # Usage:  bash 03_run_gtdb_tree.sh [-s GTDB_REPRESENTATIVES_DIR]   (conda activate env_immense not needed, only submits)
 #   -s  directory the <accession>_query.fasta links are written to (default GTDB_REPRESENTATIVES, the reference set of all repos)
 # After the Slurm job (job_kansasii_complex_gtdb_representatives) has finished and been checked:
-#   rsync -a --exclude work --exclude .nextflow --exclude '*_transfer_result/genomes/' \
-#       $ROOT/runs/kansasii_complex_gtdb_representatives/ $ROOT/output/kansasii_complex_gtdb_representatives/
-#   bash $ROOT/repos/kansasii-docs/bin/write_manifest.sh $ROOT/output/kansasii_complex_gtdb_representatives \
-#       $ROOT/repos/immensekansasii 03_run_gtdb_tree.sh <accessions file>     # provenance
-#   bash 07_generate_itol_species_labels.sh        # iTOL files for the tree
-# run_IMMENSE.sh only submits the controller job and returns at once, so the rsync must wait.
+#   bash 07_generate_itol_species_labels.sh        # iTOL files for the tree (reads the tree from $ROOT/runs/, writes output/iTOL/)
+# run_IMMENSE.sh only submits the controller job and returns at once, so step 07 must wait.
 set -euo pipefail
 
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
