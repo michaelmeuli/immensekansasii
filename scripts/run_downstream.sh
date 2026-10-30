@@ -9,7 +9,7 @@
 #   results table (needs MIC, sanger_mlsa, sanger_mlsa_excluded, sanger_refalign, cgMLST sample_qc)
 #        -> sanger_vs_wgs, hsp65-refalign (01, 04, 05), gyrA-refalign, iTOL, SAMPLES.md
 #        -> cgMLST distances / MSTs / Ridom export (08-10), core-SNP MSTs
-#   arm (assemblies) -> arm reannotation (needs MIC + results)
+#   amr (assemblies) -> amr reannotation (needs MIC + results)
 #   atypical-sample table and SUMMARY.html (need hsp65-refalign, gyrA-refalign)
 #
 # Not run here: the pipeline runs (step 5b: finished and copied before), sanger-microsynth (reads and
@@ -19,7 +19,7 @@
 #
 # Usage: bash run_downstream.sh [--dry-run] [--with-bam]
 #   --dry-run   print the sbatch commands only
-#   --with-bam  also run the read-mapping arm variant (131+ array tasks, about 1 h each batch)
+#   --with-bam  also run the read-mapping AMR variant (131+ array tasks, about 1 h each batch)
 # Logs: runs/downstream-<date>/   Watch: squeue -u $USER
 set -euo pipefail
 
@@ -29,13 +29,13 @@ for a in "$@"; do
 done
 
 source "${KANSASII_ROOT:-/shares/sander.imm.uzh/MM/kansasii}/repos/kansasii-docs/templates/kansasii_paths.sh"
-IMM=$REPOS/immensekansasii MLSA=$REPOS/mlsa-kansasii ARM=$REPOS/kansasii-amr-marker-screen
+IMM=$REPOS/immensekansasii MLSA=$REPOS/mlsa-kansasii AMR=$REPOS/kansasii-amr-marker-screen
 MIC=$REPOS/kansasii-mic MST=$REPOS/kansasii-mst CG=$REPOS/kansasii-cgmlst
 HSP=$REPOS/hsp65-refalign GYRA=$REPOS/gyrA-refalign DOCS=$REPOS/kansasii-docs
 LOG=$RUNS/downstream-$(date +%Y%m%d)
 mkdir -p "$LOG"; cd "$LOG"
 # log directories named in the #SBATCH --output lines must exist before sbatch
-for d in mlsa mic hsp65_refalign gyrA_refalign arm mst sanger-microsynth; do mkdir -p "$OUTPUT_ROOT/$d/logs"; done
+for d in mlsa mic hsp65_refalign gyrA_refalign amr mst sanger-microsynth; do mkdir -p "$OUTPUT_ROOT/$d/logs"; done
 mkdir -p "$RUNS/cgmlst/logs"
 
 CONDA_SH='source "$(conda info --base)/etc/profile.d/conda.sh"'
@@ -107,16 +107,16 @@ cg2=$(submit_file "$results" "$CG/submit_all.sbatch" --export=ALL,STEPS=08:09:10
 mst=$(submit_file "$results" "$MST/submit_all.sbatch")
 
 # 13 AMR markers: assemblies need nothing but the pipeline runs; reannotation joins MIC + results
-arm=$(submit_file "" "$ARM/submit_arm.sbatch")
-arm_deps=("$arm" "$mic" "$results")
+amr=$(submit_file "" "$AMR/submit_amr.sbatch")
+amr_deps=("$amr" "$mic" "$results")
 if (( BAM )); then
-  bam_prep=$(submit_wrap arm-bam-prepare env_amr "$arm" "bash $ARM/scripts/run_arm_bam.sh prepare")
+  bam_prep=$(submit_wrap amr-bam-prepare env_amr "$amr" "bash $AMR/scripts/run_amr_bam.sh prepare")
   n_samples=$(ls "$ASSEMBLIES" | wc -l)   # array covers every sample
-  bam=$(submit_file "$bam_prep" "$ARM/submit_arm_bam.sbatch" --array="0-$((n_samples - 1))%20")
-  bam_fin=$(submit_wrap arm-bam-finish env_amr "$bam" "bash $ARM/scripts/run_arm_bam.sh finish")
-  arm_deps+=("$bam_fin")
+  bam=$(submit_file "$bam_prep" "$AMR/submit_amr_bam.sbatch" --array="0-$((n_samples - 1))%20")
+  bam_fin=$(submit_wrap amr-bam-finish env_amr "$bam" "bash $AMR/scripts/run_amr_bam.sh finish")
+  amr_deps+=("$bam_fin")
 fi
-arm_re=$(submit_file "$(join "${arm_deps[@]}")" "$ARM/submit_arm_reannot.sbatch")
+amr_re=$(submit_file "$(join "${amr_deps[@]}")" "$AMR/submit_amr_reannot.sbatch")
 
 # 14 atypical gyrA / hsp65 samples (project and public) and the results overview
 atyp=$(submit_wrap atypical env_mlsa "$(join "$hv" "$hk" "$hp" "$hpp" "$gy")" \
@@ -127,4 +127,4 @@ echo "submitted; logs in $LOG"
 echo "  link=$link mic=$mic prep=$prep ld=$ld ldx=$ldx hsp65=$hsp65 cg1=$cg1"
 echo "  sm=$sm smx=$smx ra=$ra rah=$rah gic=$gic results=$results"
 echo "  svw=$svw hsp65_validate=$hv korean=$hk public=$hp public_persicum=$hpp gyrA=$gy itol=$itol report=$report"
-echo "  cg2=$cg2 mst=$mst arm=$arm arm_reannot=$arm_re atypical=$atyp"
+echo "  cg2=$cg2 mst=$mst amr=$amr amr_reannot=$amr_re atypical=$atyp"

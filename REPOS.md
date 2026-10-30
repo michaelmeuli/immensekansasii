@@ -20,7 +20,7 @@ After the IMMENSE pipeline runs (days, step 5b) everything else is one dependenc
 
 ```bash
 bash immensekansasii/scripts/run_downstream.sh --dry-run    # print the sbatch commands
-bash immensekansasii/scripts/run_downstream.sh [--with-bam] # link -> MIC -> MLSA -> cgMLST -> results table -> hsp65/gyrA/mst/arm -> overview
+bash immensekansasii/scripts/run_downstream.sh [--with-bam] # link -> MIC -> MLSA -> cgMLST -> results table -> hsp65/gyrA/mst/amr -> overview
 ```
 
 `check_sync.sh` reports uncommitted or unpushed work in every repo here, and drift of the shared files (`.gitattributes`,

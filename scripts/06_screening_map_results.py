@@ -223,7 +223,7 @@ def main() -> None:
                     default=OUTPUT_ROOT / "mic/mhk/outliers_per_antibiotic.csv",
                     help="kansasii-mic long table (PROBENNUMMER, antibiotic, mhk_raw, modified_z, clsi_category)")
     ap.add_argument("--arm-calls", type=Path,
-                    default=OUTPUT_ROOT / "arm/work/report/marker_calls.pass.tsv",
+                    default=OUTPUT_ROOT / "amr/work/report/marker_calls.pass.tsv",
                     help="kansasii-amr-marker-screen marker_calls.pass.tsv (aa_call == MUT rows -> arm_mut)")
     ap.add_argument("--cgmlst-qc", type=Path, default=OUTPUT_ROOT / "cgmlst/sample_qc.tsv",
                     help="kansasii-cgmlst sample_qc.tsv (sample, cgmlst_called_pct) -> cgmlst_called_pct")
