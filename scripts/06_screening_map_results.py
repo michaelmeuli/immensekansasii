@@ -38,7 +38,7 @@ script never modifies it. Added columns:
   resistance_amrfinder
       <id>/4_resistance_virulence/02_AMRfinderplus/<id>.tsv: Element symbol(s)
       joined by "; ", "none" if AMRFinderPlus ran without a hit, empty if no file.
-  arm_mut
+  amr_mut
       Markers called MUT by kansasii-amr-marker-screen (marker_calls.pass.tsv, aa_call == MUT, qc ok),
       "<gene>-<marker>" comma-joined, e.g. "rpsL-K43R,rrs-A514C". Includes non-discriminating
       markers (discriminating = no: the ATCC 12478 reference carries the mutant allele, MUT then
@@ -142,7 +142,7 @@ def hsp65_calls(path: Path) -> dict[str, str]:
     return dict(zip(sc["probennummer"], sc["nearest_species"]))
 
 
-def arm_mut_calls(path: Path) -> dict[str, str]:
+def amr_mut_calls(path: Path) -> dict[str, str]:
     """Return {PROBENNUMMER: 'gene-marker,gene-marker'} for the aa_call == MUT rows of marker_calls.pass.tsv."""
     found: dict[str, set[str]] = {}
     for r in read_tsv(path).to_dict("records"):
@@ -222,9 +222,9 @@ def main() -> None:
     ap.add_argument("--mic-file", type=Path,
                     default=OUTPUT_ROOT / "mic/mhk/outliers_per_antibiotic.csv",
                     help="kansasii-mic long table (PROBENNUMMER, antibiotic, mhk_raw, modified_z, clsi_category)")
-    ap.add_argument("--arm-calls", type=Path,
+    ap.add_argument("--amr-calls", type=Path,
                     default=OUTPUT_ROOT / "amr/work/report/marker_calls.pass.tsv",
-                    help="kansasii-amr-marker-screen marker_calls.pass.tsv (aa_call == MUT rows -> arm_mut)")
+                    help="kansasii-amr-marker-screen marker_calls.pass.tsv (aa_call == MUT rows -> amr_mut)")
     ap.add_argument("--cgmlst-qc", type=Path, default=OUTPUT_ROOT / "cgmlst/sample_qc.tsv",
                     help="kansasii-cgmlst sample_qc.tsv (sample, cgmlst_called_pct) -> cgmlst_called_pct")
     ap.add_argument("--ridom-clusters", type=Path, default=RIDOM_CLUSTERS,
@@ -251,7 +251,7 @@ def main() -> None:
     for c in ("species", "gtdb_ani", "gtdb_af", "gtdb_reference",
               "checkm_contamination", "contamination_flag",
               "species_sanger_mlsa", "species_sanger_mlsa_excl", "species_sanger_refalign", "TNR_MLSA",
-              "resistance_abricate", "resistance_amrfinder", "arm_mut"):
+              "resistance_abricate", "resistance_amrfinder", "amr_mut"):
         res[c] = ""
 
     # --- GTDB species + resistance from the pipeline run ---
@@ -306,14 +306,14 @@ def main() -> None:
         warn(f"{args.results_dir} not found; resistance columns left empty")
 
     # --- kansasii-amr-marker-screen: markers called MUT, "<gene>-<marker>" comma-joined ---
-    if args.arm_calls.exists():
-        arm = arm_mut_calls(args.arm_calls)
-        not_linked = sorted(set(arm) - pnrs)
+    if args.amr_calls.exists():
+        amr = amr_mut_calls(args.amr_calls)
+        not_linked = sorted(set(amr) - pnrs)
         if not_linked:
-            warn(f"{len(not_linked)} arm_mut samples not in the link table: {not_linked[:5]}...")
-        res["arm_mut"] = res["PROBENNUMMER"].map(lambda p: arm.get(p, ""))
+            warn(f"{len(not_linked)} amr_mut samples not in the link table: {not_linked[:5]}...")
+        res["amr_mut"] = res["PROBENNUMMER"].map(lambda p: amr.get(p, ""))
     else:
-        warn(f"{args.arm_calls} not found; arm_mut left empty")
+        warn(f"{args.amr_calls} not found; amr_mut left empty")
 
     def flag(v: str) -> str:
         try:
