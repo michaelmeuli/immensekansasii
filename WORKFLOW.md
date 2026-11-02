@@ -344,6 +344,57 @@ Getting the files into iTOL (the script only writes them on the server):
 2. At <https://itol.embl.de> upload the `.treefile`, open the tree, then drag
    `*itol_species_labels.txt` and `*itol_species_colorstrip.txt` onto the tree view.
 
+### 2d. Core-SNP phylogeny (`modules/kansasii_phylo.nf`, branch `kansasii`)
+
+The only tree in the project. It is part of the pipeline (called in `main.nf` after GTDB-Tk,
+skipped with `--skip_kansasii_phylo true`), not a script of this repo. GTDB-Tk gives the species;
+this gives strain-level relatedness. Three processes run in series:
+
+| process | runs | what it does | container |
+|---|---|---|---|
+| `kansasii_snippy` | once per sample | `snippy --ctgs <Unicycler assembly> --ref <ref>`, then copies the whole `snippy_out/` into `<kansasii_snippy_db>/<sample_id>/` (an existing dir of that name is deleted first) | `snippy:4.6.0` |
+| `kansasii_snippy_core` | once per invocation, `maxForks 1` | `snippy-core --ref <ref> --prefix kansasii_complex_core <kansasii_snippy_db>/*/` over **every** sample dir in the db, not only this invocation's | `snippy:4.6.0` |
+| `kansasii_tree` | once, `maxForks 1` | `iqtree -s kansasii_complex_core.aln -m GTR+G -pre kansasii_complex_tree` (IQ-TREE 3.1.3) | `iqtree:3.1.3` |
+
+- **Reference:** `GCF_000157895.3_ASM15789v2_genomic.fna` (*M. kansasii* ATCC 12478, NCBI), in
+  `kansasii_ref_dir` (`conf/profiles/s3it.config`: `data/gtdb_genomes/Mycobacteriaceae/ncbi_dataset/data/GCF_000157895.3/`).
+  All samples are mapped to this one genome whatever their GTDB species, so the whole complex
+  shares one coordinate system. `snippy-core` keeps only positions covered in all samples, so
+  a distant or poorly covered sample can shrink the core alignment for the whole tree (not
+  checked for `mkan329`; the per-sample core fractions are in the unpublished `.txt` of `snippy-core`).
+- **Input is the assembly, not the reads.** Snippy runs with `--ctgs` on the Unicycler assembly, so
+  SNPs are called from contigs and read depth plays no role.
+- **The snippy db** (`--kansasii_snippy_db`) is not a reference database. It is a plain directory
+  that `kansasii_snippy` fills, one subdirectory per sample with the full snippy output
+  (`snps.vcf`, `snps.aligned.fa`, `snps.tab`, `ref.fa`, ...). Existing ones are under
+  `/shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/`
+  (`mkan329`, `mkan329_jc`, `mkan329_test`, `kansasii_complex_gtdb_representatives`, `public_PRJNA*`).
+  Because `snippy-core` globs `*/`, **the tree contains exactly what is in the db dir when it runs**:
+  stale or foreign sample dirs end up in the tree, so one db per run set and never copy
+  unrelated samples into it. To drop a sample, delete its subdirectory and rerun `snippy-core`
+  and the tree (a rerun of the same `-r` run id with `-resume`).
+- **Outputs** in `<run>/kansasii_phylogeny/` (copied to `<run>_transfer_result/kansasii_phylogeny/`):
+  `kansasii_complex_core.aln` (core SNPs only, `Reference` is one of the tips),
+  `kansasii_complex_tree.treefile` (Newick, this is what goes to iTOL, see 2c),
+  `kansasii_complex_tree.iqtree` (log, model, parameters), `kansasii_tree_version.txt`.
+  The other `snippy-core` outputs (`.full.aln`, `.tab`, `.txt` with per-sample core fractions)
+  stay in the Nextflow `work/` dir of `kansasii_snippy_core` and are not published.
+- **Resources** (`s3it.config`): snippy 4 CPU / 4 GB, snippy-core 4 CPU / 8 GB, IQ-TREE 4 CPU /
+  4 GB, 30 min x attempt each. `kansasii_ref_dir` and the db are bind-mounted into the
+  containers, so both dirs must exist before the run.
+- **Current `mkan329` tree:** 187 tips (186 samples in the db + `Reference`), 875 alignment
+  columns, 511 parsimony-informative, IQ-TREE reports model `GTR+F+G4`.
+
+Limits of the tree, to keep in mind when reading it:
+- **No branch support.** IQ-TREE runs without `-bb`/`-alrt`, so there are no bootstrap or SH-aLRT values.
+- **No ascertainment bias correction.** The alignment has SNP columns only (IQ-TREE sees 0
+  constant sites) and the model has no `+ASC`, so branch lengths are overestimated. Use the
+  topology; for distances use the SNP counts of `snippy-core` or Ridom, not branch lengths.
+- **Cumulative.** The tree written by the last invocation covers everything in the db (see 2b step 2);
+  the run-level tables of that invocation do not.
+- **Midpoint rooting is done later**, in `scripts/12_generate_itol_ast.py`, not here: the
+  treefile is unrooted.
+
 ## 3. Screening map
 
 Sources in `data/imm/`: `screening_map_project.csv`, `screening_map_strains.csv`
