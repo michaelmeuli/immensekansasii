@@ -65,13 +65,13 @@ isolates with `contamination_flag == contaminated` (035, 106, 113, and since 202
 
 ## Public reads: GTDB kansasii with a non-kansasii hsp65 (2026-10-24)
 
-Question: how many of the 880 GTDB-kansasii assemblies of the four public BioProjects (see `PROJECTS.md`) would be misidentified by Sanger hsp65?
+Question: how many of the 857 GTDB-kansasii assemblies of the four public BioProjects (see `PROJECTS.md`; the 23 of the 880 with CheckM contamination above 5 % are left out, rerun 2026-11-03) would be misidentified by Sanger hsp65?
 `hsp65-refalign/scripts/05_call_public.py` (moved from `mlsa-kansasii/sanger_vs_wgs/run_insilico_public.py`, commit 5498d72; identical table on rerun 2026-10-25) cuts the 441 bp hsp65 amplicon (TB-11/TB-12(w) in silico PCR)
 out of each `1_unicycler/<id>.fasta` and classifies it against the 72 per-genome hsp65 amplicons of the GTDB complex genomes
 (sanger_refalign logic). Output: `output/hsp65-refalign/results/public/{insilico_public.tsv,SUMMARY.txt}` (the first run is kept in `output/mlsa-kansasii/results/sanger_vs_wgs_public/`).
-Positive control: 9 GTDB-persicum samples gave 6 persicum and 3 closest to the atypical kansasii genomes, as expected.
+Positive control: 9 GTDB-persicum samples (contaminated ones left out) gave 6 persicum and 3 closest to the atypical kansasii genomes, as expected.
 
-Result: an amplicon was found in all 880; 877 are closest to a typical kansasii reference with 0 differences. Three are not:
+Result: an amplicon was found in all 857; 854 are closest to a typical kansasii reference with 0 differences. Three are not:
 
 | Sample | BioProject | hsp65 closest reference (diffs) | best kansasii reference (diffs) | Notes |
 |---|---|---|---|---|
@@ -79,7 +79,7 @@ Result: an amplicon was found in all 880; 877 are closest to a typical kansasii 
 | SRR27048434 | PRJNA1048499 | *pseudokansasii* GCA_000524055.1 (0) | 11 (atypical genome GCF_002705785.1) | next: gastri 10, persicum 12 |
 | SRR27048675 | PRJNA1048499 | *attenuatum* GCA_002086865.1 (0) | 15 (atypical genome GCF_002705785.1) | next: gastri 14, persicum 16, pseudokansasii 16 |
 
-- SRR28038296 is the only sample with a *persicum*-like hsp65 (1 of 880); no sample is closest to a persicum reference. A Sanger hsp65 read of it could be called persicum.
+- SRR28038296 is the only sample with a *persicum*-like hsp65 (1 of 857); no sample is closest to a persicum reference. A Sanger hsp65 read of it could be called persicum.
   The 3 atypical-hsp65 kansasii genomes are real kansasii (`mlsa-kansasii/LIT.md`).
 - SRR27048434 and SRR27048675 are kansasii by every other measure: GTDB-Tk ANI to GCF_000157895.3 99.59 / 99.88 (AF 0.98 / 0.99, next species < 94 %),
   MetaPhlAn4 kansasii at 100 % purity, 16S kansasii, ST38, CheckM contamination 0.15 %, completeness 100 %. Their hsp65 is identical to
