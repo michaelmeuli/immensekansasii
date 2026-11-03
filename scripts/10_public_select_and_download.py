@@ -24,6 +24,7 @@ Usage: 10_public_select_and_download.py [-o public_dir] [-j jobs] [--no-download
 import argparse
 import csv
 import hashlib
+import os
 import subprocess
 import sys
 import time
@@ -34,7 +35,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # kansasii_paths.py sits next to this script
 
-from kansasii_paths import PUBLIC_READS  # noqa: E402
+from kansasii_paths import MANIFEST_SCRIPT, PUBLIC_READS, REPOS  # noqa: E402
 
 Row = dict[str, Any]
 SELECTED_COLS = ["sample_id", "bioproject", "runs", "biosample", "scientific_name", "strain", "isolate",
@@ -184,6 +185,9 @@ def main() -> None:
         print(f"{proj}: {len(sel_rows)} samples ({n_ov} shared with another given project), "
               f"{len(not_runnable[proj])} runs not runnable -> {pdir}")
         if args.no_download:
+            subprocess.run(["bash", str(MANIFEST_SCRIPT), str(pdir), str(REPOS / "immensekansasii"),
+                            "10_public_select_and_download.py --no-download", str(pdir / "metadata.tsv")],
+                           env={**os.environ, "MANIFEST_NAME": "selected.MANIFEST.txt"}, check=True)
             continue
         reads_dir.mkdir(exist_ok=True)
         with ThreadPoolExecutor(args.jobs) as ex:
@@ -195,6 +199,10 @@ def main() -> None:
                 except Exception as e:  # keep going; rerun finishes the missing samples
                     failed.append(sid)
                     print(f"{sid}: FAILED ({e})", flush=True)
+        # provenance (see kansasii-docs/docs/PROVENANCE.md); own file name since 09_ writes into the same dir
+        subprocess.run(["bash", str(MANIFEST_SCRIPT), str(pdir), str(REPOS / "immensekansasii"),
+                        "10_public_select_and_download.py", str(pdir / "metadata.tsv"), f"failed={len(failed)}"],
+                       env={**os.environ, "MANIFEST_NAME": "selected.MANIFEST.txt"}, check=True)
         if failed:
             print(f"{proj}: {len(failed)} samples failed, rerun to retry: {' '.join(failed)}", file=sys.stderr)
             had_failures = True

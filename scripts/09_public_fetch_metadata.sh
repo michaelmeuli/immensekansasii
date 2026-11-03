@@ -35,5 +35,8 @@ for p in "$@"; do
   [ "$n" -gt 0 ] || { rm -f "$tmp"; echo "ERROR: no runs returned for $p" >&2; exit 1; }
   mv "$tmp" "$dir/metadata.tsv"
   echo "$p: $n runs -> $dir/metadata.tsv"
+  # provenance (see kansasii-docs/docs/PROVENANCE.md); own file name since 10_ writes into the same dir
+  MANIFEST_NAME=metadata.MANIFEST.txt bash "$MANIFEST_SCRIPT" "$dir" "$REPOS/immensekansasii" 09_public_fetch_metadata.sh \
+    "https://www.ebi.ac.uk/ena/portal/api/filereport?accession=$p&result=read_run"
   sleep 1
 done
