@@ -29,7 +29,7 @@
 *   SNP columns only and the model has no +ASC, branch lengths are overestimated.
 *   Midpoint rooting happens later in scripts/12_generate_itol_ast.py.
 *
-* Documentation: WORKFLOW.md section 2d. The db follows the same accumulate-across-
+* Documentation: kansasii-docs/docs/WORKFLOW.md section 2d. The db follows the same accumulate-across-
 * runs pattern as the pyMLST cgMLST db, hence the run-level caveat: the tree of the
 * last invocation covers every isolate in the db, the run-level tables do not.
 */

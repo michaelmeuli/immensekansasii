@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Fetch the ENA read-run metadata of public BioProjects (see PROJECTS.md) into
+# Fetch the ENA read-run metadata of public BioProjects (see kansasii-docs/docs/PROJECTS.md) into
 #   <public_dir>/<BioProject>/metadata.tsv
 # One row per run: accessions, species as submitted, strain, country, host,
 # collection date, platform, layout, read/base counts, fastq ftp paths + md5.

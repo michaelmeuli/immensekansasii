@@ -13,7 +13,7 @@ AUFTRAGSNUMMER). If that LNR is not in strains (case reopened only for the MHK: 
 it is the project TNR when BESCHREIBUNG names the follow-up order or the row was verified by hand
 in the LIS (LIS_VERIFIED_OWN_TNR), else empty (LNR2 holds the LNR).
 MHK_TNR_DIFFERS = "yes" when TNR_MHK is another TNR than TNR: the MHK belongs to a different culture
-than the one sequenced under TNR. Informational flag; consumers decide whether to use that MHK (see WORKFLOW.md).
+than the one sequenced under TNR. Informational flag; consumers decide whether to use that MHK (see kansasii-docs/docs/WORKFLOW.md).
 MIC_JC = "JC_<NR_JC>" when one of the row's TNRs is in screening_map_ast_jc.csv (wide MIC table of the
 jc-sequenced isolates, NR_JC = its row number). kansasii-mic uses that table only where mic.csv has no
 MHK-panel values; for those isolates MHK is set to the same JC_<NR_JC> (replacing an MGIT-only id), so

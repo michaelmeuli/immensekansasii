@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # run_downstream.sh - submit every step after the IMMENSE pipeline runs as a Slurm dependency chain
-# (steps 2-13 of "Run order" in WORKFLOW.md):
+# (steps 2-13 of "Run order" in kansasii-docs/docs/WORKFLOW.md):
 #
 #   link table -> MIC analysis ---------------------------------------------------------------+
 #              -> MLSA inputs -> locus_discovery(+excluded) -> hsp65 references -> sanger_refalign(hsp65)
 #                              -> sanger_mlsa(+excluded), sanger_refalign, genome_identity_check
 #   cgMLST scheme + allele calls (00-07) --------------------------------------------------------+
 #   results table (needs MIC, sanger_mlsa, sanger_mlsa_excluded, sanger_refalign, cgMLST sample_qc)
-#        -> sanger_vs_wgs, hsp65-refalign (01, 04, 05), gyrA-refalign, iTOL, SAMPLES.md
+#        -> sanger_vs_wgs, hsp65-refalign (01, 04, 05), gyrA-refalign, iTOL, kansasii-docs/docs/SAMPLES.md
 #        -> cgMLST distances / MSTs / Ridom export (08-10), core-SNP MSTs
 #   amr (assemblies) -> amr reannotation (needs MIC + results)
 #   atypical-sample table and SUMMARY.html (need hsp65-refalign, gyrA-refalign)

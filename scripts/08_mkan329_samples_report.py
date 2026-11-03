@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write SAMPLES.md: a per-isolate report of the Mkan329 run.
+"""Write kansasii-docs/docs/SAMPLES.md: a per-isolate report of the Mkan329 run.
 
 Reads the per-sample summary tables written by the pipeline
 (<results>/<Mkan329-NNN>/3_quality/summary/<Mkan329-NNN>.tab) and the
@@ -74,7 +74,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--results", default=str(ASSEMBLIES))
     ap.add_argument("--link", default=str(SCREENING_MAP_LINK))
-    ap.add_argument("--out", default=str(REPOS / "immensekansasii" / "SAMPLES.md"))
+    ap.add_argument("--out", default=str(REPOS / "kansasii-docs" / "docs" / "SAMPLES.md"))
     args = ap.parse_args()
 
     with open(args.link, encoding="utf-8") as fh:

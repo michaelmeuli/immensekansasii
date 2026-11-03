@@ -177,7 +177,7 @@ rsync -a --exclude work --exclude .nextflow --exclude '*_transfer_result/genomes
      /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>/ /shares/sander.imm.uzh/MM/kansasii/output/<run_name>/
 ```
 
-The tree comes from `modules/kansasii_phylo.nf` (snippy per sample against one reference, `snippy-core` over the whole db, IQ-TREE); details, outputs and limits of the tree: `WORKFLOW.md` section 2d.
+The tree comes from `modules/kansasii_phylo.nf` (snippy per sample against one reference, `snippy-core` over the whole db, IQ-TREE); details, outputs and limits of the tree: `kansasii-docs/docs/WORKFLOW.md` section 2d.
 
 On the `kansasii` branch `--kansasii_snippy_db <dir>` is **required** (`main.nf` stops
 without it, or pass `--skip_kansasii_phylo true`). `kansasii_phylo.nf` copies every sample
@@ -188,7 +188,7 @@ dir can be repeated and resume (`-resume` is always on), but run-level tables an
 only cover the samples of the latest invocation.
 
 Real Illumina isolates (Mkan329) are run in batches (test batch, `b01..bNN`, final `all`
-run) with `scripts/04_mkan329_batches.sh`, see **`WORKFLOW.md`** section 2b for the full,
+run) with `scripts/04_mkan329_batches.sh`, see **`kansasii-docs/docs/WORKFLOW.md`** section 2b for the full,
 copy-pasteable commands. Use `Mkan329-NNN` as sample id for fastq input, never a bare
 number: `checkm.nf` does `grep ${sample_id}` on the CheckM log.
 
