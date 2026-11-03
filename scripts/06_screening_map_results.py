@@ -59,8 +59,9 @@ script never modifies it. Added columns:
 
   <ABBR>_mic, <ABBR>_modified_z, <ABBR>_clsi_category   (13 antibiotics, see MIC_ABBR)
       Broth microdilution MIC as reported (mhk_raw, e.g. "<=1", "0.12-0.25"), the
-      per-antibiotic cohort modified z-score of log2 MIC and the CLSI category
-      (S/I/R; empty where no M. kansasii breakpoint exists: EMB, INH, STR, ETO),
+      per-antibiotic cohort modified z-score of log2 MIC and the category
+      (S/I/R against the CLSI M. kansasii breakpoint; for EMB, INH, ETO and STR, which have none, S/R
+      against the non-CLSI threshold in kansasii_cutoffs.py, no I),
       from kansasii-mic outliers_per_antibiotic.csv (--mic-file). Empty if the
       isolate was not tested.
 
