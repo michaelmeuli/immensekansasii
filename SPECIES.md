@@ -16,9 +16,11 @@ printed as a warning on each run). Isolates flagged in the mkan329 run:
 | Mkan329-035 | 113.4 % | kansasii | mixed kansasii + ostraviense, see below |
 | Mkan329-113 | 61.4 % | persicum | 11.0 Mb assembly, MetaPhlAn4 persicum |
 | Mkan329-106 | 20.4 % | kansasii | 7.4 Mb assembly |
+| Mkan329-021 | 7.76 % | kansasii | flagged since 2026-10-20; GTDB and MetaPhlAn4 agree |
+| Mkan329-010 | 7.67 % | persicum | flagged since 2026-10-20; GTDB and MetaPhlAn4 agree |
 
-Only 035 shows a species disagreement; 106 and 113 are flagged but GTDB and
-MetaPhlAn4 agree, and I did not check their hsp65 calls. Mkan329-010 and -021 (about 7.7 %) are below the threshold.
+Only 035 shows a species disagreement; 010, 021, 106 and 113 are flagged but GTDB and
+MetaPhlAn4 agree. hsp65: 021 and 106 are called kansasii (correct), 113 has no usable read, 010 has no hsp65 read.
 
 MIC values of flagged isolates are excluded from the final conclusions (CheckM `contamination_flag` is the
 criterion; only 035 has MIC data).
@@ -49,8 +51,8 @@ isolates with `contamination_flag == contaminated` (035, 106, 113, and since 202
 
 | Species | GTDB `species` | hsp65 MLSA (`species_sanger_mlsa`) |
 |---|---|---|
-| kansasii | 123 | 90 |
-| persicum | 30 | 11 |
+| kansasii | 122 | 89 |
+| persicum | 29 | 11 |
 | pseudokansasii | 20 | 4 |
 | attenuatum | 2 | 1 |
 | innocens | 1 | 1 |
@@ -59,9 +61,9 @@ isolates with `contamination_flag == contaminated` (035, 106, 113, and since 202
 | non-complex (avium 2, tuberculosis, abscessus, xenopi, marinum) | 6 | 0 |
 
 - *M. gastri* is the only species of the complex without an isolate.
-- 69 of the 177 complex isolates have no MLSA call. This is probably because no Sanger
+- 67 of the 177 complex isolates have no MLSA call. This is probably because no Sanger
   (hsp65) read exists for them; not yet checked against the Sanger sample list.
-- Where both calls exist, GTDB and MLSA agree for all 108 isolates.
+- Where both calls exist, GTDB and MLSA agree for all 107 uncontaminated isolates.
 
 ## Public reads: GTDB kansasii with a non-kansasii hsp65 (2026-10-24)
 
