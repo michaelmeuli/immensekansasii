@@ -308,11 +308,11 @@ def main() -> None:
 
     # --- kansasii-amr-marker-screen: markers called MUT, "<gene>-<marker>" comma-joined ---
     if args.amr_calls.exists():
-        amr = amr_mut_calls(args.amr_calls)
-        not_linked = sorted(set(amr) - pnrs)
+        amr_mut = amr_mut_calls(args.amr_calls)
+        not_linked = sorted(set(amr_mut) - pnrs)
         if not_linked:
             warn(f"{len(not_linked)} amr_mut samples not in the link table: {not_linked[:5]}...")
-        res["amr_mut"] = res["PROBENNUMMER"].map(lambda p: amr.get(p, ""))
+        res["amr_mut"] = res["PROBENNUMMER"].map(lambda p: amr_mut.get(p, ""))
     else:
         warn(f"{args.amr_calls} not found; amr_mut left empty")
 
@@ -411,7 +411,7 @@ def main() -> None:
         keys = [ridom_id(p, l) for p, l in zip(res["PROBENNUMMER"], res["LABEL"])]
         hit = [k in rid.index for k in keys]
         for src, dst in RIDOM_COLS.items():
-            res[dst] = [rid.at[k, src].strip() if h else "" for k, h in zip(keys, hit)]
+            res[dst] = [str(rid.at[k, src]).strip() if h else "" for k, h in zip(keys, hit)]
         warn(f"ridom: {sum(hit)}/{len(res)} isolates matched; not in screening table: "
              f"{', '.join(sorted(set(rid.index) - set(keys)))}")
     else:

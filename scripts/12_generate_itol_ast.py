@@ -122,12 +122,12 @@ def order_by_species(clade: Any, species: dict[str, str]) -> tuple[int, int]:
 def write_tree(tree_file: Path, species: dict[str, str], out: Path) -> list[str]:
     from Bio import Phylo  # only here, so the call logic can be tested without Biopython
 
-    tree = Phylo.read(str(tree_file), "newick")
+    tree = Phylo.read(str(tree_file), "newick")  # type: ignore[attr-defined,no-untyped-call]
     for tip in [t.name for t in tree.get_terminals() if t.name not in species]:
         tree.prune(tip)
     tree.root_at_midpoint()
     order_by_species(tree.root, species)
-    Phylo.write(tree, str(out), "newick")
+    Phylo.write(tree, str(out), "newick")  # type: ignore[attr-defined,no-untyped-call]
     return [t.name for t in tree.get_terminals()]
 
 
