@@ -327,8 +327,8 @@ isolates of the complex (no `Reference` tip, no control / type strains with a `L
 roots it at the midpoint, rotates the branches so species sit together (topology unchanged) and writes to `output/immensekansasii/results/iTOL/mkan329_patients/`: `kansasii_patients_midpoint.nwk`,
 `itol_1_ast_dots.txt` (13 circle rings, filled = resistant, hollow = susceptible or intermediate, none = no MIC),
 `itol_2_species_ring.txt` (outermost ring, load it last) and `itol_leaf_labels.txt`. Resistance is the CLSI category
-(`<DRUG>_clsi_category`); EMB, INH, ETO and STR have no CLSI breakpoint, so `NON_CLSI_THRESHOLDS_MG_L` at the top of
-the script (8, 8, 0.6, 16 mg/L; resistant if MIC is above) decides. Tests: `tests/test_itol_ast.py`.
+(`<DRUG>_clsi_category`); EMB, INH, ETO and STR have no CLSI breakpoint, so `NON_CLSI_THRESHOLDS_MG_L` (8, 8, 0.6, 16 mg/L; resistant if MIC is above) decides. The values are defined in
+`scripts/kansasii_cutoffs.py`, the vendored copy of `kansasii-docs/templates/kansasii_cutoffs.py` that kansasii-mic uses too. Tests: `tests/test_itol_ast.py`.
 
 The figure `data/imm/midpoint-rooted-tree.{pdf,svg}` is the iTOL render of these files (tree, `itol_1_ast_dots`,
 `itol_2_species_ring`, leaf labels), exported by hand from itol.embl.de (copy in `output/immensekansasii/results/iTOL/mkan329_patients/`). No script writes or reads it; re-export it

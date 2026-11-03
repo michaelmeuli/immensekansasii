@@ -29,11 +29,13 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import kansasii_paths as kp  # noqa: E402
+from kansasii_cutoffs import non_clsi_thresholds_by_code  # noqa: E402
 
 # antibiotics in ring order, innermost first
 DRUGS = ("AMK", "CIP", "CLR", "DOX", "EMB", "ETO", "INH", "LZD", "MXF", "RFB", "RIF", "STR", "SXT")
-# drugs with no CLSI breakpoint for M. kansasii: MIC threshold in mg/L (configurable)
-NON_CLSI_THRESHOLDS_MG_L = {"EMB": 8.0, "INH": 8.0, "ETO": 0.6, "STR": 16.0}
+# drugs with no CLSI breakpoint for M. kansasii: MIC threshold in mg/L, defined in kansasii_cutoffs (shared with
+# kansasii-mic); only the drugs that have a ring here
+NON_CLSI_THRESHOLDS_MG_L = {d: t for d, t in non_clsi_thresholds_by_code().items() if d in DRUGS}
 # True: resistant if MIC > threshold (MIC == threshold is susceptible); False: resistant if MIC >= threshold
 NON_CLSI_RESISTANT_IF_ABOVE = True
 COMPLEX_SPECIES = tuple(kp.SPECIES_COLORS)
