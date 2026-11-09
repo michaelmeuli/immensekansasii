@@ -14,6 +14,7 @@ params.skip_wgmlst = false
 params.skip_tbprofiler = false
 params.skip_lissero = false
 params.skip_kansasii_phylo = false
+params.kansasii_min_aligned_fraction = 0  // 0 = leave out only samples with no aligned base; 0.3 keeps a run to the M. kansasii complex (see modules/kansasii_phylo.nf)
 
 // The snippy db accumulates all isolates of a project, so it has no global default
 if (!params.skip_kansasii_phylo && !params.kansasii_snippy_db) {
@@ -321,22 +322,40 @@ workflow {
       // Extract GTDB results for each individual assembly
       gtdb_out = extract_gtdb_output( gtdb_out_batched_argumented )
 
+      }
+
       // Reference-based SNP phylogeny across all samples. GTDB already resolves
       // species-level identity via ANI, but strain-level relatedness needs a
       // real SNP tree, so every sample gets mapped against a single shared
-      // reference with Snippy regardless of its GTDB species. Results
+      // reference with Snippy regardless of its GTDB species (the step does
+      // not use the GTDB result and also runs with --skip_gtdb). Results
       // accumulate in a persistent database across runs (mirroring pyMLST's
       // cgMLST db), and snippy-core + IQ-TREE rebuild one combined core-SNP
       // alignment/tree across all accumulated isolates.
       if (!params.skip_kansasii_phylo) {
-      samples_to_run_kansasii_ch = unicycler_out.assembly
-                        .join(gtdb_out.species, remainder: false)
-                        .map { item -> return [item[0], item[1], item[2]] } // sample_id, assembly, species
-
-      kansasii_snippy_out = kansasii_snippy(samples_to_run_kansasii_ch)
-      kansasii_core_out   = kansasii_snippy_core(kansasii_snippy_out.done.collect())
-      kansasii_tree(kansasii_core_out.core_aln)
+      // The published tree must belong to this invocation: without this, a failed
+      // (and ignored) snippy-core or IQ-TREE task leaves the tree of an earlier
+      // invocation in place, which no longer matches the db.
+      def stale_phylo_dir = file("${params.output_dir_run}/kansasii_phylogeny")
+      if (stale_phylo_dir.exists()) {
+          log.warn "Removing ${stale_phylo_dir} of the previous invocation; it is rebuilt from the snippy db at the end of this run."
+          stale_phylo_dir.deleteDir()
       }
+
+      kansasii_snippy_out = kansasii_snippy(unicycler_out.assembly)
+      // Evaluated once all kansasii_snippy tasks are done: names and modification
+      // times of the sample dirs in the db. It is the cache key of
+      // kansasii_snippy_core, so -resume reruns snippy-core and the tree exactly
+      // when the db content changed.
+      kansasii_db_state = kansasii_snippy_out.done.collect().map { ids ->
+          file(params.kansasii_snippy_db).listFiles()
+              .findAll { it.isDirectory() && !it.name.startsWith('.') }
+              .collect { "${it.name}:${it.lastModified()}" }
+              .sort()
+              .join(',')
+      }
+      kansasii_core_out   = kansasii_snippy_core(kansasii_db_state)
+      kansasii_tree(kansasii_core_out.core_aln)
       }
 
       typing_rMLST        = rMLST(unicycler_out.assembly)

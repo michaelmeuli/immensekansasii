@@ -181,11 +181,15 @@ The tree comes from `modules/kansasii_phylo.nf` (snippy per sample against one r
 
 On the `kansasii` branch `--kansasii_snippy_db <dir>` is **required** (`main.nf` stops
 without it, or pass `--skip_kansasii_phylo true`). `kansasii_phylo.nf` copies every sample
-into that dir and runs `snippy-core` over all of it, so use one db dir per run, and create
+into that dir and runs `snippy-core` over all of it (samples with no aligned base, or with less than
+`--kansasii_min_aligned_fraction` of the reference aligned, are left out and listed in
+`kansasii_phylogeny/kansasii_complex_core.samples.tsv`; default 0, use 0.3 to keep a run to the
+*M. kansasii* complex), so use one db dir per run, and create
 it before the run (it is bind-mounted into the container; a missing dir gives
 `container creation failed ... mount`). Runs with the same `-r <run_name>` in the same run
-dir can be repeated and resume (`-resume` is always on), but run-level tables and the tree
-only cover the samples of the latest invocation.
+dir can be repeated and resume (`-resume` is always on), but the run-level tables
+only cover the samples of the latest invocation; the tree covers everything in the db and is rebuilt
+by every invocation (the previous `kansasii_phylogeny/` is removed at the start).
 
 Real Illumina isolates (Mkan329) are run in batches (test batch, `b01..bNN`, final `all`
 run) with `scripts/04_mkan329_batches.sh`, see **`kansasii-docs/docs/WORKFLOW.md`** section 2b for the full,
