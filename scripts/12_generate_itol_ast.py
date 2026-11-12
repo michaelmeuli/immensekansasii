@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """iTOL inputs for the patient isolates of the M. kansasii complex: midpoint-rooted tree, AST dots, species ring.
 
-Reads the snippy-core / IQ-TREE tree of mkan329 (tips are PROBENNUMMER, plus the snippy `Reference`) and
+Reads a snippy-core / IQ-TREE tree (tips are PROBENNUMMER, plus the snippy `Reference`; default: the tree of the 171
+clinical isolates in output/immensekansasii/results/iTOL/mkan329_patients171/, made once by its make_tree.sbatch) and
 screening_map_results.csv, keeps the patient isolates of the complex (no `Reference`, no control / type strains
 with a LABEL, no `excluded` isolates, species in the complex) and writes to --out-dir:
 
@@ -184,11 +185,16 @@ def write_labels(patients: dict[str, dict[str, str]], tips: list[str], out: Path
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+# Tree of the 171 clinical isolates alone (287,242 core columns) and its iTOL files. The 187-tip mkan329 tree has
+# only 875 core columns (non-complex controls in the alignment), so it is no longer the default.
+PATIENTS171 = kp.OUT_IMM / "results" / "iTOL" / "mkan329_patients171"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--tree", type=Path, default=kp.OUT_IMM / "results" / "iTOL" / "mkan329" / "kansasii_complex_tree.treefile")
+    ap.add_argument("--tree", type=Path, default=PATIENTS171 / "kansasii_patients171_tree.treefile")
     ap.add_argument("--results", type=Path, default=kp.SCREENING_MAP_RESULTS)
-    ap.add_argument("--out-dir", type=Path, default=kp.OUT_IMM / "results" / "iTOL" / "mkan329_patients")
+    ap.add_argument("--out-dir", type=Path, default=PATIENTS171)
     args = ap.parse_args()
 
     patients = read_patients(args.results)
