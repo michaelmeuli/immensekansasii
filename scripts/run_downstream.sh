@@ -8,7 +8,7 @@
 #   cgMLST scheme + allele calls (00-07) --------------------------------------------------------+
 #   results table (needs MIC, sanger_mlsa, sanger_mlsa_excluded, sanger_refalign, cgMLST sample_qc)
 #        -> sanger_vs_wgs, hsp65-refalign (01, 04, 05), gyrA-refalign, iTOL, kansasii-docs/docs/SAMPLES.md
-#        -> cgMLST distances / MSTs / Ridom export (08-10), core-SNP MSTs
+#        -> cgMLST distances / MSTs (08-09), core-SNP MSTs
 #   amr (assemblies) -> amr reannotation (needs MIC + results)
 #   atypical-sample table and SUMMARY.html (need hsp65-refalign, gyrA-refalign)
 #
@@ -102,8 +102,8 @@ itol=$(submit_wrap itol env_immense "$results" \
 itol_ast=$(submit_wrap itol-ast biopython "$results" "python $IMM/scripts/12_generate_itol_ast.py")
 report=$(submit_wrap samples-report env_mic "$results" "cd $IMM; python scripts/08_mkan329_samples_report.py")
 
-# 12b cgMLST distances / MSTs / Ridom export, core-SNP MSTs
-cg2=$(submit_file "$results" "$CG/submit_all.sbatch" --export=ALL,STEPS=08:09:10)
+# 12b cgMLST distances / MSTs, core-SNP MSTs. Step 10 (Ridom archive) is not run: superseded by kansasii-ridom submit_export.sbatch
+cg2=$(submit_file "$results" "$CG/submit_all.sbatch" --export=ALL,STEPS=08:09)
 mst=$(submit_file "$results" "$MST/submit_all.sbatch")
 
 # 13 AMR markers: assemblies need nothing but the pipeline runs; reannotation joins MIC + results
