@@ -162,19 +162,14 @@ Start every run of the immensekansasii (IMMense) pipeline in its own
 subdirectory of `/shares/sander.imm.uzh/MM/kansasii/runs/`, not in `output/`.
 Nextflow writes its `work/` directory into the directory the run is started
 from. `work/` is large and only temporary, so it must not end up in
-`output/`, which gets downloaded to local `kansasii_C`. Once a run has
-finished and been checked, copy its end results to
-`/shares/sander.imm.uzh/MM/kansasii/output/<run_name>/` and delete `work/`.
+`output/`, which gets downloaded to local `kansasii_C`. The end results stay in
+`runs/<run_name>/`, where the project scripts read them.
 
 ```bash
 mkdir -p /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/<db_name> /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>
 cd /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>
 bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j <job_name> -t <input_type> -r <run_name> \
      -x "--kansasii_snippy_db /shares/sander.imm.uzh/software/pipelines/IMMense/IMMense_dependencies/databases/kansasii_complex/<db_name>" -i <input_dir>
-
-# after the run: collect results (without work/) in output/
-rsync -a --exclude work --exclude .nextflow --exclude '*_transfer_result/genomes/' \
-     /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>/ /shares/sander.imm.uzh/MM/kansasii/output/<run_name>/
 ```
 
 The tree comes from `modules/kansasii_phylo.nf` (snippy per sample against one reference, `snippy-core` over the whole db, IQ-TREE); details, outputs and limits of the tree: `kansasii-docs/docs/WORKFLOW.md` section 2d.
@@ -189,9 +184,9 @@ it before the run (it is bind-mounted into the container; a missing dir gives
 `container creation failed ... mount`). Runs with the same `-r <run_name>` in the same run
 dir can be repeated and resume (`-resume` is always on), but the run-level tables
 only cover the samples of the latest invocation; the tree covers everything in the db and is rebuilt
-by every invocation (the previous `kansasii_phylogeny/` is removed at the start).
+by every invocation (`kansasii_phylogeny/` is emptied at the start).
 
-Real Illumina isolates (Mkan329) are run in batches (test batch, `b01..bNN`, final `all`
+Real Illumina isolates (Mkan329) are run in batches (test batch, then `b01..bNN`; no final `all`
 run) with `scripts/04_mkan329_batches.sh`, see **`kansasii-docs/docs/WORKFLOW.md`** section 2b for the full,
 copy-pasteable commands. Use `Mkan329-NNN` as sample id for fastq input, never a bare
 number: `checkm.nf` does `grep ${sample_id}` on the CheckM log.
