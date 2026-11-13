@@ -2,7 +2,7 @@
 """iTOL inputs for the patient isolates of the M. kansasii complex: midpoint-rooted tree, AST dots, species ring.
 
 Reads a snippy-core / IQ-TREE tree (tips are PROBENNUMMER, plus the snippy `Reference`; default: the tree of the 171
-clinical isolates in output/immensekansasii/results/iTOL/mkan329_patients171/, made by scripts/13_patients171_tree.sbatch) and
+clinical isolates in output/immensekansasii/results/iTOL/mkan329_patients171/, made by submit_patients171_tree.sbatch) and
 screening_map_results.csv, keeps the patient isolates of the complex (no `Reference`, no control / type strains
 with a LABEL, no `excluded` isolates, species in the complex) and writes to --out-dir:
 
@@ -197,7 +197,7 @@ def main() -> None:
     ap.add_argument("--out-dir", type=Path, default=PATIENTS171)
     ap.add_argument("--patient-list", type=Path, metavar="FILE",
                     help="only write the PROBENNUMMER of the patient isolates to FILE (one per line, sorted) and stop; "
-                         "the sample list of scripts/13_patients171_tree.sbatch")
+                         "the sample list of submit_patients171_tree.sbatch")
     args = ap.parse_args()
 
     patients = read_patients(args.results)

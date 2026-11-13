@@ -7,7 +7,7 @@
 # 875 core columns. Here the controls (LABEL set) and the `excluded` isolates are left out: the list comes from
 # 12_generate_itol_ast.py --patient-list, the same rule that script uses to prune the tree.
 # Not part of run_downstream.sh (about 45 min). Rerun when the snippy db or the `excluded` column changes, then
-# rerun 12_generate_itol_ast.py. Submit: sbatch scripts/13_patients171_tree.sbatch
+# rerun 12_generate_itol_ast.py. Submit: sbatch submit_patients171_tree.sbatch
 #SBATCH --job-name=patients171-tree
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=24G
@@ -51,6 +51,6 @@ cp tree_GTR_G.iqtree "$OUT/kansasii_patients171_tree.iqtree"
 cp core.txt "$OUT/kansasii_patients171_core.txt"
 
 # provenance (see kansasii-docs/docs/PROVENANCE.md); MANIFEST.txt of this directory belongs to script 12
-MANIFEST_NAME=MANIFEST_tree.txt bash "$MANIFEST_SCRIPT" "$OUT" "$REPO" 13_patients171_tree.sbatch \
+MANIFEST_NAME=MANIFEST_tree.txt bash "$MANIFEST_SCRIPT" "$OUT" "$REPO" submit_patients171_tree.sbatch \
   "$SCREENING_MAP_RESULTS" "$DB" "$ATCC12478_FASTA"
 echo done
