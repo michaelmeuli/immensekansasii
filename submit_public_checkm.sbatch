@@ -49,7 +49,8 @@ for project in "${PUBLIC_PROJECTS[@]}"; do
       printf '%s\tquay.io/biocontainers/checkm-genome:1.2.2--pyhdfd78af_1\t%s\t' "$version" "$IMAGE" > "${id}_checkm_version.txt"
       echo "CheckM run outside Nextflow by immensekansasii/submit_public_checkm.sbatch, job ${SLURM_JOB_ID:-none}, $(date -Is)" > checkm_rerun.txt
       rm "$id.fasta" )
-    read -r comp cont het < <(grep -w "$id" "$w/checkm_output.tsv" | awk '{print $(NF-2), $(NF-1), $NF}')
+    # the result row starts with the bin id; the INFO lines of the same file name the work dir, which ends in the id too
+    read -r comp cont het < <(awk -v id="$id" '$1 == id {print $(NF-2), $(NF-1), $NF}' "$w/checkm_output.tsv")
     [[ -n ${cont:-} ]] || { echo "ERROR: no CheckM row for $id in $w/checkm_output.tsv" >&2; exit 1; }
     mkdir -p "$target"
     cp -r "$w"/. "$target"/
