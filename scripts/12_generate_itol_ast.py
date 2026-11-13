@@ -2,7 +2,7 @@
 """iTOL inputs for the patient isolates of the M. kansasii complex: midpoint-rooted tree, AST dots, species ring.
 
 Reads a snippy-core / IQ-TREE tree (tips are PROBENNUMMER, plus the snippy `Reference`; default: the tree of the 171
-clinical isolates in output/immensekansasii/results/iTOL/mkan329_patients171/, made once by its make_tree.sbatch) and
+clinical isolates in output/immensekansasii/results/iTOL/mkan329_patients171/, made by scripts/13_patients171_tree.sbatch) and
 screening_map_results.csv, keeps the patient isolates of the complex (no `Reference`, no control / type strains
 with a LABEL, no `excluded` isolates, species in the complex) and writes to --out-dir:
 
@@ -195,9 +195,17 @@ def main() -> None:
     ap.add_argument("--tree", type=Path, default=PATIENTS171 / "kansasii_patients171_tree.treefile")
     ap.add_argument("--results", type=Path, default=kp.SCREENING_MAP_RESULTS)
     ap.add_argument("--out-dir", type=Path, default=PATIENTS171)
+    ap.add_argument("--patient-list", type=Path, metavar="FILE",
+                    help="only write the PROBENNUMMER of the patient isolates to FILE (one per line, sorted) and stop; "
+                         "the sample list of scripts/13_patients171_tree.sbatch")
     args = ap.parse_args()
 
     patients = read_patients(args.results)
+    if args.patient_list is not None:
+        args.patient_list.parent.mkdir(parents=True, exist_ok=True)
+        args.patient_list.write_text("".join(f"{p}\n" for p in sorted(patients)), encoding="utf-8")
+        print(f"{len(patients)} patient isolates -> {args.patient_list}")
+        return
     args.out_dir.mkdir(parents=True, exist_ok=True)
     tips = write_tree(args.tree, {k: v["species"].strip() for k, v in patients.items()}, args.out_dir / "kansasii_patients_midpoint.nwk")
     missing = sorted(set(patients) - set(tips))
