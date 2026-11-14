@@ -7,10 +7,12 @@
 # on every such sample and writes the same files:
 #   -> runs/public_<BioProject>/assembly/results/<sample>/3_quality/checkM/{checkm_output.tsv,results/,<sample>_checkm_version.txt}
 #      plus checkm_rerun.txt (job id and date: the result does not come from a Nextflow task)
-#   -> runs/public_checkm_rerun/{rerun.tsv,MANIFEST.txt} (work dir; one line per sample)
+#   -> runs/public_checkm_rerun/{rerun.tsv,summary_updates.tsv,MANIFEST.txt} (work dir; one line per sample)
+#   -> 3_quality/summary/<sample>.tab of every sample with a checkm_rerun.txt: the three checkm_* columns are set to the
+#      values of its checkm_output.tsv (old and new values in summary_updates.tsv; nothing else in the row changes).
+#      The file is replaced, not edited in place: the hard-linked copy in work/ keeps what the pipeline wrote.
 # Samples whose checkm_output.tsv has a result row are skipped, so the job can be submitted again.
-# The per-sample summary (3_quality/summary/<sample>.tab) is not rewritten: it keeps `null` in the checkm columns;
-# hsp65-refalign and gyrA-refalign read checkm_output.tsv.
+# The merged tables of the run (<run>_transfer_result/) are not rewritten; hsp65-refalign and gyrA-refalign read checkm_output.tsv.
 # Not part of run_downstream.sh (about 4 min per sample). Afterwards: hsp65-refalign submit_public.sbatch,
 # gyrA-refalign submit_gyrA.sbatch, kansasii-docs bin/make_runs_report.py. Submit: sbatch submit_public_checkm.sbatch
 #SBATCH --job-name=public-checkm
@@ -63,6 +65,37 @@ for project in "${PUBLIC_PROJECTS[@]}"; do
   done
 done
 echo "$n samples"
+
+# summary tables of every sample whose CheckM result comes from this job (also from an earlier submission)
+upd=$WORK/summary_updates.tsv
+[[ -s $upd ]] || printf 'date\tjob\tbioproject\tsample\told_completeness\told_contamination\told_heterogeneity\tcompleteness\tcontamination\tstrain_heterogeneity\n' > "$upd"
+m=0
+for project in "${PUBLIC_PROJECTS[@]}"; do
+  results=$(public_assemblies "$project")
+  for marker in "$results"/*/3_quality/checkM/checkm_rerun.txt; do
+    [[ -e $marker ]] || continue
+    dir=${marker%/3_quality/checkM/checkm_rerun.txt}
+    id=$(basename "$dir")
+    tab=$dir/3_quality/summary/$id.tab
+    [[ -s $tab ]] || { echo "ERROR: no summary table $tab" >&2; exit 1; }
+    read -r comp cont het < <(awk -v id="$id" '$1 == id {print $(NF-2), $(NF-1), $NF}' "$dir/3_quality/checkM/checkm_output.tsv")
+    [[ -n ${het:-} ]] || { echo "ERROR: no CheckM row for $id" >&2; exit 1; }
+    old=$(awk -F'\t' -v OFS='\t' 'NR == 1 {for (i = 1; i <= NF; i++) c[$i] = i}
+                                   NR == 2 {print $c["checkm_completeness"], $c["checkm_contamination"], $c["checkm_heterogeneity"]}' "$tab")
+    [[ $old == "$comp"$'\t'"$cont"$'\t'"$het" ]] && continue
+    awk -F'\t' -v OFS='\t' -v a="$comp" -v b="$cont" -v h="$het" '
+      NR == 1 {for (i = 1; i <= NF; i++) c[$i] = i
+               if (!c["checkm_completeness"] || !c["checkm_contamination"] || !c["checkm_heterogeneity"]) exit 1}
+      NR == 2 {$c["checkm_completeness"] = a; $c["checkm_contamination"] = b; $c["checkm_heterogeneity"] = h}
+      {print}' "$tab" > "$tab.new"
+    [[ $(wc -l < "$tab.new") -eq $(wc -l < "$tab") ]] || { echo "ERROR: $tab.new is not complete" >&2; exit 1; }
+    chmod --reference="$tab" "$tab.new"
+    mv "$tab.new" "$tab"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$(date -Is)" "${SLURM_JOB_ID:-none}" "$project" "$id" "$old" "$comp" "$cont" "$het" >> "$upd"
+    m=$((m + 1))
+  done
+done
+echo "$m summary tables updated"
 
 # provenance (see kansasii-docs/docs/PROVENANCE.md)
 bash "$MANIFEST_SCRIPT" "$WORK" "$REPO" submit_public_checkm.sbatch "$RUNS"/public_PRJNA*/assembly/results
