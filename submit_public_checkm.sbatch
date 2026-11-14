@@ -12,7 +12,9 @@
 #      values of its checkm_output.tsv (old and new values in summary_updates.tsv; nothing else in the row changes).
 #      The file is replaced, not edited in place: the hard-linked copy in work/ keeps what the pipeline wrote.
 # Samples whose checkm_output.tsv has a result row are skipped, so the job can be submitted again.
-# The merged tables of the run (<run>_transfer_result/) are not rewritten; hsp65-refalign and gyrA-refalign read checkm_output.tsv.
+# The merged tables of a run (<run>_transfer_result/<run>_quality.tsv, _quality_QC.csv) are not touched: they hold only the
+# samples of the last invocation of the run, and none of the samples redone so far is among them (check with grep before
+# relying on them for a new sample). hsp65-refalign and gyrA-refalign read checkm_output.tsv.
 # Not part of run_downstream.sh (about 4 min per sample). Afterwards: hsp65-refalign submit_public.sbatch,
 # gyrA-refalign submit_gyrA.sbatch, kansasii-docs bin/make_runs_report.py. Submit: sbatch submit_public_checkm.sbatch
 #SBATCH --job-name=public-checkm
