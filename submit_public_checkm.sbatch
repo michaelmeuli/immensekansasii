@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# CheckM for public samples that have an assembly but no CheckM result.
+# CheckM for public samples that have an assembly but no CheckM result (no checkm_output.tsv, or one without a result row).
 # The pipeline submits `checkm` only for samples MetaPhlAn4 classifies as bacteria (main.nf, samples_to_run_checkM_ch),
 # so a sample whose metaphlan4 task failed, or whose profile is 100 % UNCLASSIFIED, has no 3_quality/checkM/
-# (kansasii-docs/docs/RUNS.md, "Exceptions"). This job runs the command of modules/checkm.nf in the same container
+# (kansasii-docs/docs/RUNS.md, "Exceptions"). A table without a result row is left by a resumed `checkm` task that
+# stopped with "Unexpected error: <class 'PermissionError'>" and replaced the good table of the first task. This job runs the command of modules/checkm.nf in the same container
 # on every such sample and writes the same files:
 #   -> runs/public_<BioProject>/assembly/results/<sample>/3_quality/checkM/{checkm_output.tsv,results/,<sample>_checkm_version.txt}
 #      plus checkm_rerun.txt (job id and date: the result does not come from a Nextflow task)
 #   -> runs/public_checkm_rerun/{rerun.tsv,MANIFEST.txt} (work dir; one line per sample)
-# Samples that already have checkm_output.tsv are skipped, so the job can be submitted again.
+# Samples whose checkm_output.tsv has a result row are skipped, so the job can be submitted again.
 # The per-sample summary (3_quality/summary/<sample>.tab) is not rewritten: it keeps `null` in the checkm columns;
 # hsp65-refalign and gyrA-refalign read checkm_output.tsv.
 # Not part of run_downstream.sh (about 4 min per sample). Afterwards: hsp65-refalign submit_public.sbatch,
@@ -39,7 +40,8 @@ for project in "${PUBLIC_PROJECTS[@]}"; do
     id=$(basename "$dir")
     fasta=$dir/1_unicycler/$id.fasta
     target=$dir/3_quality/checkM
-    [[ -s $fasta && ! -s $target/checkm_output.tsv ]] || continue
+    [[ -s $fasta ]] || continue
+    if [[ -s $target/checkm_output.tsv ]] && awk -v id="$id" '$1 == id {ok = 1} END {exit !ok}' "$target/checkm_output.tsv"; then continue; fi
     w=$WORK/$id
     rm -rf "$w"; mkdir -p "$w"
     cp "$fasta" "$w/$id.fasta"
@@ -52,7 +54,7 @@ for project in "${PUBLIC_PROJECTS[@]}"; do
     # the result row starts with the bin id; the INFO lines of the same file name the work dir, which ends in the id too
     read -r comp cont het < <(awk -v id="$id" '$1 == id {print $(NF-2), $(NF-1), $NF}' "$w/checkm_output.tsv")
     [[ -n ${cont:-} ]] || { echo "ERROR: no CheckM row for $id in $w/checkm_output.tsv" >&2; exit 1; }
-    mkdir -p "$target"
+    rm -rf "$target"; mkdir -p "$target"   # a table without a result row and its empty results/ go
     cp -r "$w"/. "$target"/
     rm -rf "$w"
     printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$(date -Is)" "${SLURM_JOB_ID:-none}" "$project" "$id" "$comp" "$cont" "$het" >> "$log"
