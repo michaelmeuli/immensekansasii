@@ -26,14 +26,14 @@ from typing import TypedDict
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # kansasii_paths.py sits next to this script
 
-from kansasii_paths import ASSEMBLIES, REPOS, SCREENING_MAP_LINK, SPECIES  # noqa: E402
+from kansasii_paths import ASSEMBLIES, MAX_CHECKM_CONTAMINATION, REPOS, SCREENING_MAP_LINK, SPECIES  # noqa: E402
 
 COMPLEX = set(SPECIES)  # all 7 species of the complex, gastri included
 # GTDB merged M. ulcerans into M. marinum; MetaPhlAn writes Mycobacteroides_abscessus
 ALIAS = {"ulcerans": "marinum"}
 
 # flag thresholds
-MAX_CONTAM = 5.0        # CheckM contamination %
+MAX_CONTAM = MAX_CHECKM_CONTAMINATION  # CheckM contamination % (kansasii_paths)
 MIN_PURITY = 95.0       # MetaPhlAn4 purity %
 MIN_AF = 0.90           # GTDB fastANI alignment fraction
 MIN_ANI = 98.0

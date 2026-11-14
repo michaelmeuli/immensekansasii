@@ -82,7 +82,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # kansasii_paths.py sits next to this script
 
-from kansasii_paths import (ASSEMBLIES, IMM_DIR, MANIFEST_SCRIPT, OUT_AMR, OUT_CGMLST, OUT_MIC, OUT_IMM, OUT_MLSA, REPOS, RIDOM_CLUSTERS, RUNS, SPECIES)  # noqa: E402
+from kansasii_paths import (ASSEMBLIES, IMM_DIR, MANIFEST_SCRIPT, MAX_CHECKM_CONTAMINATION, OUT_AMR, OUT_CGMLST, OUT_MIC, OUT_IMM, OUT_MLSA, REPOS, RIDOM_CLUSTERS, RUNS, SPECIES)  # noqa: E402
 
 TNR_COLS_RE = r"^TNR(_JC|_MM|[0-9]+)?$"
 
@@ -232,7 +232,7 @@ def main() -> None:
                     help="Ridom ridom-clusters.csv (Sample ID, ...) -> ridom_* columns, appended last")
     ap.add_argument("--min-cgmlst-pct", type=float, default=90.0,
                     help="isolates with a lower %% of cgMLST loci called get excluded = true (default 90)")
-    ap.add_argument("--max-contamination", type=float, default=5.0,
+    ap.add_argument("--max-contamination", type=float, default=MAX_CHECKM_CONTAMINATION,
                     help="CheckM contamination %% above which contamination_flag is set (default 5)")
     ap.add_argument("--copy-to", type=Path, default=None,
                     help="directory to also copy the output to (default: <root>/output, but only "
