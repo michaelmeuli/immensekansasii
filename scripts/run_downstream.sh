@@ -5,17 +5,19 @@
 #   link table -> MIC analysis ---------------------------------------------------------------+
 #              -> MLSA inputs -> locus_discovery(+excluded) -> hsp65 references -> sanger_refalign(hsp65)
 #                              -> sanger_mlsa(+excluded), sanger_refalign, genome_identity_check
-#   cgMLST scheme + allele calls (00-07) --------------------------------------------------------+
-#   results table (needs MIC, sanger_mlsa, sanger_mlsa_excluded, sanger_refalign, cgMLST sample_qc)
+#   results table (needs MIC, sanger_mlsa, sanger_mlsa_excluded, sanger_refalign; reads the Ridom exports
+#                  data/imm/ridom-comparison-table.csv for `excluded` and ridom-clusters.csv)
 #        -> sanger_vs_wgs, hsp65-refalign (01, 04, 05), gyrA-refalign, iTOL, kansasii-docs/docs/SAMPLES.md
-#        -> cgMLST distances / MSTs (08-09), core-SNP MSTs
+#        -> kansasii-ridom: archive for SeqSphere+ and the tables derived from the Ridom exports
 #   amr (assemblies) -> amr reannotation (needs MIC + results)
 #   atypical-sample table and SUMMARY.html (need hsp65-refalign, gyrA-refalign)
 #
 # Not run here: the pipeline runs (step 5b: finished and copied before), sanger-microsynth (reads and
 # sends mail; test it with `scripts/02_analyse_report.py --batch DIR --no-send --no-blast`), the NCBI BLAST
-# of hsp65-refalign 02 (sends sequences out) and the GWAS work. Inputs that must exist: data/imm tables, the
-# Sanger .ab1 files, the conda envs (env_mic, env_mlsa, env_immense, env_amr, env_cgmlst, env_mst).
+# of hsp65-refalign 02 (sends sequences out), the GWAS work, Ridom SeqSphere+ itself (GUI; its exports
+# data/imm/ridom-* must exist, kansasii-docs/docs/RIDOM.md) and the obsolete kansasii-cgmlst (chewBBACA) and
+# kansasii-mst (core SNPs), which nothing reads. Inputs that must exist: data/imm tables, the
+# Sanger .ab1 files, the conda envs (env_mic, env_mlsa, env_immense, env_amr, env_ridom).
 #
 # Usage: bash run_downstream.sh [--dry-run] [--with-bam]
 #   --dry-run   print the sbatch commands only
@@ -30,13 +32,12 @@ done
 
 source "${KANSASII_ROOT:-/shares/sander.imm.uzh/MM/kansasii}/repos/kansasii-docs/templates/kansasii_paths.sh"
 IMM=$REPOS/immensekansasii MLSA=$REPOS/mlsa-kansasii AMR=$REPOS/kansasii-amr-marker-screen
-MIC=$REPOS/kansasii-mic MST=$REPOS/kansasii-mst CG=$REPOS/kansasii-cgmlst
+MIC=$REPOS/kansasii-mic RIDOM=$REPOS/kansasii-ridom
 HSP=$REPOS/hsp65-refalign GYRA=$REPOS/gyrA-refalign DOCS=$REPOS/kansasii-docs
 LOG=$RUNS/downstream-$(date +%Y%m%d)
 mkdir -p "$LOG"; cd "$LOG"
 # log directories named in the #SBATCH --output lines must exist before sbatch
-for d in "$OUT_MLSA" "$OUT_MIC" "$OUT_HSP65" "$OUT_GYRA" "$OUT_AMR" "$OUT_MST" "$OUT_CGMLST" "$OUT_MICROSYNTH"; do mkdir -p "$d/logs"; done
-mkdir -p "$RUNS/cgmlst/logs"
+for d in "$OUT_MLSA" "$OUT_MIC" "$OUT_HSP65" "$OUT_GYRA" "$OUT_AMR" "$OUT_RIDOM" "$OUT_MICROSYNTH"; do mkdir -p "$d/logs"; done
 
 CONDA_SH='source "$(conda info --base)/etc/profile.d/conda.sh"'
 
@@ -81,11 +82,8 @@ ra=$(submit_file "$prep"  "$MLSA/submit_sanger_refalign.sbatch")
 rah=$(submit_file "$hsp65" "$MLSA/submit_hsp65_amplicon_alignment.sbatch")
 gic=$(submit_file "$prep" "$MLSA/submit_genome_identity_check.sbatch")
 
-# 12a cgMLST scheme, allele calls and per-genome QC (00-07); needs the previous results table only for species/contamination
-cg1=$(submit_file "$link" "$CG/submit_all.sbatch" --export=ALL,STEPS=00:01:02:03:04:05:06:07)
-
-# 9  results table
-results=$(submit_wrap results env_mic "$(join "$mic" "$sm" "$smx" "$ra" "$cg1")" \
+# 9  results table (`excluded` from the Ridom good-targets value in data/imm/ridom-comparison-table.csv)
+results=$(submit_wrap results env_mic "$(join "$mic" "$sm" "$smx" "$ra")" \
   "python $IMM/scripts/06_screening_map_results.py")
 
 # 8b/8c  validation that reads the results table
@@ -102,9 +100,9 @@ itol=$(submit_wrap itol env_immense "$results" \
 itol_ast=$(submit_wrap itol-ast biopython "$results" "python $IMM/scripts/12_generate_itol_ast.py")
 report=$(submit_wrap samples-report env_mic "$results" "cd $IMM; python scripts/08_mkan329_samples_report.py")
 
-# 12b cgMLST distances / MSTs, core-SNP MSTs. Step 10 (Ridom archive) is not run: superseded by kansasii-ridom submit_export.sbatch
-cg2=$(submit_file "$results" "$CG/submit_all.sbatch" --export=ALL,STEPS=08:09)
-mst=$(submit_file "$results" "$MST/submit_all.sbatch")
+# 12 Ridom: archive of the pool for SeqSphere+ and the tables derived from the exports in data/imm/ridom-*
+rexp=$(submit_file "$results" "$RIDOM/submit_export.sbatch")
+rid=$(submit_file "$results" "$RIDOM/submit_all.sbatch")
 
 # 13 AMR markers: assemblies need nothing but the pipeline runs; reannotation joins MIC + results
 amr=$(submit_file "" "$AMR/submit_amr.sbatch")
@@ -124,7 +122,7 @@ atyp=$(submit_wrap atypical env_mlsa "$(join "$hv" "$hk" "$hp" "$hpp" "$gy")" \
 
 echo
 echo "submitted; logs in $LOG"
-echo "  link=$link mic=$mic prep=$prep ld=$ld ldx=$ldx hsp65=$hsp65 cg1=$cg1"
+echo "  link=$link mic=$mic prep=$prep ld=$ld ldx=$ldx hsp65=$hsp65"
 echo "  sm=$sm smx=$smx ra=$ra rah=$rah gic=$gic results=$results"
 echo "  svw=$svw hsp65_validate=$hv korean=$hk public=$hp public_persicum=$hpp gyrA=$gy itol=$itol report=$report"
-echo "  cg2=$cg2 mst=$mst amr=$amr amr_reannot=$amr_re atypical=$atyp"
+echo "  ridom_export=$rexp ridom=$rid amr=$amr amr_reannot=$amr_re atypical=$atyp"

@@ -1,4 +1,4 @@
-"""is_excluded of scripts/06_screening_map_results.py: contaminated, non-complex clinical sample, or < min_pct % of the cgMLST loci called."""
+"""is_excluded of scripts/06_screening_map_results.py: contaminated, non-complex clinical sample, or < min_pct % good cgMLST targets in Ridom."""
 from __future__ import annotations
 
 import importlib.util

@@ -22,16 +22,14 @@ script never modifies it. Added columns:
       (default 5), else empty (also empty if no value). Flagged isolates are
       mixed cultures/assemblies (e.g. Mkan329-035: kansasii + ostraviense, 13 Mb),
       so GTDB and hsp65 species calls may legitimately disagree.
-  cgmlst_called_pct, excluded  (inserted right after contamination_flag)
-      cgmlst_called_pct: % of the cgMLST95 loci with an allele call (kansasii-cgmlst step 07,
-      output/kansasii-cgmlst/results/sample_qc.tsv; --cgmlst-qc); empty for isolates that are not allele-called
-      (contaminated, not in the complex) or if the file is missing.
-      excluded: "true"/"false" on every row; true if contamination_flag is "contaminated",
-      cgmlst_called_pct < --min-cgmlst-pct (default 90, like Ridom's good-target threshold), or the
-      row is a clinical sample (LABEL empty) whose GTDB species is outside the M. kansasii complex
-      (e.g. NR 184, M. avium). Non-complex control strains (LABEL set) are not excluded by this.
-      The genome-based repos (kansasii-cgmlst, kansasii-mst, kansasii-amr-marker-screen) skip excluded isolates.
-      Order: kansasii-cgmlst 07 -> this script -> kansasii-cgmlst 08-10.
+  excluded  (inserted right after contamination_flag)
+      "true"/"false" on every row; true if contamination_flag is "contaminated", the Ridom SeqSphere+
+      good-targets value (ridom_perc_good_targets, see below) is < --min-good-targets-pct (default 90,
+      Ridom's good-target threshold), or the row is a clinical sample (LABEL empty) whose GTDB species is
+      outside the M. kansasii complex (e.g. NR 184, M. avium). Non-complex control strains (LABEL set)
+      are not excluded by this. An isolate without a Ridom value is not excluded by coverage.
+      The genome-based repos (kansasii-ridom, kansasii-amr-marker-screen, kansasii-mic) skip excluded isolates.
+      Order: Ridom export data/imm/ridom-comparison-table.csv (manual) -> this script -> kansasii-ridom.
   resistance_abricate
       <id>/4_resistance_virulence/01_Abricate/<id>_resistances_summary.tsv
       ("gene (identity%)", 100%-coverage hits only). Empty = no hit or no result.
@@ -82,7 +80,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # kansasii_paths.py sits next to this script
 
-from kansasii_paths import (ASSEMBLIES, IMM_DIR, MANIFEST_SCRIPT, MAX_CHECKM_CONTAMINATION, OUT_AMR, OUT_CGMLST, OUT_MIC, OUT_IMM, OUT_MLSA, REPOS, RIDOM_CLUSTERS, RUNS, SPECIES)  # noqa: E402
+from kansasii_paths import (ASSEMBLIES, IMM_DIR, MANIFEST_SCRIPT, MAX_CHECKM_CONTAMINATION, OUT_AMR, OUT_MIC, OUT_IMM, OUT_MLSA, REPOS, RIDOM_CLUSTERS, RIDOM_COMPARISON, RUNS, SPECIES)  # noqa: E402
 
 TNR_COLS_RE = r"^TNR(_JC|_MM|[0-9]+)?$"
 
@@ -98,14 +96,27 @@ MIC_ABBR = {
 MIC_FIELDS = (("mic", "mhk_raw"), ("modified_z", "modified_z"), ("clsi_category", "clsi_category"))
 
 
-# ridom-clusters.csv column -> screening_map_results column (appended last)
-RIDOM_COLS = {"Perc. Good Targets": "ridom_perc_good_targets",
-              "Approximated Genome Size (Mbases)": "ridom_genome_size_mb",
-              "Species": "ridom_species", "-Group-": "ridom_mst_cluster"}
+# Ridom export column -> screening_map_results column (appended last). The comparison table covers the whole pool
+# (incl. isolates that Ridom's good-targets value excludes, e.g. M055); the cluster table only the clustered cohort.
+RIDOM_COMPARISON_COLS = {"Perc. Good Targets": "ridom_perc_good_targets",
+                         "Approximated Genome Size (Mbases)": "ridom_genome_size_mb",
+                         "Species": "ridom_species"}
+RIDOM_CLUSTER_COLS = {"-Group-": "ridom_mst_cluster"}
+RIDOM_COLS = {**RIDOM_COMPARISON_COLS, **RIDOM_CLUSTER_COLS}
+
+
+def read_ridom(path: Path) -> pd.DataFrame:
+    """Ridom SeqSphere+ CSV export (`;`- or `,`-separated, with BOM) indexed by Sample ID."""
+    header = path.read_text(encoding="utf-8-sig").splitlines()[0]
+    sep = ";" if header.count(";") > header.count(",") else ","
+    t = pd.read_csv(path, sep=sep, encoding="utf-8-sig", dtype=str, keep_default_na=False)
+    if t["Sample ID"].duplicated().any():
+        raise ValueError(f"{path}: duplicate Sample ID")
+    return t.set_index("Sample ID")
 
 
 def ridom_id(pnr: str, label: str) -> str:
-    """Sample ID of the Ridom export (kansasii-cgmlst 10_export_ridom.py): Mkan329-081 -> M081, controls -> safe label."""
+    """Sample ID of the Ridom export (kansasii-ridom 01_export_ridom.py): Mkan329-081 -> M081, controls -> safe label."""
     if label:
         return re.sub(r"_+", "_", re.sub(r"[^A-Za-z0-9]+", "_", label)).strip("_")
     return pnr.replace("Mkan329-", "M")
@@ -114,16 +125,16 @@ def ridom_id(pnr: str, label: str) -> str:
 COMPLEX = set(SPECIES)  # all 7 species of the complex, gastri included
 
 
-def is_excluded(contamination_flag: str, cgmlst_called_pct: str, min_pct: float,
+def is_excluded(contamination_flag: str, good_targets_pct: str, min_pct: float,
                 species: str = "", label: str = "") -> bool:
     """Contaminated, a non-complex clinical sample (known species outside COMPLEX, no LABEL), or fewer than min_pct %
-    of the cgMLST loci called (an empty percentage never excludes)."""
+    good cgMLST targets in Ridom (an empty percentage never excludes)."""
     if contamination_flag == "contaminated":
         return True
     if species and species not in COMPLEX and not label:
         return True
     try:
-        return float(cgmlst_called_pct) < min_pct
+        return float(good_targets_pct) < min_pct
     except ValueError:
         return False
 
@@ -226,12 +237,13 @@ def main() -> None:
     ap.add_argument("--amr-calls", type=Path,
                     default=OUT_AMR / "results/assembly/work/report/marker_calls.pass.tsv",
                     help="kansasii-amr-marker-screen marker_calls.pass.tsv (aa_call == MUT rows -> amr_mut)")
-    ap.add_argument("--cgmlst-qc", type=Path, default=OUT_CGMLST / "results/sample_qc.tsv",
-                    help="kansasii-cgmlst sample_qc.tsv (sample, cgmlst_called_pct) -> cgmlst_called_pct")
+    ap.add_argument("--ridom-comparison", type=Path, default=RIDOM_COMPARISON,
+                    help="Ridom ridom-comparison-table.csv (Sample ID, Perc. Good Targets, ...) -> excluded and the "
+                         "ridom_perc_good_targets / ridom_genome_size_mb / ridom_species columns, appended last")
     ap.add_argument("--ridom-clusters", type=Path, default=RIDOM_CLUSTERS,
-                    help="Ridom ridom-clusters.csv (Sample ID, ...) -> ridom_* columns, appended last")
-    ap.add_argument("--min-cgmlst-pct", type=float, default=90.0,
-                    help="isolates with a lower %% of cgMLST loci called get excluded = true (default 90)")
+                    help="Ridom ridom-clusters.csv (Sample ID, -Group-) -> ridom_mst_cluster, appended last")
+    ap.add_argument("--min-good-targets-pct", type=float, default=90.0,
+                    help="isolates with a lower %% of good cgMLST targets in Ridom get excluded = true (default 90)")
     ap.add_argument("--max-contamination", type=float, default=MAX_CHECKM_CONTAMINATION,
                     help="CheckM contamination %% above which contamination_flag is set (default 5)")
     ap.add_argument("--copy-to", type=Path, default=None,
@@ -326,19 +338,27 @@ def main() -> None:
         warn("contaminated (CheckM > %g%%): %s" % (args.max_contamination, ", ".join(
             f"{p} ({c})" for p, c, f in zip(res["PROBENNUMMER"], res["checkm_contamination"], res["contamination_flag"]) if f)))
 
-    # --- cgmlst_called_pct + excluded (contaminated or poor cgMLST coverage) ---
-    pct: dict[str, str] = {}
-    if args.cgmlst_qc.exists():
-        qc = read_tsv(args.cgmlst_qc)
-        pct = dict(zip(qc["sample"], qc["cgmlst_called_pct"]))
+    # --- excluded (contaminated, non-complex clinical sample, or < min % good cgMLST targets in Ridom) ---
+    ridom_keys = [ridom_id(p, lb) for p, lb in zip(res["PROBENNUMMER"], res["LABEL"].fillna(""))]
+    comparison: pd.DataFrame | None = None
+    if args.ridom_comparison.exists():
+        comparison = read_ridom(args.ridom_comparison)
     else:
-        warn(f"{args.cgmlst_qc} not found; cgmlst_called_pct left empty, excluded = contaminated only")
+        warn(f"{args.ridom_comparison} not found; excluded = contaminated or non-complex only")
+    good_pct = [str(comparison.at[k, "Perc. Good Targets"]).strip() if comparison is not None and k in comparison.index else ""
+                for k in ridom_keys]
+    pct_of = dict(zip(res["PROBENNUMMER"], good_pct))
     after = list(res.columns).index("contamination_flag") + 1
-    res.insert(after, "cgmlst_called_pct", res["PROBENNUMMER"].map(lambda p: pct.get(p, "")))
-    res.insert(after + 1, "excluded", [
-        "true" if is_excluded(f, c, args.min_cgmlst_pct, sp, lb) else "false"
-        for f, c, sp, lb in zip(res["contamination_flag"], res["cgmlst_called_pct"],
+    res.insert(after, "excluded", [
+        "true" if is_excluded(f, c, args.min_good_targets_pct, sp, lb) else "false"
+        for f, c, sp, lb in zip(res["contamination_flag"], good_pct,
                                 res["species"].fillna(""), res["LABEL"].fillna(""))])
+    if comparison is not None:
+        no_value = [p for p, c, f, sp in zip(res["PROBENNUMMER"], good_pct, res["contamination_flag"], res["species"].fillna(""))
+                    if not c and not f and sp in COMPLEX]
+        if no_value:
+            warn("complex isolates without a Ridom good-targets value (not excluded by coverage; new Ridom export needed): "
+                 + ", ".join(no_value))
     non_complex = res[(res["excluded"] == "true") & (res["contamination_flag"] == "") & ~res["species"].fillna("").isin(COMPLEX)
                       & (res["species"].fillna("") != "")]
     if len(non_complex):
@@ -346,8 +366,8 @@ def main() -> None:
             f"{p} ({sp})" for p, sp in zip(non_complex["PROBENNUMMER"], non_complex["species"])))
     low = res[(res["excluded"] == "true") & (res["contamination_flag"] == "") & ~res.index.isin(non_complex.index)]
     if len(low):
-        warn("excluded (< %g%% cgMLST loci called): %s" % (args.min_cgmlst_pct, ", ".join(
-            f"{p} ({c})" for p, c in zip(low["PROBENNUMMER"], low["cgmlst_called_pct"]))))
+        warn("excluded (< %g%% good cgMLST targets in Ridom): %s" % (args.min_good_targets_pct, ", ".join(
+            f"{p} ({pct_of[p]})" for p in low["PROBENNUMMER"])))
 
     # --- hsp65 species calls: sanger_mlsa (mlsa1), sanger_mlsa_excluded (mlsa2) ---
     for col, path in (("species_sanger_mlsa", args.mlsa1), ("species_sanger_mlsa_excl", args.mlsa2)):
@@ -406,16 +426,17 @@ def main() -> None:
 
     for c in RIDOM_COLS.values():
         res[c] = ""
-    if args.ridom_clusters.exists():
-        rid = read_tsv(args.ridom_clusters, ",").set_index("Sample ID")
-        keys = [ridom_id(p, l) for p, l in zip(res["PROBENNUMMER"], res["LABEL"])]
-        hit = [k in rid.index for k in keys]
-        for src, dst in RIDOM_COLS.items():
-            res[dst] = [str(rid.at[k, src]).strip() if h else "" for k, h in zip(keys, hit)]
-        warn(f"ridom: {sum(hit)}/{len(res)} isolates matched; not in screening table: "
-             f"{', '.join(sorted(set(rid.index) - set(keys)))}")
-    else:
-        warn(f"{args.ridom_clusters} not found; ridom columns left empty")
+    clusters = read_ridom(args.ridom_clusters) if args.ridom_clusters.exists() else None
+    if clusters is None:
+        warn(f"{args.ridom_clusters} not found; ridom_mst_cluster left empty")
+    for name, table, cols in (("comparison table", comparison, RIDOM_COMPARISON_COLS), ("clusters", clusters, RIDOM_CLUSTER_COLS)):
+        if table is None:
+            continue
+        hit = [k in table.index for k in ridom_keys]
+        for src, dst in cols.items():
+            res[dst] = [str(table.at[k, src]).strip() if h else "" for k, h in zip(ridom_keys, hit)]
+        warn(f"ridom {name}: {sum(hit)}/{len(res)} isolates matched; not in screening table: "
+             f"{', '.join(sorted(set(table.index) - set(ridom_keys)))}")
 
     res.to_csv(out, index=False)
     print(f"{(res[[f'{a}_mic' for a in MIC_ABBR.values()]] != '').any(axis=1).sum()} isolates with MIC data")
