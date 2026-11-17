@@ -156,21 +156,26 @@ fi
   echo -e "COLOR\t#000000"
   echo -e "LEGEND_TITLE\tSpecies complex"
   if [ "$MODE" = samples ]; then
-    # samples mode: each kansasii-complex species gets its own color
+    # samples mode: each kansasii-complex species gets its SPECIES_COLORS colour (kansasii_paths.sh), in SPECIES order
+    legend_colors=""; legend_labels=""
+    for sp in "${SPECIES[@]}"; do
+      for pair in "${SPECIES_COLORS[@]}"; do [ "${pair%%=*}" = "$sp" ] && legend_colors+="\t${pair#*=}"; done
+      legend_labels+="\tM. $sp"
+    done
     echo -e "LEGEND_SHAPES\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1"
-    echo -e "LEGEND_COLORS\t#4daf4a\t#ff7f00\t#a65628\t#f781bf\t#ffd92f\t#00bcd4\t#1b9e77\t#e41a1c\t#377eb8\t#984ea3\t#999999"
-    echo -e "LEGEND_LABELS\tM. kansasii\tM. persicum\tM. pseudokansasii\tM. innocens\tM. attenuatum\tM. ostraviense\tM. gastri\tM. tuberculosis complex\tM. avium complex\tM. simiae complex\tother"
+    echo -e "LEGEND_COLORS${legend_colors}\t#e41a1c\t#377eb8\t#984ea3\t#999999"
+    echo -e "LEGEND_LABELS${legend_labels}\tM. tuberculosis complex\tM. avium complex\tM. simiae complex\tother"
   else
     echo -e "LEGEND_SHAPES\t1\t1\t1\t1"
     echo -e "LEGEND_COLORS\t#4daf4a\t#e41a1c\t#377eb8\t#984ea3"
     echo -e "LEGEND_LABELS\tM. kansasii complex\tM. tuberculosis complex\tM. avium complex\tM. simiae complex"
   fi
   echo "DATA"
-  awk -F'\t' -v OFS='\t' -v mode="$MODE" '
+  awk -F'\t' -v OFS='\t' -v mode="$MODE" -v species_colors="${SPECIES_COLORS[*]}" '
     BEGIN {
-      sc["kansasii"] = "#4daf4a"; sc["persicum"] = "#ff7f00"; sc["pseudokansasii"] = "#a65628"
-      sc["innocens"] = "#f781bf"; sc["attenuatum"] = "#ffd92f"; sc["ostraviense"] = "#00bcd4"
-      sc["gastri"] = "#1b9e77"
+      # "kansasii=#1b9e77 persicum=#d95f02 ..." (SPECIES_COLORS of kansasii_paths.sh) -> sc[species] = colour
+      n = split(species_colors, pairs, " ")
+      for (i = 1; i <= n; i++) { split(pairs[i], kv, "="); sc[kv[1]] = kv[2] }
     }
     {
       id = $1
